@@ -23,6 +23,9 @@ public:
   ULong64_t GetTStamp();
   UShort_t GetChNum();
   std::string GetEventType();
+  UShort_t GetEnergy();
+  Ushort_t GetEnergyShort();
+  UShort_t GetWaveForm();
 
   ~Event();
 }

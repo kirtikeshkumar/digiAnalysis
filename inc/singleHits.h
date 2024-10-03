@@ -16,9 +16,7 @@ This file saves individual hits as registered
 namespace digiAnalysis {
 
 class WaveForm;
-class smoothWaveForm;
 class diffWaveForm;
-class cfdWaveForm;
 
 class singleHits {
 private:

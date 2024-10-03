@@ -1,6 +1,7 @@
 #ifndef Analysis_h
 #define Analysis_h
 
+#include "Events.h"
 #include "Hits.h"
 #include "WaveForm.h"
 #include "includes.hh"
@@ -13,13 +14,26 @@
 
 namespace digiAnalysis {
 
-class Hits;
+class singleHits;
 class WaveForm;
-class smoothWaveForm;
 class diffWaveForm;
-class cfdWaveForm;
 
-class Analysis {}
+class Analysis {
+private:
+  std::vector<Event *> vecOfEvents;
+  std::vector<singleHits *> vecOfHits;
+  std::string fDatafileName;
+  unsigned int EnergyThreshold;
+
+public:
+  Analysis();
+  Analysis(std::string datafilename, unsigned int numOfEvents = 0,
+           double EThreshold = 0);
+  ~Analysis(unsigned int numOfEvents, unsigned int EnergyThreshold);
+
+  void LoadData(); // read hits/events from file based on cmake variable
+  void CreateEvents();
+};
 
 } // namespace digiAnalysis
 
