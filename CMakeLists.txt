@@ -15,7 +15,9 @@ else()
 endif()
 
 
-option(WAVES "Enable or Disable Waveform analysis" OFF)
+option(WAVES "Enable or Disable Waveform Analysis" OFF)
+option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
+option(CFD "Enable or Disable Waveform CFD" OFF)
 
 
 find_package(ROOT REQUIRED)
