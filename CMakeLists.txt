@@ -19,6 +19,10 @@ option(WAVES "Enable or Disable Waveform Analysis" OFF)
 option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
 option(CFD "Enable or Disable Waveform CFD" OFF)
 
+if(SMOOTH)
+    set(ENV{SMOOTH_BOX_SIZE} "4")
+endif()
+set(ENV{NUM_SAMPLE_BASELINE} "16")
 
 find_package(ROOT REQUIRED)
 include_directories(${ROOT_INCLUDE_DIRS})
