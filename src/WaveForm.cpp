@@ -1,10 +1,12 @@
+/*define meantime using tracesSmooth if SMOOTH is turned on*/
+
 #include "WaveForm.h"
-#include "TMath.h"
-#include <iostream>
-#include <cmath>
-#include <cstdlib> // to get enviroment variable setSmoothSz
+#include "includes.hh"
+
+// ClassImp(digiAnalysis::WaveForm);
 
 using namespace std;
+
 namespace digiAnalysis
 {
   // UShort_t WaveForm::nSampleBL = 16;

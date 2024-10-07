@@ -15,6 +15,9 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
+#include <cstdlib>
+#include <cmath>
 
 #include <Rtypes.h>
 #include <TCanvas.h>

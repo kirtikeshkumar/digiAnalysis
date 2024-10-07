@@ -1,9 +1,6 @@
 /*
 This File defines how to hande the waveform
 class WaveForm: parent class contains how to handle waveform including plotting
-
-add a function to concatenate 2 waveforms: this will be useful for the PSBar or any other double readout case
-add a function to take average of vecOfWaveForms
 */
 
 #ifndef WaveForm_h
@@ -11,12 +8,6 @@ add a function to take average of vecOfWaveForms
 
 #include "includes.hh"
 #pragma once
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-#include <cstdlib>
-#include <cmath>
 
 namespace digiAnalysis
 {
