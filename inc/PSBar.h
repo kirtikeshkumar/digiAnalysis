@@ -1,6 +1,7 @@
-#ifndef PSBar
-#define PSBar
+#ifndef PSBar_h
+#define PSBar_h
 
+#include "WaveForm.h"
 #include "singleHits.h"
 #include <iostream>
 #include <memory>
@@ -13,26 +14,25 @@ class TH1F;
 
 namespace digiAnalysis {
 class singleHits;
+class WaveForm;
 
 class PSBar {
 private:
   ushort BarIndex;    // Index of Bar starting from 0
-  UInt_t Qlong;       // Folded Charge first 16 bits near, next 16 bits farftr
   ULong64_t TimeNear; // DAQ timestamp of smaller channel
   ULong64_t Timestamp;
   Int_t Delt; // Time diff between left and right PMT
-
-  // Storing the event no. corresponding to TTree
-  ULong64_t EvNo;
-
-  UInt_t Qnear;
-  UInt_t Qfar;
+  UInt_t QNear;
+  UInt_t QFar;
+  UInt_t QNearShort;
+  UInt_t QFarShort;
+  float QMean;
+  float QMeanShort;
+  float PSD;
 
 #ifdef WAVES
-  std::unique_ptr<WaveForm> nearWF;
-  std::unique_ptr<smoothWaveForm> nearSmoothWF;
-  std::unique_ptr<WaveForm> farWF;
-  std::unique_ptr<smoothWaveForm> farSmoothWF;
+  std::unique_ptr<WaveForm> WF; // combined Waveform containing first half as
+                                // near and second half as far
 #endif
 
 public:
@@ -43,11 +43,12 @@ public:
   PSBar(singleHits *h1, singleHits *h2);
 
   // Getters
-  ushort GetBarIndex() const;
-  ULong64_t GetEvNo() const { return fEvNo; }
+  ushort GetBarIndex() const { return BarIndex; }
   UInt_t GetQNear();
   UInt_t GetQFar();
-  Double_t GetQMean();
+  float GetQMean();
+  float GetQMeanShort();
+  float GetPSD();
   Long_t GetDelT() const;
   Long_t GetTStampNear();
   Long_t GetTStampFar();
@@ -57,6 +58,12 @@ public:
   // Printer
   void Print();
 
+#ifdef WAVES
+  WaveForm GetWF(); // combined Waveform containing first half as
+                    // near and second half as far
+#endif
+
   ~PSBar();
 };
 } // namespace digiAnalysis
+#endif
