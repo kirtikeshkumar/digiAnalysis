@@ -43,6 +43,7 @@ public:
   // void CreateEvents();
   // TTree *GetTreeFromFile(const std::string &filename);
   std::vector<std::unique_ptr<singleHits>> &GetSingleHits();
+  void SortHits(const std::string &major, const std::string &minor = "");
 };
 
 } // namespace digiAnalysis

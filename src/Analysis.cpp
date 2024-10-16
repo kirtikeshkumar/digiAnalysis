@@ -102,7 +102,48 @@ void Analysis::LoadData(unsigned int numOfEvents, double EThreshold) {
 }
 
 std::vector<std::unique_ptr<singleHits>> &Analysis::GetSingleHits() {
+  /*
+    This returns a pointer of the vecOfHits in this class.
+    Any modification to vecOfHits will reflect in the variable populated by this
+    function
+  */
   return vecOfHits;
+}
+
+void Analysis::SortHits(const std::string &major, const std::string &minor) {
+  std::sort(vecOfHits.begin(), vecOfHits.end(),
+            [major, minor](const std::unique_ptr<singleHits> &a,
+                           const std::unique_ptr<singleHits> &b) {
+              // Major sorting
+              if (major == "Energy") {
+                if (a->GetEnergy() != b->GetEnergy())
+                  return a->GetEnergy() < b->GetEnergy();
+              } else if (major == "Time") {
+                if (a->GetTimestamp() != b->GetTimestamp())
+                  return a->GetTimestamp() < b->GetTimestamp();
+              } else if (major == "Channel") {
+                if (a->GetChNum() != b->GetChNum())
+                  return a->GetChNum() < b->GetChNum();
+              } else if (major == "Board") {
+                if (a->GetBoard() != b->GetBoard())
+                  return a->GetBoard() < b->GetBoard();
+              }
+
+              // Minor sorting if specified
+              if (!minor.empty()) {
+                if (minor == "Energy") {
+                  return a->GetEnergy() < b->GetEnergy();
+                } else if (minor == "Time") {
+                  return a->GetTimestamp() < b->GetTimestamp();
+                } else if (minor == "Channel") {
+                  return a->GetChNum() < b->GetChNum();
+                } else if (minor == "Board") {
+                  return a->GetBoard() < b->GetBoard();
+                }
+              }
+
+              return false; // In case both major and minor criteria are equal
+            });
 }
 
 /*
