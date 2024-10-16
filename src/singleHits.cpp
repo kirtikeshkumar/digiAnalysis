@@ -77,6 +77,7 @@ float singleHits::GetPSD() { return PSD; }
 std::unique_ptr<WaveForm> singleHits::GetWF() { return WF; }
 std::unique_ptr<diffWaveForm> singleHits::GetDiffWF() { return dWF; }
 
+void singleHits::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
 void singleHits::SetSmoothWF() { WF->SetSmooth(); }
 void singleHits::SetDiffWF() {}
 #endif

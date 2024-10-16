@@ -2,9 +2,15 @@
 #define Analysis_h
 
 #include "Events.h"
-#include "Hits.h"
+#include "PSBar.h"
 #include "WaveForm.h"
 #include "includes.hh"
+#include "singleHits.h"
+#include <TClass.h>
+#include <TFile.h>
+#include <TKey.h>
+#include <TTree.h>
+#include <TTreeIndex.h>
 #pragma once
 #include <iostream>
 #include <memory>
@@ -15,24 +21,28 @@
 namespace digiAnalysis {
 
 class singleHits;
+class Event;
+class PSBar;
 class WaveForm;
 class diffWaveForm;
 
 class Analysis {
 private:
-  std::vector<Event *> vecOfEvents;
-  std::vector<singleHits *> vecOfHits;
+  std::vector<std::unique_ptr<Event>> vecOfEvents;
+  std::vector<std::unique_ptr<singleHits>> vecOfHits;
   std::string fDatafileName;
-  unsigned int EnergyThreshold;
+  double EnergyThreshold;
 
 public:
   Analysis();
   Analysis(std::string datafilename, unsigned int numOfEvents = 0,
            double EThreshold = 0);
-  ~Analysis(unsigned int numOfEvents, unsigned int EnergyThreshold);
+  ~Analysis();
 
-  void LoadData(); // read hits/events from file based on cmake variable
-  void CreateEvents();
+  void LoadData(unsigned int numOfEvents, double EThreshold);
+  // void CreateEvents();
+  // TTree *GetTreeFromFile(const std::string &filename);
+  std::vector<std::unique_ptr<singleHits>> &GetSingleHits();
 };
 
 } // namespace digiAnalysis

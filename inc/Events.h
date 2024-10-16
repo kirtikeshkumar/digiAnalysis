@@ -33,6 +33,7 @@ public:
   float GetPSD();
 #ifdef WAVES
   WaveForm GetWaveForm();
+  void SetWaveForm();
 #endif
   ~Event();
 };

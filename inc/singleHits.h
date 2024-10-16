@@ -60,6 +60,7 @@ public:
   std::unique_ptr<diffWaveForm> GetDiffWF();
 
   // Setters
+  void SetWF(const WaveForm &wf);
   void SetSmoothWF();
   void SetDiffWF();
   void SetCFD();

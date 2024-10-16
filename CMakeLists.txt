@@ -15,7 +15,7 @@ else()
 endif()
 
 
-option(WAVES "Enable or Disable Waveform Analysis" OFF)
+option(WAVES "Enable or Disable Waveform Analysis" ON)
 option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
 option(CFD "Enable or Disable Waveform CFD" OFF)
 
@@ -35,7 +35,7 @@ include_directories(${ROOT_INCLUDE_DIRS})
 
 include_directories(inc)
 
-file(GLOB sources ${sources} src/*.cpp)
+file(GLOB sources src/*.cpp)
 
 add_executable(Test_Dummy test/Test_Dummy.cpp ${sources})
 target_link_libraries(Test_Dummy ${ROOT_LIBRARIES})

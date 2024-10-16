@@ -44,6 +44,7 @@ ULong64_t Event::GetTStamp() {
 
   throw std::runtime_error("Event does not contain a valid data.");
 }
+
 UShort_t Event::GetChNum() {
   if (IsSingleHitEvt()) {
     return std::get<singleHits>(data).GetChNum();
@@ -53,6 +54,7 @@ UShort_t Event::GetChNum() {
 
   throw std::runtime_error("Event does not contain a valid data.");
 }
+
 std::string Event::GetEventType() {
   if (IsSingleHitEvt()) {
     return "singleHit";
@@ -62,6 +64,7 @@ std::string Event::GetEventType() {
 
   throw std::runtime_error("Event does not contain a valid data.");
 }
+
 UShort_t Event::GetEnergy() {
   if (IsSingleHitEvt()) {
     return std::get<singleHits>(data).GetEnergy();
@@ -71,6 +74,7 @@ UShort_t Event::GetEnergy() {
 
   throw std::runtime_error("Event does not contain a valid data.");
 }
+
 UShort_t Event::GetEnergyShort() {
   if (IsSingleHitEvt()) {
     return std::get<singleHits>(data).GetEnergyShort();
@@ -80,6 +84,7 @@ UShort_t Event::GetEnergyShort() {
 
   throw std::runtime_error("Event does not contain a valid data.");
 }
+
 float Event::GetPSD() {
   if (IsSingleHitEvt()) {
     return std::get<singleHits>(data).GetPSD();
@@ -100,5 +105,16 @@ WaveForm Event::GetWaveForm() {
 
   throw std::runtime_error("Event does not contain a valid data.");
 }
+
+WaveForm Event::SetWaveForm(const WaveForm &wf) {
+  if (IsSingleHitEvt()) {
+    std::get<singleHits>(data).SetWF(wf);
+  } else if (IsPSBar()) {
+    std::get<PSBar>(data).SetWF(wf);
+  }
+}
 #endif
+
+Event::~Event() {}
+
 } // namespace digiAnalysis

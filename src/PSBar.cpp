@@ -29,7 +29,9 @@ void PSBar::Print() {}
 
 #ifdef WAVES
 WaveForm PSBar::GetWF() { return WF; }
+void PSBar::SetWF(const WaveForm &wf){WF -> SetWaveForm(wf)}
 #endif
 
-PSBar::~PSBar() {}
+PSBar::~PSBar() {
+}
 } // namespace digiAnalysis

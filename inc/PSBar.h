@@ -61,6 +61,7 @@ public:
 #ifdef WAVES
   WaveForm GetWF(); // combined Waveform containing first half as
                     // near and second half as far
+  void SetWF(const WaveForm &wf);
 #endif
 
   ~PSBar();
