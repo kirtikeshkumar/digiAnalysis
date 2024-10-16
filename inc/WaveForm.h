@@ -7,6 +7,7 @@ class WaveForm: parent class contains how to handle waveform including plotting
 #define WaveForm_h
 
 #include "includes.hh"
+#include "globals.h"
 #pragma once
 
 namespace digiAnalysis {
@@ -58,8 +59,8 @@ public:
                         const std::vector<WaveForm> vecOfWaveForm);
   std::vector<std::unique_ptr<WaveForm>> SplitWaveForm(UShort_t numSplits);
 
-  static UShort_t nSampleBL;   // Number of baseline samples
-  static UShort_t smoothBoxSz; // Size of smoothing box
+  //static UShort_t nSampleBL;   // Number of baseline samples
+  //static UShort_t smoothBoxSz; // Size of smoothing box
 
   //  ClassDef(WaveForm, 1);
 };

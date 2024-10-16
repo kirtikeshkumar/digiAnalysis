@@ -20,15 +20,6 @@ option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
 option(CFD "Enable or Disable Waveform CFD" OFF)
 
 
-
-set(NUM_SAMPLE_BASELINE "16" CACHE STRING "Number of baseline samples for waveform analysis")
-
-if(SMOOTH)
-    set(SMOOTH_BOX_SIZE "4" CACHE STRING "Size of smoothing box for waveform analysis")
-    set(ENV{SMOOTH_BOX_SIZE} ${SMOOTH_BOX_SIZE})
-endif()
-set(ENV{NUM_SAMPLE_BASELINE} ${NUM_SAMPLE_BASELINE})
-
 find_package(ROOT REQUIRED)
 include_directories(${ROOT_INCLUDE_DIRS})
 #message(STATUS ${ROOT_LIBRARIES})

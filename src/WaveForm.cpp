@@ -8,7 +8,7 @@
 using namespace std;
 
 namespace digiAnalysis {
-// UShort_t WaveForm::nSampleBL = 16;
+/*// UShort_t WaveForm::nSampleBL = 16;
 const char *env_var_baselinesamples = std::getenv("NUM_SAMPLE_BASELINE");
 UShort_t WaveForm::nSampleBL =
     static_cast<UShort_t>(std::stoul(env_var_baselinesamples));
@@ -17,6 +17,7 @@ UShort_t WaveForm::nSampleBL =
 const char *envVar = std::getenv("SMOOTH_BOX_SIZE");
 UShort_t WaveForm::smoothBoxSz = static_cast<UShort_t>(std::stoul(envVar));
 #endif
+*/
 
 /*Constructors*/
 WaveForm::WaveForm() // Default Constructor initializes empty vectors
@@ -40,15 +41,15 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
     meantime = meantime + traces[j] * j;
     sampleSum = sampleSum + traces[j];
 #ifdef SMOOTH
-    if (WaveForm::smoothBoxSz == 1) {
+    if (smoothBoxSz == 1) {
       tracesSmooth.push_back(traces[j]);
     } else {
-      if (j < WaveForm::smoothBoxSz) {
+      if (j < smoothBoxSz) {
         tracesSmooth.push_back(0);
         movingSum = movingSum + traces[j];
       }
-      movingSum = movingSum + traces[j] - traces[j - WaveForm::smoothBoxSz];
-      tracesSmooth.push_back(movingSum / WaveForm::smoothBoxSz);
+      movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
+      tracesSmooth.push_back(movingSum / smoothBoxSz);
     }
 #endif
   }
@@ -67,7 +68,7 @@ WaveForm::WaveForm(const std::vector<UShort_t> tr) // copy from other vector
       traces = tr;
       SetMeanTime();
 #ifdef SMOOTH
-      SetSmooth(WaveForm::smoothBoxSz);
+      SetSmooth(smoothBoxSz);
 #endif
     }
   } else {
@@ -141,15 +142,15 @@ void WaveForm::SetWaveForm(std::vector<UShort_t> tr) {
       meantime = meantime + traces[j] * j;
       sampleSum = sampleSum + traces[j];
 #ifdef SMOOTH
-      if (WaveForm::smoothBoxSz == 1) {
+      if (smoothBoxSz == 1) {
         tracesSmooth.push_back(traces[j]);
       } else {
-        if (j < WaveForm::smoothBoxSz) {
+        if (j < smoothBoxSz) {
           tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
         }
-        movingSum = movingSum + traces[j] - traces[j - WaveForm::smoothBoxSz];
-        tracesSmooth.push_back(movingSum / WaveForm::smoothBoxSz);
+        movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
+        tracesSmooth.push_back(movingSum / smoothBoxSz);
       }
 #endif
     }
@@ -253,10 +254,10 @@ void WaveForm::SetBaseLine() {
   baseline = 0;
   float sum = 0;
   if (!traces.empty()) {
-    for (unsigned int j = 0; j < WaveForm::nSampleBL; j++) {
+    for (unsigned int j = 0; j < nSampleBL; j++) {
       sum = sum + traces[j];
     }
-    baseline = sum / WaveForm::nSampleBL;
+    baseline = sum / nSampleBL;
   } else {
     std::cout << "err SetBaseLine: traces is empty" << std::endl;
   }
@@ -266,10 +267,10 @@ void WaveForm::SetBaseLine(std::vector<UShort_t> tr) {
   baseline = 0;
   float sum = 0;
   if (!tr.empty()) {
-    for (unsigned int j = 0; j < WaveForm::nSampleBL; j++) {
+    for (unsigned int j = 0; j < nSampleBL; j++) {
       sum = sum + tr[j];
     }
-    baseline = sum / WaveForm::nSampleBL;
+    baseline = sum / nSampleBL;
   } else {
     std::cout << "err SetBaseLine: input vector is empty" << std::endl;
   }
@@ -278,11 +279,11 @@ void WaveForm::SetBaseLine(std::vector<UShort_t> tr) {
 void WaveForm::SetBaseLine(TArrayS *arr) {
   baseline = 0;
   float sum = 0;
-  if (arr && (arr->GetSize() > WaveForm::nSampleBL)) {
-    for (unsigned int j = 0; j < WaveForm::nSampleBL; j++) {
+  if (arr && (arr->GetSize() > nSampleBL)) {
+    for (unsigned int j = 0; j < nSampleBL; j++) {
       sum = sum + arr->At(j);
     }
-    baseline = sum / WaveForm::nSampleBL;
+    baseline = sum / nSampleBL;
   } else {
     std::cout << "err SetBaseLine: input array is empty or smaller than "
                  "NUM_SAMPLE_BASELINE"
@@ -359,11 +360,11 @@ void WaveForm::AverageWaveForms(UShort_t numWaveForm, UShort_t sizeOfWaveForms,
   // currently only traces is averaged
   UShort_t sum = 0;
   baseline = 0;
-  for (unsigned int i = 0; i < WaveForm::nSampleBL; i++) {
+  for (unsigned int i = 0; i < nSampleBL; i++) {
     for (unsigned int j = 0; j < numWaveForm; j++) {
       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
     }
-    baseline = sum / WaveForm::nSampleBL;
+    baseline = sum / nSampleBL;
   }
 
   for (unsigned int i = 0; i < sizeOfWaveForms; i++) {

@@ -35,6 +35,8 @@ void Analysis::LoadData(unsigned int numOfEvents, double EThreshold) {
 
   TFile *fp = new TFile(fDatafileName.c_str(), "READ");
   TTree *tr = (TTree *)fp->Get("Data_F");
+
+  std::cout << "Loading data from: " << fDatafileName << std::endl;
   // TTree *tr = GetTreeFromFile(fDatafileName);
 
   // Set branch addresses.

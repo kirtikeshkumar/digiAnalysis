@@ -20,6 +20,7 @@
 #include <cmath>
 
 #include <Rtypes.h>
+#include "RtypesCore.h"
 #include <TCanvas.h>
 #include <TColor.h>
 #include <TF1.h>
