@@ -9,18 +9,20 @@
 #define BASE_INCLUDES_HH_
 
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
-#include <memory>
-#include <cstdlib>
-#include <cmath>
 
-#include <Rtypes.h>
 #include "RtypesCore.h"
+#include <Rtypes.h>
+#include <TArray.h>
+#include <TArrayS.h>
 #include <TCanvas.h>
 #include <TColor.h>
 #include <TF1.h>

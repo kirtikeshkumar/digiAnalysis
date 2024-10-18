@@ -23,18 +23,31 @@ Analysis::Analysis(std::string datafilename, unsigned int numOfEvents,
 
 void Analysis::LoadData(unsigned int numOfEvents, double EThreshold) {
 
+  TFile *fp = new TFile(fDatafileName.c_str(), "READ");
+
+  if (!fp || fp->IsZombie()) {
+    std::cerr << "Error: Unable to open file " << fDatafileName << std::endl;
+    return; // Exit or handle the error appropriately
+  }
+
+  TTree *tr = (TTree *)fp->Get("Data_F");
+
+  // Check if the TTree was retrieved successfully
+  if (!tr) {
+    std::cerr << "Error: Unable to retrieve TTree 'Data_F' from file."
+              << std::endl;
+    fp->Close();
+    return; // Exit or handle the error appropriately
+  }
   // Declaration of leaves types
   UShort_t Channel;
   ULong64_t Timestamp;
   UShort_t Board;
   UShort_t Energy;
   UShort_t EnergyShort;
-#ifdef WAVES
-  TArrayS *Samples;
-#endif
-
-  TFile *fp = new TFile(fDatafileName.c_str(), "READ");
-  TTree *tr = (TTree *)fp->Get("Data_F");
+  // #ifdef WAVES
+  TArrayS *Samples = nullptr;
+  // #endif
 
   std::cout << "Loading data from: " << fDatafileName << std::endl;
   // TTree *tr = GetTreeFromFile(fDatafileName);
@@ -45,9 +58,10 @@ void Analysis::LoadData(unsigned int numOfEvents, double EThreshold) {
   tr->SetBranchAddress("Board", &Board);
   tr->SetBranchAddress("Energy", &Energy);
   tr->SetBranchAddress("EnergyShort", &EnergyShort);
-#ifdef WAVES
+  // #ifdef WAVES
   tr->SetBranchAddress("Samples", &Samples);
-#endif
+  std::cout << "Branch waves set" << std::endl;
+  // #endif
 
   Long64_t nentries = tr->GetEntries();
   Long64_t nbytes = 0;
@@ -73,7 +87,6 @@ void Analysis::LoadData(unsigned int numOfEvents, double EThreshold) {
             << std::endl;
 
   tr->BuildIndex("Timestamp", "0");
-  std::cout << "BuiltIndex" << std::endl;
   TTreeIndex *index = (TTreeIndex *)tr->GetTreeIndex();
   if (!index) {
     std::cerr << "Error creating tree index!" << std::endl;
@@ -87,14 +100,19 @@ void Analysis::LoadData(unsigned int numOfEvents, double EThreshold) {
     return;
   }
 
-  for (Long64_t iev = 0; iev < numOfEvents; iev++) {
+  std::cout << "sorting done" << std::endl;
+  for (ULong64_t iev = 0; iev < numOfEvents; iev++) {
+    if (iev % 100000 == 0) {
+      std::cout << "Reading: " << indices[iev] << std::endl;
+    }
     nbytes += tr->GetEntry(indices[iev]);
     if (Energy > EThreshold) {
+#ifndef WAVES
       std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
           iev, Channel, Board, Timestamp, Energy, EnergyShort);
-#ifdef WAVES
+#else
       std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
-          iev, Channel, Board, Timestamp, Energy, EnergyShort, &Samples);
+          iev, Channel, Board, Timestamp, Energy, EnergyShort, Samples);
 #endif
       vecOfHits.push_back(std::move(hit));
     }
@@ -103,9 +121,9 @@ void Analysis::LoadData(unsigned int numOfEvents, double EThreshold) {
 
 std::vector<std::unique_ptr<singleHits>> &Analysis::GetSingleHits() {
   /*
-    This returns a pointer of the vecOfHits in this class.
-    Any modification to vecOfHits will reflect in the variable populated by this
-    function
+    This returns a reference to vecOfHits in this class.
+    Thus vecOfHits and the variable created by using this func are
+    "NOT" independent
   */
   return vecOfHits;
 }

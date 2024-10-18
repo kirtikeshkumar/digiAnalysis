@@ -6,14 +6,14 @@ This file saves individual hits as registered
 #define singleHits_h
 
 #include "WaveForm.h"
-#include "diffWaveFrom.h"
+// #include "diffWaveFrom.h"
 #include "includes.hh"
 #pragma once
 
 namespace digiAnalysis {
 
 class WaveForm;
-class diffWaveForm;
+// class diffWaveForm;
 
 class singleHits {
 private:
@@ -31,7 +31,7 @@ private:
   std::unique_ptr<WaveForm> WF;
 
   // Initialize depending on situation
-  std::unique_ptr<diffWaveForm> dWF;
+  // std::unique_ptr<diffWaveForm> dWF;
 #endif
 
 public:
@@ -57,12 +57,13 @@ public:
 
 #ifdef WAVES
   std::unique_ptr<WaveForm> GetWF();
-  std::unique_ptr<diffWaveForm> GetDiffWF();
+  WaveForm *GetWFPtr();
+  // std::unique_ptr<diffWaveForm> GetDiffWF();
 
   // Setters
   void SetWF(const WaveForm &wf);
   void SetSmoothWF();
-  void SetDiffWF();
+  // void SetDiffWF();
   void SetCFD();
 #endif
   void SetPSD();

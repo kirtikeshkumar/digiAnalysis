@@ -32,8 +32,9 @@ public:
   UShort_t GetEnergyShort();
   float GetPSD();
 #ifdef WAVES
-  WaveForm GetWaveForm();
-  void SetWaveForm();
+  std::unique_ptr<WaveForm> GetWaveForm();
+  WaveForm *GetWFPtr();
+  void SetWaveForm(const WaveForm &wf);
 #endif
   ~Event();
 };

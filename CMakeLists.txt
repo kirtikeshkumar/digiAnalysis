@@ -19,6 +19,17 @@ option(WAVES "Enable or Disable Waveform Analysis" ON)
 option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
 option(CFD "Enable or Disable Waveform CFD" OFF)
 
+if(WAVES)
+add_definitions(-DWAVES)
+endif(WAVES)
+
+if(SMOOTH)
+add_definitions(-DSMOOTH)
+endif(SMOOTH)
+
+if(CFD)
+add_definitions(-DCFD)
+endif(CFD)
 
 find_package(ROOT REQUIRED)
 include_directories(${ROOT_INCLUDE_DIRS})

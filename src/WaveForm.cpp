@@ -56,7 +56,7 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
   meantime = TMath::Log10(meantime / sampleSum);
 }
 
-WaveForm::WaveForm(const std::vector<UShort_t> tr) // copy from other vector
+WaveForm::WaveForm(const std::vector<int> tr) // copy from other vector
 {
   if (!tr.empty()) {
     SetBaseLine(tr);
@@ -119,16 +119,69 @@ WaveForm::~WaveForm() {
   */
 }
 
-void WaveForm::Plot() {}
+void WaveForm::Plot() {
+  if (traces.empty() && tracesSmooth.empty()) {
+    std::cout
+        << "Both traces and tracesSmooth are empty. No plot will be created."
+        << std::endl;
+    return;
+  }
+
+  // Create a canvas
+  TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+
+  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
+  int nTraces = traces.size();
+  int nTracesSmooth = tracesSmooth.size();
+
+  TGraph *graphTraces = nullptr;
+  TGraph *graphTracesSmooth = nullptr;
+
+  // Plot traces if not empty
+  if (!traces.empty()) {
+    graphTraces = new TGraph(nTraces);
+    for (int i = 0; i < nTraces; ++i) {
+      graphTraces->SetPoint(i, i, traces[i]);
+    }
+    graphTraces->SetLineColor(kRed);
+    graphTraces->SetTitle("Traces");
+    graphTraces->Draw("AL");
+    legend->AddEntry(graphTraces, "Traces", "l");
+  }
+
+  // Plot tracesSmooth if not empty
+  if (!tracesSmooth.empty()) {
+    graphTracesSmooth = new TGraph(nTracesSmooth);
+    for (int i = 0; i < nTracesSmooth; ++i) {
+      graphTracesSmooth->SetPoint(i, i, tracesSmooth[i]);
+    }
+    graphTracesSmooth->SetLineColor(kBlue);
+    graphTracesSmooth->SetTitle("Smoothed Traces");
+
+    if (graphTraces) {
+      graphTracesSmooth->Draw("L SAME");
+    } else {
+      graphTracesSmooth->Draw("AL");
+    }
+    legend->AddEntry(graphTracesSmooth, "Smoothed Traces", "l");
+  }
+
+  // Draw the legend
+  legend->Draw();
+
+  // Update the canvas
+  canvas->Update();
+}
 
 /*Getters*/
-std::vector<UShort_t> WaveForm::GetTraces() { return traces; }
-std::vector<UShort_t> WaveForm::GetTracesSmooth() { return tracesSmooth; }
+std::vector<int> WaveForm::GetTraces() { return traces; }
+std::vector<int> WaveForm::GetTracesSmooth() { return tracesSmooth; }
 float WaveForm::GetMeanTime() { return meantime; }
 float WaveForm::GetBaseLine() { return baseline; }
+uint WaveForm::GetSize() { return traces.size(); }
 
 /*Setters*/
-void WaveForm::SetWaveForm(std::vector<UShort_t> tr) {
+void WaveForm::SetWaveForm(std::vector<int> tr) {
 #ifdef SMOOTH
   unsigned int movingSum = 0;
 #endif
@@ -170,7 +223,29 @@ void WaveForm::SetWaveForm(const WaveForm &wf) {
   baseline = wf.baseline;
 }
 
-void WaveForm::SetSmooth(UShort_t smoothBoxSz) {
+void WaveForm::SetSmooth(UShort_t sBoxSz) {
+  if (!traces.empty()) {
+    unsigned int movingSum = 0;
+    SetBaseLine();
+    unsigned int size = traces.size();
+    if (sBoxSz == 1) {
+      tracesSmooth = traces;
+    } else {
+      for (unsigned int j = 0; j < size; j++) {
+        if (j < sBoxSz) {
+          tracesSmooth.push_back(0);
+          movingSum = movingSum + traces[j];
+        }
+        movingSum = movingSum + traces[j] - traces[j - sBoxSz];
+        tracesSmooth.push_back(movingSum / sBoxSz);
+      }
+    }
+  } else {
+    std::cout << "err SetSmooth: Fill traces first" << std::endl;
+  }
+}
+
+void WaveForm::SetSmooth() {
   if (!traces.empty()) {
     unsigned int movingSum = 0;
     SetBaseLine();
@@ -209,7 +284,7 @@ void WaveForm::SetMeanTime() {
   }
 }
 
-void WaveForm::SetMeanTime(const std::vector<UShort_t> tr) {
+void WaveForm::SetMeanTime(const std::vector<int> tr) {
   meantime = 0;
   float sampleSum = 0;
   if (!tr.empty()) {
@@ -224,7 +299,7 @@ void WaveForm::SetMeanTime(const std::vector<UShort_t> tr) {
   }
 }
 
-void WaveForm::SetMeanTime(const std::vector<UShort_t> tr, UShort_t start,
+void WaveForm::SetMeanTime(const std::vector<int> tr, UShort_t start,
                            UShort_t stop) {
   meantime = 0;
   float sampleSum = 0;
@@ -263,7 +338,7 @@ void WaveForm::SetBaseLine() {
   }
 }
 
-void WaveForm::SetBaseLine(std::vector<UShort_t> tr) {
+void WaveForm::SetBaseLine(std::vector<int> tr) {
   baseline = 0;
   float sum = 0;
   if (!tr.empty()) {

@@ -28,10 +28,10 @@ double PSBar::GetHitPos() { return 0; }
 void PSBar::Print() {}
 
 #ifdef WAVES
-WaveForm PSBar::GetWF() { return WF; }
-void PSBar::SetWF(const WaveForm &wf){WF -> SetWaveForm(wf)}
+std::unique_ptr<WaveForm> PSBar::GetWF() { return std::move(WF); }
+WaveForm *PSBar::GetWFPtr() { return WF.get(); }
+void PSBar::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
 #endif
 
-PSBar::~PSBar() {
-}
+PSBar::~PSBar() {}
 } // namespace digiAnalysis

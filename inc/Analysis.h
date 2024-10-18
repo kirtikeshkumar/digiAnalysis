@@ -6,6 +6,7 @@
 #include "WaveForm.h"
 #include "includes.hh"
 #include "singleHits.h"
+#include <TArray.h>
 #include <TClass.h>
 #include <TFile.h>
 #include <TKey.h>
@@ -24,7 +25,7 @@ class singleHits;
 class Event;
 class PSBar;
 class WaveForm;
-class diffWaveForm;
+// class diffWaveForm;
 
 class Analysis {
 private:

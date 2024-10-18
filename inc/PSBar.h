@@ -59,8 +59,9 @@ public:
   void Print();
 
 #ifdef WAVES
-  WaveForm GetWF(); // combined Waveform containing first half as
-                    // near and second half as far
+  std::unique_ptr<WaveForm> GetWF(); // combined Waveform containing first half
+                                     // as near and second half as far
+  WaveForm *GetWFPtr();
   void SetWF(const WaveForm &wf);
 #endif
 

@@ -28,9 +28,9 @@ singleHits::singleHits(const singleHits &other)
   if (other.WF) {
     WF = std::make_unique<WaveForm>(*other.WF);
   }
-  if (other.dWF) {
-    dWF = std::make_unique<diffWaveForm>(*other.dWF);
-  }
+  // if (other.dWF) {
+  //   dWF = std::make_unique<diffWaveForm>(*other.dWF);
+  // }
 #endif
 }
 
@@ -74,12 +74,14 @@ UShort_t singleHits::GetEnergyShort() { return EnergyShort; }
 float singleHits::GetPSD() { return PSD; }
 
 #ifdef WAVES
-std::unique_ptr<WaveForm> singleHits::GetWF() { return WF; }
-std::unique_ptr<diffWaveForm> singleHits::GetDiffWF() { return dWF; }
+std::unique_ptr<WaveForm> singleHits::GetWF() { return std::move(WF); }
+WaveForm *singleHits::GetWFPtr() { return WF.get(); }
+// std::unique_ptr<diffWaveForm> singleHits::GetDiffWF() { return
+// std::move(dWF); }
 
 void singleHits::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
 void singleHits::SetSmoothWF() { WF->SetSmooth(); }
-void singleHits::SetDiffWF() {}
+// void singleHits::SetDiffWF() {}
 #endif
 
 void singleHits::SetPSD() { PSD = 1.0 - (EnergyShort * 1.0) / Energy; }
@@ -100,7 +102,7 @@ void singleHits::Print() {
   std::cout << "PSD           : " << PSD << std::endl;
 #ifdef WAVES
   std::cout << "Waves         : " << "ON" << std::endl;
-  std::cout << "WaveForm      : " << "WF" << srd::endl;
+  std::cout << "WaveForm      : " << "WF" << std::endl;
 #else
   std::cout << "Waves         : " << "OFF" << std::endl;
 #endif
