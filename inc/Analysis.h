@@ -36,15 +36,24 @@ private:
 
 public:
   Analysis();
-  Analysis(std::string datafilename, unsigned int numOfEvents = 0,
+  Analysis(std::string datafilename, ULong64_t numOfEvents = 0,
+           double EThreshold = 0);
+  Analysis(std::string datafilename, ULong64_t start, ULong64_t numOfEvents = 0,
            double EThreshold = 0);
   ~Analysis();
 
-  void LoadData(unsigned int numOfEvents, double EThreshold);
-  // void CreateEvents();
-  // TTree *GetTreeFromFile(const std::string &filename);
-  std::vector<std::unique_ptr<singleHits>> &GetSingleHits();
+  void LoadData(ULong64_t numOfEvents, double EThreshold);
+  void LoadData(ULong64_t start, ULong64_t numOfEvents, double EThreshold);
+  void SetSingleHit(ULong64_t hitIndx, std::unique_ptr<singleHits> hit);
   void SortHits(const std::string &major, const std::string &minor = "");
+  // void CreateEvents();
+
+  void DeleteHit(ULong64_t hitNum);
+  void ResizeHitsVector();
+
+  // TTree *GetTreeFromFile(const std::string &filename);
+  std::vector<std::unique_ptr<singleHits>> &GetSingleHitsVec();
+  std::unique_ptr<singleHits> GetSingleHit(ULong64_t hitIndx);
 };
 
 } // namespace digiAnalysis
