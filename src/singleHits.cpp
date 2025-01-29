@@ -76,6 +76,7 @@ float singleHits::GetPSD() { return PSD; }
 #ifdef WAVES
 std::unique_ptr<WaveForm> singleHits::GetWF() { return std::move(WF); }
 WaveForm *singleHits::GetWFPtr() { return WF.get(); }
+float singleHits::GetMeanTime() { return WF->GetMeanTime(); }
 // std::unique_ptr<diffWaveForm> singleHits::GetDiffWF() { return
 // std::move(dWF); }
 

@@ -58,6 +58,7 @@ public:
 #ifdef WAVES
   std::unique_ptr<WaveForm> GetWF();
   WaveForm *GetWFPtr();
+  float GetMeanTime();
   // std::unique_ptr<diffWaveForm> GetDiffWF();
 
   // Setters

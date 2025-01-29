@@ -45,8 +45,9 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
       tracesSmooth.push_back(traces[j]);
     } else {
       if (j < smoothBoxSz) {
-        tracesSmooth.push_back(0);
+        // tracesSmooth.push_back(0);
         movingSum = movingSum + traces[j];
+        tracesSmooth.push_back(movingSum / j);
       }
       movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
       tracesSmooth.push_back(movingSum / smoothBoxSz);
@@ -143,7 +144,8 @@ void WaveForm::Plot() {
     for (int i = 0; i < nTraces; ++i) {
       graphTraces->SetPoint(i, i, traces[i]);
     }
-    graphTraces->SetLineColor(kRed);
+    graphTraces->SetLineColor(kBlue);
+    graphTraces->SetLineWidth(2);
     graphTraces->SetTitle("Traces");
     graphTraces->Draw("AL");
     legend->AddEntry(graphTraces, "Traces", "l");
@@ -155,7 +157,8 @@ void WaveForm::Plot() {
     for (int i = 0; i < nTracesSmooth; ++i) {
       graphTracesSmooth->SetPoint(i, i, tracesSmooth[i]);
     }
-    graphTracesSmooth->SetLineColor(kBlue);
+    graphTracesSmooth->SetLineColor(kRed);
+    graphTracesSmooth->SetLineWidth(2);
     graphTracesSmooth->SetTitle("Smoothed Traces");
 
     if (graphTraces) {
@@ -165,7 +168,10 @@ void WaveForm::Plot() {
     }
     legend->AddEntry(graphTracesSmooth, "Smoothed Traces", "l");
   }
-
+  TLine *line = new TLine(0.0, 0.0, 5000, 0.0);
+  line->SetLineColor(kBlack);
+  line->SetLineWidth(2);
+  line->Draw("L SAME");
   // Draw the legend
   legend->Draw();
 
@@ -199,8 +205,9 @@ void WaveForm::SetWaveForm(std::vector<float> tr) {
         tracesSmooth.push_back(traces[j]);
       } else {
         if (j < smoothBoxSz) {
-          tracesSmooth.push_back(0);
+          // tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
+          tracesSmooth.push_back(movingSum / j);
         }
         movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
         tracesSmooth.push_back(movingSum / smoothBoxSz);
@@ -236,9 +243,9 @@ void WaveForm::SetSmooth(UShort_t sBoxSz) {
     } else {
       for (unsigned int j = 0; j < size; j++) {
         if (j < sBoxSz) {
-          tracesSmooth.push_back(0);
+          // tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
-          tracesSmooth.push_back(movingSum / sBoxSz);
+          tracesSmooth.push_back(movingSum / j);
         } else {
           movingSum = movingSum + traces[j] - traces[j - sBoxSz];
           tracesSmooth.push_back(movingSum / sBoxSz);
@@ -260,8 +267,9 @@ void WaveForm::SetSmooth() {
     } else {
       for (unsigned int j = 0; j < size; j++) {
         if (j < smoothBoxSz) {
-          tracesSmooth.push_back(0);
+          // tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
+          tracesSmooth.push_back(movingSum / j);
         }
         movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
         tracesSmooth.push_back(movingSum / smoothBoxSz);
@@ -373,6 +381,15 @@ void WaveForm::SetBaseLine(TArrayS *arr) {
 
 // std::vector<float> WaveForm::EvalDecayTime(UShort_t FitStart, UShort_t
 // FitEnd, UShort_t numDecayConst) {}
+
+void WaveForm::ShiftWaveForm(int BL) {
+  if (!traces.empty()) {
+    for (unsigned int j = 0; j < traces.size(); j++) {
+      traces[j] = traces[j] + BL;
+    }
+  }
+}
+
 float WaveForm::IntegrateWaveForm() {
   float sum = 0;
   if (!traces.empty()) {

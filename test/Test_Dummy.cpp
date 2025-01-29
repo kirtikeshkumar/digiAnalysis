@@ -21,11 +21,16 @@ int main(int argc, char *argv[]) {
   // "/media/kirtikesh/Ventoy/GGAG/DataF_CH1@V1730_167_GGAG_2inch_insideHutch_3Oct_calib_Na.root
   // ";
   std::string fname =
-      "/media/kirtikesh/Ventoy/run_LaBr3_NHP_EuCs_18Oct_AnodeOnly/FILTERED/"
-      "DataF_run_LaBr3_NHP_EuCs_18Oct_AnodeOnly.root ";
+      "/media/kirtikesh/KirtikeshSSD/Waves/CeBr_CsI_0pt5Vpp/"
+      "Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_0pt5Vpp_8IS_300PG_"
+      "6000Gate_5696Holdoff_TConnector_1/FILTERED/"
+      "DataF_CH2@V1730_167_Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_"
+      "0pt5Vpp_8IS_300PG_6000Gate_5696Holdoff_TConnector_1.root";
+  // "/media/kirtikesh/Ventoy/run_LaBr3_NHP_EuCs_18Oct_AnodeOnly/FILTERED/"
+  // "DataF_run_LaBr3_NHP_EuCs_18Oct_AnodeOnly.root ";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 0, 1000000, 0);
+  digiAnalysis::Analysis an(fname, 0, 0, 1);
 
   std::cout << "getting the vector from an" << std::endl;
 
