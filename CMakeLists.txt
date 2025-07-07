@@ -15,7 +15,7 @@ else()
 endif()
 
 # Options for features
-option(WAVES "Enable or Disable Waveform Analysis" ON)
+option(WAVES "Enable or Disable Waveform Analysis" OFF)
 option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
 option(CFD "Enable or Disable Waveform CFD" OFF)
 

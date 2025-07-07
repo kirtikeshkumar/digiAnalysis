@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
-
+#ifdef WAVES
   TH2 *hMTPlot =
       new TH2F("MTPlot", "Energy vs MeanTime", 4096, 0, 4096, 500, 1.5, 8);
   int nentries = hitsVector.size();
@@ -38,5 +38,6 @@ int main(int argc, char *argv[]) {
   TCanvas *c1 = new TCanvas("c1", "Energy vs MeanTime", 800, 600);
   hMTPlot->Draw("COLZ");
   fApp->Run();
+#endif
   return 0;
 }

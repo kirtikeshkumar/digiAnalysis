@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   int nentries = hitsVector.size();
   std::cout << "hitsVector size = " << nentries << std::endl;
-
+#ifdef WAVES
   // test smoothing and plotting
   std::cout << "Energy: " << hitsVector[21000]->GetEnergy() << std::endl;
   digiAnalysis::WaveForm *WF = hitsVector[21000]->GetWFPtr();
@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
   digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
   WFAveraged.Plot();
 
+#endif
   // test plot data
   TH2 *hEnPSD =
       new TH2F("hEnPSD", "Energy(x) vs PSD(y)", 8192, 0, 8192, 819, 0, 1);
