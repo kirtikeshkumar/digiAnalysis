@@ -39,5 +39,26 @@ include_directories(inc)
 
 file(GLOB sources src/*.cpp)
 
-add_executable(Test_Dummy test/Test_Dummy.cpp ${sources})
-target_link_libraries(Test_Dummy ${ROOT_LIBRARIES})
+#add_executable(Test_Dummy test/Test_Dummy.cpp ${sources})
+#target_link_libraries(Test_Dummy ${ROOT_LIBRARIES})
+
+SET(TESTSDIR ${TESTSDIR} ${CMAKE_SOURCE_DIR}/test)
+
+#COLLECTING ALL TEST FILES
+macro(collect_tests TESTS)
+  foreach(TEST ${TESTS})
+    file(GLOB tests ${tests} ${TEST}/*.cpp)
+  endforeach()
+endmacro()
+
+macro(build_executables EXECUTABLES)
+  foreach(EXECUTABLE ${EXECUTABLES})
+    get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
+    add_executable(${TARGET_NAME} ${EXECUTABLE} ${headers} ${sources})
+    target_link_libraries(${TARGET_NAME} ${ROOT_LIBRARIES})
+ endforeach()
+endmacro()
+
+collect_tests("${TESTSDIR}")
+build_executables("${tests}")
+
