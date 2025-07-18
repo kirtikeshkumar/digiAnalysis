@@ -20,12 +20,12 @@ int main(int argc, char *argv[]) {
   // std::string fname =
   // "/media/kirtikesh/Ventoy/GGAG/DataF_CH1@V1730_167_GGAG_2inch_insideHutch_3Oct_calib_Na.root
   // ";
-  std::string fname =
-      "/media/kirtikesh/Kirtikesh3/run_NaI0_AnodeDynodeCoinc_NoAmp/FILTERED/"
-      "DataF_run_NaI0_AnodeDynodeCoinc_NoAmp.root";
+  std::string fname = "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
+                      "run_NaI0_AnodeDynodeCoinc_AmpAnode2Dynode8/FILTERED/"
+                      "DataF_run_NaI0_AnodeDynodeCoinc_AmpDynode2.root";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 3325, 10000, 0);
+  digiAnalysis::Analysis an(fname, 0, 10000, 0);
 
   std::cout << "getting the vector from an" << std::endl;
 
@@ -43,32 +43,50 @@ int main(int argc, char *argv[]) {
 
   // Plot Waveform to check
   int evi = 0;
-  for (evi = 0; evi < nentries; evi++) {
+  for (evi = 155; evi < nentries; ++evi) {
+    if (evi % 100 == 0) {
+      std::cout << evi << std::endl;
+    }
     if (hitsVector[evi]->GetChNum() == 0 and
-        hitsVector[evi]->GetEnergy() <= 40 and
-        hitsVector[evi]->GetEnergy() >= 35) {
-      std::cout << "evi: " << evi << std::endl;
+        hitsVector[evi]->GetEnergy() >= 1954 and
+        hitsVector[evi]->GetEnergy() <= 1956 and
+        hitsVector[evi]->GetPSD() < 0.8) {
+      std::cout << "evi: " << evi << " hitNum: " << hitsVector[evi]->GetEvNum()
+                << std::endl;
+      hitsVector[evi]->Print();
       break;
     }
   }
-  // evi = 250;
-  hitsVector[evi]->Print();
-  digiAnalysis::WaveForm *WF = hitsVector[evi]->GetWFPtr();
-  WF->SetSmooth(32);
-  std::cout << "Got the waveform with size" << WF->GetSize() << std::endl;
-  std::cout << "Got the waveform with baseline" << WF->GetBaseLine()
-            << std::endl;
-  std::cout << "Got the waveform with meantime" << WF->GetMeanTime()
-            << std::endl;
-  // WF->SetSmooth(32);
-  WF->Plot();
+  evi = 1292;
+  if (evi < nentries) {
+    hitsVector[evi]->Print();
+    digiAnalysis::WaveForm *WF = hitsVector[evi]->GetWFPtr();
+    // psd = 1.0 - WF->IntegrateWaveForm(290, 440) * 1.0 /
+    //                 WF->IntegrateWaveForm(290, 1390);
+    // std::cout<<
+    WF->SetSmooth(32);
+    std::cout << "Got the waveform with size" << WF->GetSize() << std::endl;
+    std::cout << "Got the waveform with baseline" << WF->GetBaseLine()
+              << std::endl;
+    std::cout << "Got the waveform with meantime" << WF->GetMeanTime()
+              << std::endl;
+    WF->SetSmooth(32);
+    WF->Plot();
+  } else {
+    std::cout << "E.O.F: no event of required type found" << std::endl;
+  }
 
   // create anode-dynode pairs
   // 0 is anode, 1 is dynode
   // It is observed that in the noAmp file, removing energy < 5 ADC in channel 1
   // results in same number of events as in channel 0
-  TH2 *hDelT =
-      new TH2F("hDelT", "DelT between channels", 8192, 0, 8192, 1000, 0, 4);
+
+  // TH2 *hDelT =
+  //     new TH2F("hDelT", "DelT between channels", 8192, 0, 8192, 1000, 0, 4);
+
+  // for (evi=0 : evi<nentries:evi++) {
+
+  // }
 
   fApp->Run();
   return 0;

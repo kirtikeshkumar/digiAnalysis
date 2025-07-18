@@ -58,6 +58,9 @@ singleHits::singleHits(ULong64_t EvNum, UShort_t channel, UShort_t board,
   EnergyShort = energyshort;
   PSD = 1.0 - (EnergyShort * 1.0) / Energy;
   WF = std::make_unique<WaveForm>(arr);
+  SetEvalEnergy();
+  SetEvalEnergyShort();
+  SetEvalPSD();
 }
 #endif
 
@@ -77,11 +80,24 @@ float singleHits::GetPSD() { return PSD; }
 std::unique_ptr<WaveForm> singleHits::GetWF() { return std::move(WF); }
 WaveForm *singleHits::GetWFPtr() { return WF.get(); }
 float singleHits::GetMeanTime() { return WF->GetMeanTime(); }
+float singleHits::GetEvalEnergy() { return evalEnergy; }
+float singleHits::GetEvalEnergyShort() { return evalEnergyShort; }
+float singleHits::GetEvalPSD() { return evalPSD; }
 // std::unique_ptr<diffWaveForm> singleHits::GetDiffWF() { return
 // std::move(dWF); }
 
 void singleHits::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
 void singleHits::SetSmoothWF() { WF->SetSmooth(); }
+void singleHits::SetSmoothWF(UShort_t sBoxSz) { WF->SetSmooth(sBoxSz); }
+void singleHits::SetEvalEnergy() {
+  evalEnergy =
+      (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) / 16.0;
+}
+void singleHits::SetEvalEnergyShort() {
+  evalEnergyShort =
+      (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) / 16.0;
+}
+void singleHits::SetEvalPSD() { evalPSD = 1.0 - evalEnergyShort / evalEnergy; }
 // void singleHits::SetDiffWF() {}
 #endif
 
@@ -94,18 +110,21 @@ void singleHits::Print() {
             << std::endl;
   std::cout << "###############################################################"
             << std::endl;
-  std::cout << "Hit Number    : " << hitNum << std::endl;
-  std::cout << "Channel Number: " << ChNum << std::endl;
-  std::cout << "Board         : " << Board << std::endl;
-  std::cout << "TimeStamp     : " << Timestamp << std::endl;
-  std::cout << "Energy        : " << Energy << std::endl;
-  std::cout << "EnergyShort   : " << EnergyShort << std::endl;
-  std::cout << "PSD           : " << PSD << std::endl;
+  std::cout << "Hit Number      : " << hitNum << std::endl;
+  std::cout << "Channel Number  : " << ChNum << std::endl;
+  std::cout << "Board           : " << Board << std::endl;
+  std::cout << "TimeStamp       : " << Timestamp << std::endl;
+  std::cout << "Energy          : " << Energy << std::endl;
+  std::cout << "EnergyShort     : " << EnergyShort << std::endl;
+  std::cout << "PSD             : " << PSD << std::endl;
 #ifdef WAVES
-  std::cout << "Waves         : " << "ON" << std::endl;
-  std::cout << "WaveForm      : " << "WF" << std::endl;
+  std::cout << "Waves           : " << "ON" << std::endl;
+  std::cout << "WaveForm        : " << "WF" << std::endl;
+  std::cout << "EnergyEval      : " << evalEnergy << std::endl;
+  std::cout << "EnergyShortEval : " << evalEnergyShort << std::endl;
+  std::cout << "PSDEval         : " << evalPSD << std::endl;
 #else
-  std::cout << "Waves         : " << "OFF" << std::endl;
+  std::cout << "Waves           : " << "OFF" << std::endl;
 #endif
   std::cout << "###############################################################"
             << std::endl;

@@ -13,15 +13,19 @@
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
-  std::string fname =
-      "/media/kirtikesh/KirtikeshSSD/Waves/CeBr_CsI_0pt5Vpp/"
-      "Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_0pt5Vpp_8IS_300PG_"
-      "6000Gate_5696Holdoff_TConnector_1/FILTERED/"
-      "DataF_CH2@V1730_167_Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_"
-      "0pt5Vpp_8IS_300PG_6000Gate_5696Holdoff_TConnector_1.root";
+  // std::string fname =
+  //     "/media/kirtikesh/KirtikeshSSD/Waves/CeBr_CsI_0pt5Vpp/"
+  //     "Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_0pt5Vpp_8IS_300PG_"
+  //     "6000Gate_5696Holdoff_TConnector_1/FILTERED/"
+  //     "DataF_CH2@V1730_167_Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_"
+  //     "0pt5Vpp_8IS_300PG_6000Gate_5696Holdoff_TConnector_1.root";
+
+  std::string fname = "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
+                      "run_NaI0_AnodeDynodeCoinc_AmpAnode2Dynode8/FILTERED/"
+                      "DataF_run_NaI0_AnodeDynodeCoinc_AmpDynode2.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 200000, 1);
+  digiAnalysis::Analysis an(fname, 0, 20000, 1);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -29,14 +33,56 @@ int main(int argc, char *argv[]) {
 #ifdef WAVES
   TH2 *hMTPlot =
       new TH2F("MTPlot", "Energy vs MeanTime", 4096, 0, 4096, 500, 1.5, 8);
+  TH2 *hPSDPlot =
+      new TH2F("PSDPlot", "Energy vs PSD", 4096, 0, 4096, 500, -8, 2);
+  TH2 *hEPlot =
+      new TH2F("EPlot", "Energy vs EvalEnergy", 410, 0, 4096, 410, 0, 4096);
+  TH2 *hESPlot = new TH2F("ESPlot", "EnergyShort vs EvalEnergyShort", 410, 0,
+                          4096, 410, 0, 4096);
+  TH2 *hPSDEvalPlot =
+      new TH2F("PSDEvalPlot", "PSD vs PSDEval", 160, -8, 8, 160, -8, 8);
+  TH1F *hEEvalRatio =
+      new TH1F("hEEValRatio", "Ratio of EEval vs E", 1000, 0, 200);
   int nentries = hitsVector.size();
+  double psd = 0;
+  double evalEnergy = 0;
+  double evalEnergyShort = 0;
+  digiAnalysis::WaveForm *WF = nullptr;
   for (int i = 0; i < nentries; i++) {
-    if (hitsVector[i]->GetPSD() > 0.0) {
+    if (hitsVector[i]->GetChNum() == 0) { // (hitsVector[i]->GetPSD() > 0.0 and
+                                          // hitsVector[i]->GetChNum() == 0) {
       hMTPlot->Fill(hitsVector[i]->GetEnergy(), hitsVector[i]->GetMeanTime());
+      WF = hitsVector[i]->GetWFPtr();
+      evalEnergy = WF->IntegrateWaveForm(290, 1390);
+      evalEnergyShort = WF->IntegrateWaveForm(290, 440);
+      psd = 1.0 - evalEnergyShort * 1.0 / evalEnergy;
+      hPSDPlot->Fill(hitsVector[i]->GetEnergy(), psd);
+      hEPlot->Fill(hitsVector[i]->GetEnergy(), evalEnergy / 16.0);
+      hESPlot->Fill(hitsVector[i]->GetEnergyShort(), evalEnergyShort / 16.0);
+      hPSDEvalPlot->Fill(hitsVector[i]->GetPSD(), psd);
+      hEEvalRatio->Fill(evalEnergyShort * 1.0 /
+                        hitsVector[i]->GetEnergyShort());
+      if (i < 1300 and i > 1285) {
+        std::cout << i << std::endl;
+        hitsVector[i]->Print();
+        std::cout << "Eval Energy     : " << evalEnergy / 16.0 << std::endl;
+        std::cout << "Eval EnergyShort: " << evalEnergyShort / 16.0
+                  << std::endl;
+        std::cout << "Eval PSD        : " << psd << std::endl;
+      }
     }
   }
   TCanvas *c1 = new TCanvas("c1", "Energy vs MeanTime", 800, 600);
   hMTPlot->Draw("COLZ");
+  TCanvas *c2 = new TCanvas("c2", "Energy vs PSD", 800, 600);
+  hPSDPlot->Draw("COLZ");
+  TCanvas *c3 = new TCanvas("c3", "Energy vs evalEnergy", 800, 600);
+  hEPlot->Draw("COLZ");
+  // hEEvalRatio->Draw("HIST");
+  TCanvas *c4 = new TCanvas("c4", "EnergyShort vs evalEnergyShort", 800, 600);
+  hESPlot->Draw("COLZ");
+  TCanvas *c5 = new TCanvas("c5", "PSD vs PSDEval", 800, 600);
+  hPSDEvalPlot->Draw("COLZ");
   fApp->Run();
 #endif
   return 0;

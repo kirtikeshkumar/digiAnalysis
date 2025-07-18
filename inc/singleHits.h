@@ -6,6 +6,7 @@ This file saves individual hits as registered
 #define singleHits_h
 
 #include "WaveForm.h"
+#include "globals.h"
 // #include "diffWaveFrom.h"
 #include "includes.hh"
 #pragma once
@@ -29,6 +30,9 @@ private:
 #ifdef WAVES
   // Needed for Waves Acquisition
   std::unique_ptr<WaveForm> WF;
+  float evalEnergy;
+  float evalEnergyShort;
+  float evalPSD;
 
   // Initialize depending on situation
   // std::unique_ptr<diffWaveForm> dWF;
@@ -59,11 +63,18 @@ public:
   std::unique_ptr<WaveForm> GetWF();
   WaveForm *GetWFPtr();
   float GetMeanTime();
+  float GetEvalEnergy();
+  float GetEvalEnergyShort();
+  float GetEvalPSD();
   // std::unique_ptr<diffWaveForm> GetDiffWF();
 
   // Setters
   void SetWF(const WaveForm &wf);
   void SetSmoothWF();
+  void SetSmoothWF(UShort_t sBoxSz);
+  void SetEvalEnergy();
+  void SetEvalEnergyShort();
+  void SetEvalPSD();
   // void SetDiffWF();
   void SetCFD();
 #endif

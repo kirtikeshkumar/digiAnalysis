@@ -243,9 +243,9 @@ void WaveForm::SetSmooth(UShort_t sBoxSz) {
     } else {
       for (unsigned int j = 0; j < size; j++) {
         if (j < sBoxSz) {
-          // tracesSmooth.push_back(0);
+          tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
-          tracesSmooth.push_back(movingSum / j);
+          // tracesSmooth.push_back(movingSum / j);
         } else {
           movingSum = movingSum + traces[j] - traces[j - sBoxSz];
           tracesSmooth.push_back(movingSum / sBoxSz);
@@ -267,9 +267,9 @@ void WaveForm::SetSmooth() {
     } else {
       for (unsigned int j = 0; j < size; j++) {
         if (j < smoothBoxSz) {
-          // tracesSmooth.push_back(0);
+          tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
-          tracesSmooth.push_back(movingSum / j);
+          // tracesSmooth.push_back(movingSum / j);
         }
         movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
         tracesSmooth.push_back(movingSum / smoothBoxSz);
@@ -341,8 +341,9 @@ void WaveForm::SetMeanTime(const std::vector<float> tr, UShort_t start,
 void WaveForm::SetBaseLine() {
   baseline = 0;
   float sum = 0;
+  int blStart = 20;
   if (!traces.empty()) {
-    for (unsigned int j = 0; j < nSampleBL; j++) {
+    for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + traces[j];
     }
     baseline = sum / nSampleBL;
@@ -354,8 +355,9 @@ void WaveForm::SetBaseLine() {
 void WaveForm::SetBaseLine(std::vector<float> tr) {
   baseline = 0;
   float sum = 0;
+  int blStart = 20;
   if (!tr.empty()) {
-    for (unsigned int j = 0; j < nSampleBL; j++) {
+    for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + tr[j];
     }
     baseline = sum / nSampleBL;
@@ -367,8 +369,9 @@ void WaveForm::SetBaseLine(std::vector<float> tr) {
 void WaveForm::SetBaseLine(TArrayS *arr) {
   baseline = 0;
   float sum = 0;
+  int blStart = 20;
   if (arr && (arr->GetSize() > nSampleBL)) {
-    for (unsigned int j = 0; j < nSampleBL; j++) {
+    for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + arr->At(j);
     }
     baseline = sum / nSampleBL;
@@ -458,7 +461,8 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
   UShort_t numWaveForm = vecOfWaveForm.size();
   float sum = 0;
   baseline = 0;
-  for (unsigned int i = 0; i < nSampleBL; i++) {
+  int blStart = 20;
+  for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
     for (unsigned int j = 0; j < numWaveForm; j++) {
       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
     }
@@ -486,7 +490,8 @@ void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
   // currently only traces is averaged
   float sum = 0;
   baseline = 0;
-  for (unsigned int i = 0; i < nSampleBL; i++) {
+  int blStart = 20;
+  for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
     for (unsigned int j = start; j < start + numWaveForm; j++) {
       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
     }
