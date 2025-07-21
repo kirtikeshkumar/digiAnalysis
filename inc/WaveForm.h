@@ -19,6 +19,8 @@ protected:
   std::vector<float> CFDtraces;
   float meantime;
   float baseline;
+  int blStart = GateStart - nSampleBL - 50 > 0 ? GateStart - nSampleBL - 10 : 0;
+  TF1 *fitFunc = nullptr;
 
 public:
   WaveForm();
@@ -38,6 +40,9 @@ public:
   float GetMeanTime();
   float GetBaseLine();
   UShort_t GetSize();
+  bool IsFit();
+  double GetFitPar(int val);
+  double GetFitParError(int val);
 
   void SetWaveForm(const std::vector<float> tr);
   void SetWaveForm(const WaveForm &wf);
@@ -65,6 +70,7 @@ public:
                         const std::vector<WaveForm> vecOfWaveForm);
   void ScaleWaveForm(double Scale);
   void AddWaveForm(const WaveForm &wf1);
+  void FitExponential(int start, int stop);
   std::vector<std::unique_ptr<WaveForm>> SplitWaveForm(UShort_t numSplits);
 
   // static UShort_t nSampleBL;   // Number of baseline samples

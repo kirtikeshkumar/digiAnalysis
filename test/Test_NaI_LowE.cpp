@@ -48,8 +48,10 @@ int main(int argc, char *argv[]) {
       std::cout << evi << std::endl;
     }
     if (hitsVector[evi]->GetChNum() == 0 and
-        hitsVector[evi]->GetEnergy() >= 1954 and
-        hitsVector[evi]->GetEnergy() <= 1956 and
+        hitsVector[evi]->GetEnergy() - hitsVector[evi]->GetEnergyShort() < 0 and
+        hitsVector[evi]->GetEvalEnergy() -
+                hitsVector[evi]->GetEvalEnergyShort() >
+            0 and
         hitsVector[evi]->GetPSD() < 0.8) {
       std::cout << "evi: " << evi << " hitNum: " << hitsVector[evi]->GetEvNum()
                 << std::endl;
@@ -57,9 +59,9 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-  evi = 1292;
+  // evi = 100;
   if (evi < nentries) {
-    hitsVector[evi]->Print();
+    // hitsVector[evi]->Print();
     digiAnalysis::WaveForm *WF = hitsVector[evi]->GetWFPtr();
     // psd = 1.0 - WF->IntegrateWaveForm(290, 440) * 1.0 /
     //                 WF->IntegrateWaveForm(290, 1390);
@@ -71,6 +73,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Got the waveform with meantime" << WF->GetMeanTime()
               << std::endl;
     WF->SetSmooth(32);
+    WF->FitExponential(340, 1100);
+    hitsVector[evi]->Print();
     WF->Plot();
   } else {
     std::cout << "E.O.F: no event of required type found" << std::endl;

@@ -123,6 +123,14 @@ void singleHits::Print() {
   std::cout << "EnergyEval      : " << evalEnergy << std::endl;
   std::cout << "EnergyShortEval : " << evalEnergyShort << std::endl;
   std::cout << "PSDEval         : " << evalPSD << std::endl;
+  if (WF->IsFit()) {
+    double A = WF->GetFitPar(0);
+    double tau = WF->GetFitPar(1);
+    double Aerr = WF->GetFitParError(0);
+    double tauErr = WF->GetFitParError(1);
+    std::cout << "Fit A         : " << A << " ± " << Aerr << std::endl;
+    std::cout << "Fit Tau       : " << tau << " ± " << tauErr << std::endl;
+  }
 #else
   std::cout << "Waves           : " << "OFF" << std::endl;
 #endif

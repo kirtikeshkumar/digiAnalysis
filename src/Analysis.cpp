@@ -205,6 +205,12 @@ void Analysis::SortHits(const std::string &major, const std::string &minor) {
                 if (a->GetPSD() != b->GetPSD())
                   return a->GetPSD() < b->GetPSD();
               }
+#ifdef WAVES
+              else if (major == "EvalEnergy") {
+                if (a->GetEvalEnergy() != b->GetEvalEnergy())
+                  return a->GetEvalEnergy() < b->GetEvalEnergy();
+              }
+#endif
 
               // Minor sorting if specified
               if (!minor.empty()) {
@@ -220,7 +226,14 @@ void Analysis::SortHits(const std::string &major, const std::string &minor) {
                   if (a->GetPSD() != b->GetPSD())
                     return a->GetPSD() < b->GetPSD();
                 }
+
+#ifdef WAVES
+                else if (major == "EvalEnergy") {
+                  if (a->GetEvalEnergy() != b->GetEvalEnergy())
+                    return a->GetEvalEnergy() < b->GetEvalEnergy();
+                }
               }
+#endif
 
               return false; // In case both major and minor criteria are equal
             });

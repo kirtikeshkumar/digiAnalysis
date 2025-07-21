@@ -43,31 +43,48 @@ int main(int argc, char *argv[]) {
       new TH2F("PSDEvalPlot", "PSD vs PSDEval", 160, -8, 8, 160, -8, 8);
   TH1F *hEEvalRatio =
       new TH1F("hEEValRatio", "Ratio of EEval vs E", 1000, 0, 200);
+  TH2 *hEdiffPlot = new TH2F("EdiffPlot", "Energy vs Energy-EnergyShort", 410,
+                             0, 4096, 820, -4096, 4096);
+  TH2 *hEdiffEvalPlot =
+      new TH2F("EdiffEvalPlot", "EvalEnergy vs EvalEnergy-EvalEnergyShort", 410,
+               0, 4096, 820, -4096, 4096);
+  TH1F *hESpectra = new TH1F("hESpectra", "Energy Spectra", 4096, 0, 4096);
+  TH1F *hEEvalSpectra =
+      new TH1F("hEEvalSpectra", "Eval Energy Spectra", 4096, 0, 4096);
   int nentries = hitsVector.size();
   double psd = 0;
   double evalEnergy = 0;
   double evalEnergyShort = 0;
+  double energy = 0;
+  double energyShort = 0;
   digiAnalysis::WaveForm *WF = nullptr;
   for (int i = 0; i < nentries; i++) {
     if (hitsVector[i]->GetChNum() == 0) { // (hitsVector[i]->GetPSD() > 0.0 and
                                           // hitsVector[i]->GetChNum() == 0) {
-      hMTPlot->Fill(hitsVector[i]->GetEnergy(), hitsVector[i]->GetMeanTime());
+      energy = hitsVector[i]->GetEnergy();
+      energyShort = hitsVector[i]->GetEnergyShort();
+      hMTPlot->Fill(energy, hitsVector[i]->GetMeanTime());
       WF = hitsVector[i]->GetWFPtr();
-      evalEnergy = WF->IntegrateWaveForm(290, 1390);
-      evalEnergyShort = WF->IntegrateWaveForm(290, 440);
+      evalEnergy =
+          hitsVector[i]->GetEvalEnergy(); // WF->IntegrateWaveForm(290, 1390);
+      evalEnergyShort =
+          hitsVector[i]
+              ->GetEvalEnergyShort(); // WF->IntegrateWaveForm(290, 440);
       psd = 1.0 - evalEnergyShort * 1.0 / evalEnergy;
-      hPSDPlot->Fill(hitsVector[i]->GetEnergy(), psd);
-      hEPlot->Fill(hitsVector[i]->GetEnergy(), evalEnergy / 16.0);
-      hESPlot->Fill(hitsVector[i]->GetEnergyShort(), evalEnergyShort / 16.0);
+      hPSDPlot->Fill(energy, psd);
+      hEPlot->Fill(energy, evalEnergy);
+      hESPlot->Fill(energyShort, evalEnergyShort);
       hPSDEvalPlot->Fill(hitsVector[i]->GetPSD(), psd);
-      hEEvalRatio->Fill(evalEnergyShort * 1.0 /
-                        hitsVector[i]->GetEnergyShort());
+      hEEvalRatio->Fill(evalEnergyShort * 1.0 / energyShort);
+      hEdiffPlot->Fill(energy, energy - energyShort);
+      hEdiffEvalPlot->Fill(evalEnergy, evalEnergy - evalEnergyShort);
+      hESpectra->Fill(energy);
+      hEEvalSpectra->Fill(evalEnergy);
       if (i < 1300 and i > 1285) {
         std::cout << i << std::endl;
         hitsVector[i]->Print();
-        std::cout << "Eval Energy     : " << evalEnergy / 16.0 << std::endl;
-        std::cout << "Eval EnergyShort: " << evalEnergyShort / 16.0
-                  << std::endl;
+        std::cout << "Eval Energy     : " << evalEnergy << std::endl;
+        std::cout << "Eval EnergyShort: " << evalEnergyShort << std::endl;
         std::cout << "Eval PSD        : " << psd << std::endl;
       }
     }
@@ -83,6 +100,16 @@ int main(int argc, char *argv[]) {
   hESPlot->Draw("COLZ");
   TCanvas *c5 = new TCanvas("c5", "PSD vs PSDEval", 800, 600);
   hPSDEvalPlot->Draw("COLZ");
+  TCanvas *c6 = new TCanvas("c6", "Energy vs Energy-EnergyShort", 800, 600);
+  hEdiffPlot->Draw("COLZ");
+  TCanvas *c7 =
+      new TCanvas("c7", "evalEnergy vs evalEnergy-evalEnergyShort", 800, 600);
+  hEdiffEvalPlot->Draw("COLZ");
+  TCanvas *c8 = new TCanvas("c8", "Energy Spectra", 800, 600);
+  hESpectra->SetLineColor(kRed);
+  hEEvalSpectra->SetLineColor(kGreen);
+  hESpectra->Draw("HIST");
+  hEEvalSpectra->Draw("HISTSAME");
   fApp->Run();
 #endif
   return 0;

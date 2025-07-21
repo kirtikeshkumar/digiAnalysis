@@ -1,6 +1,7 @@
 /*define meantime using tracesSmooth if SMOOTH is turned on*/
 
 #include "WaveForm.h"
+#include "Rtypes.h"
 #include "includes.hh"
 
 // ClassImp(digiAnalysis::WaveForm);
@@ -171,7 +172,11 @@ void WaveForm::Plot() {
   TLine *line = new TLine(0.0, 0.0, 5000, 0.0);
   line->SetLineColor(kBlack);
   line->SetLineWidth(2);
-  line->Draw("L SAME");
+  line->Draw("LSAME");
+  // Draw Fit if present
+  fitFunc->SetLineColor(kGreen);
+  fitFunc->SetLineWidth(2);
+  fitFunc->Draw("LSAME");
   // Draw the legend
   legend->Draw();
 
@@ -185,6 +190,15 @@ std::vector<float> WaveForm::GetTracesSmooth() { return tracesSmooth; }
 float WaveForm::GetMeanTime() { return meantime; }
 float WaveForm::GetBaseLine() { return baseline; }
 UShort_t WaveForm::GetSize() { return traces.size(); }
+bool WaveForm::IsFit() {
+  if (fitFunc) {
+    return true;
+  } else {
+    return false;
+  }
+}
+double WaveForm::GetFitPar(int val) { return fitFunc->GetParameter(val); }
+double WaveForm::GetFitParError(int val) { return fitFunc->GetParError(val); }
 
 /*Setters*/
 void WaveForm::SetWaveForm(std::vector<float> tr) {
@@ -341,7 +355,7 @@ void WaveForm::SetMeanTime(const std::vector<float> tr, UShort_t start,
 void WaveForm::SetBaseLine() {
   baseline = 0;
   float sum = 0;
-  int blStart = 20;
+
   if (!traces.empty()) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + traces[j];
@@ -355,7 +369,7 @@ void WaveForm::SetBaseLine() {
 void WaveForm::SetBaseLine(std::vector<float> tr) {
   baseline = 0;
   float sum = 0;
-  int blStart = 20;
+
   if (!tr.empty()) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + tr[j];
@@ -369,7 +383,7 @@ void WaveForm::SetBaseLine(std::vector<float> tr) {
 void WaveForm::SetBaseLine(TArrayS *arr) {
   baseline = 0;
   float sum = 0;
-  int blStart = 20;
+
   if (arr && (arr->GetSize() > nSampleBL)) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + arr->At(j);
@@ -461,7 +475,7 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
   UShort_t numWaveForm = vecOfWaveForm.size();
   float sum = 0;
   baseline = 0;
-  int blStart = 20;
+
   for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
     for (unsigned int j = 0; j < numWaveForm; j++) {
       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
@@ -490,7 +504,7 @@ void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
   // currently only traces is averaged
   float sum = 0;
   baseline = 0;
-  int blStart = 20;
+
   for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
     for (unsigned int j = start; j < start + numWaveForm; j++) {
       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
@@ -590,4 +604,35 @@ WaveForm::SplitWaveForm(UShort_t numSplits) {
 
   return splitWaveForms;
 }
+
+void WaveForm::FitExponential(int start, int stop) {
+  // Check valid range
+  if (start < 0 || stop >= GetSize() || start >= stop) {
+    std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
+  }
+
+  int nPoints = stop - start + 1;
+  auto graph = std::make_unique<TGraph>(nPoints);
+
+  for (int i = 0; i < nPoints; ++i) {
+    graph->SetPoint(i, start + i,
+                    traces[start + i]); // x = index (or time), y = value
+  }
+
+  fitFunc = new TF1("expFit", "[0]*exp(-x/[1])", start, stop);
+  fitFunc->SetParameters(traces[start], 100); // Initial guesses
+
+  graph->Fit(fitFunc, "QR"); // Q = quiet, R = respect fit range
+
+  // double A = fitFunc->GetParameter(0);
+  // double tau = fitFunc->GetParameter(1);
+  // double Aerr = fitFunc->GetParError(0);
+  // double tauErr = fitFunc->GetParError(1);
+
+  // std::cout << "Fit results ([0]*exp(-x/[1]) on range [" << start << ", "
+  //           << stop << "]):\n";
+  // std::cout << "  Constant A  = " << A << " ± " << Aerr << "\n";
+  // std::cout << "  Tau         = " << tau << " ± " << tauErr << "\n";
+}
+
 } // namespace digiAnalysis
