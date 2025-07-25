@@ -130,7 +130,17 @@ void WaveForm::Plot() {
   }
 
   // Create a canvas
-  TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+  TObject *obj = gROOT->FindObject("canvas");
+  TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
+  if (canvas) {
+    canvas->cd();    // make it current
+    canvas->Clear(); // optional: clear previous plot
+    std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
+  } else {
+    canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+    std::cout << "Created new canvas: " << "canvas" << std::endl;
+  }
+  // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
 
   TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
   int nTraces = traces.size();

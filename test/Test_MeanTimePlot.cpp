@@ -24,6 +24,11 @@ int main(int argc, char *argv[]) {
                       "run_NaI0_AnodeDynodeCoinc_AmpAnode2Dynode8/FILTERED/"
                       "DataF_run_NaI0_AnodeDynodeCoinc_AmpDynode2.root";
 
+  // std::string fname =
+  //     "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
+  //     "run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
+  //     "DataF_run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
+
   // Read to singleHits
   digiAnalysis::Analysis an(fname, 0, 20000, 1);
 
@@ -59,8 +64,10 @@ int main(int argc, char *argv[]) {
   double energyShort = 0;
   digiAnalysis::WaveForm *WF = nullptr;
   for (int i = 0; i < nentries; i++) {
-    if (hitsVector[i]->GetChNum() == 0) { // (hitsVector[i]->GetPSD() > 0.0 and
-                                          // hitsVector[i]->GetChNum() == 0) {
+    if (hitsVector[i]->GetChNum() == 0 and
+        hitsVector[i]->GetMeanTime() <
+            3.8) { // (hitsVector[i]->GetPSD() > 0.0 and
+                   // hitsVector[i]->GetChNum() == 0) {
       energy = hitsVector[i]->GetEnergy();
       energyShort = hitsVector[i]->GetEnergyShort();
       hMTPlot->Fill(energy, hitsVector[i]->GetMeanTime());

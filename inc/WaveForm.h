@@ -8,6 +8,7 @@ class WaveForm: parent class contains how to handle waveform including plotting
 
 #include "globals.h"
 #include "includes.hh"
+#include <TROOT.h>
 #include <sys/types.h>
 #pragma once
 
