@@ -45,6 +45,9 @@ public:
   singleHits(ULong64_t EvNum, UShort_t ChNum, UShort_t Board,
              ULong64_t Timestamp, UShort_t Energy, UShort_t EnergyShort,
              TArrayS *arr);
+  singleHits(ULong64_t EvNum, UShort_t ChNum, UShort_t Board,
+             ULong64_t Timestamp, UShort_t Energy, UShort_t EnergyShort,
+             WaveForm *WF);
 #endif
   singleHits(ULong64_t EvNum, UShort_t ChNum, UShort_t Board,
              ULong64_t Timestamp, UShort_t Energy, UShort_t EnergyShort);

@@ -5,6 +5,7 @@
 */
 
 #include "Analysis.h"
+#include "TMath.h"
 #include "WaveForm.h"
 #include "includes.hh"
 #include "singleHits.h"
@@ -20,9 +21,15 @@ int main(int argc, char *argv[]) {
   //     "DataF_CH2@V1730_167_Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_"
   //     "0pt5Vpp_8IS_300PG_6000Gate_5696Holdoff_TConnector_1.root";
 
-  std::string fname = "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
-                      "run_NaI0_AnodeDynodeCoinc_AmpAnode2Dynode8/FILTERED/"
-                      "DataF_run_NaI0_AnodeDynodeCoinc_AmpDynode2.root";
+  // std::string fname =
+  //     "/media/kirtikesh/Ventoy/NaI/"
+  //     "run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
+  //     "DataF_run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
+
+  std::string fname =
+      "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
+      "Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp/FILTERED/"
+      "DataF_Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp.root";
 
   // std::string fname =
   //     "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
@@ -30,32 +37,35 @@ int main(int argc, char *argv[]) {
   //     "DataF_run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 20000, 1);
+  digiAnalysis::Analysis an(fname, 0, 0, 1);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
 #ifdef WAVES
-  TH2 *hMTPlot =
-      new TH2F("MTPlot", "Energy vs MeanTime", 4096, 0, 4096, 500, 1.5, 8);
-  TH2 *hPSDPlot =
-      new TH2F("PSDPlot", "Energy vs PSD", 4096, 0, 4096, 500, -8, 2);
-  TH2 *hEPlot =
-      new TH2F("EPlot", "Energy vs EvalEnergy", 410, 0, 4096, 410, 0, 4096);
+  int spectralsize = 8192;
+  double WFMT = 0; // MeanTime parameter for flat waveform
+  TH2 *hMTPlot = new TH2F("MTPlot", "Energy vs MeanTime", spectralsize, 0,
+                          spectralsize, 500, -4, 4);
+  TH2 *hPSDPlot = new TH2F("PSDPlot", "Energy vs PSD", spectralsize, 0,
+                           spectralsize, 500, -8, 2);
+  TH2 *hEPlot = new TH2F("EPlot", "Energy vs EvalEnergy", 410, 0, spectralsize,
+                         410, 0, spectralsize);
   TH2 *hESPlot = new TH2F("ESPlot", "EnergyShort vs EvalEnergyShort", 410, 0,
-                          4096, 410, 0, 4096);
+                          spectralsize, 410, 0, spectralsize);
   TH2 *hPSDEvalPlot =
       new TH2F("PSDEvalPlot", "PSD vs PSDEval", 160, -8, 8, 160, -8, 8);
   TH1F *hEEvalRatio =
       new TH1F("hEEValRatio", "Ratio of EEval vs E", 1000, 0, 200);
   TH2 *hEdiffPlot = new TH2F("EdiffPlot", "Energy vs Energy-EnergyShort", 410,
-                             0, 4096, 820, -4096, 4096);
+                             0, spectralsize, 820, -spectralsize, spectralsize);
   TH2 *hEdiffEvalPlot =
       new TH2F("EdiffEvalPlot", "EvalEnergy vs EvalEnergy-EvalEnergyShort", 410,
-               0, 4096, 820, -4096, 4096);
-  TH1F *hESpectra = new TH1F("hESpectra", "Energy Spectra", 4096, 0, 4096);
-  TH1F *hEEvalSpectra =
-      new TH1F("hEEvalSpectra", "Eval Energy Spectra", 4096, 0, 4096);
+               0, spectralsize, 820, -spectralsize, spectralsize);
+  TH1F *hESpectra =
+      new TH1F("hESpectra", "Energy Spectra", spectralsize, 0, spectralsize);
+  TH1F *hEEvalSpectra = new TH1F("hEEvalSpectra", "Eval Energy Spectra",
+                                 spectralsize, 0, spectralsize);
   int nentries = hitsVector.size();
   double psd = 0;
   double evalEnergy = 0;
@@ -64,14 +74,15 @@ int main(int argc, char *argv[]) {
   double energyShort = 0;
   digiAnalysis::WaveForm *WF = nullptr;
   for (int i = 0; i < nentries; i++) {
-    if (hitsVector[i]->GetChNum() == 0 and
-        hitsVector[i]->GetMeanTime() <
-            3.8) { // (hitsVector[i]->GetPSD() > 0.0 and
-                   // hitsVector[i]->GetChNum() == 0) {
+    if (hitsVector[i]->GetChNum() == 3
+        // and hitsVector[i]->GetMeanTime() < 3.8
+    ) { // (hitsVector[i]->GetPSD() > 0.0 and
+        // hitsVector[i]->GetChNum() == 0) {
       energy = hitsVector[i]->GetEnergy();
       energyShort = hitsVector[i]->GetEnergyShort();
-      hMTPlot->Fill(energy, hitsVector[i]->GetMeanTime());
       WF = hitsVector[i]->GetWFPtr();
+      WFMT = TMath::Log10(WF->GetSize() / 2.0);
+      hMTPlot->Fill(energy, hitsVector[i]->GetMeanTime());
       evalEnergy =
           hitsVector[i]->GetEvalEnergy(); // WF->IntegrateWaveForm(290, 1390);
       evalEnergyShort =

@@ -2,6 +2,8 @@
 
 #include "WaveForm.h"
 #include "Rtypes.h"
+#include "TMath.h"
+#include "globals.h"
 #include "includes.hh"
 
 // ClassImp(digiAnalysis::WaveForm);
@@ -39,8 +41,10 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
   unsigned int size = arr->GetSize();
   for (unsigned int j = 0; j < size; j++) {
     traces.push_back(baseline - arr->At(j));
-    meantime = meantime + traces[j] * j;
-    sampleSum = sampleSum + traces[j];
+    if (j >= GateStart and j <= GateStart + GateLenLong) {
+      meantime = meantime + traces[j] * j;
+      sampleSum = sampleSum + traces[j];
+    }
 #ifdef SMOOTH
     if (smoothBoxSz == 1) {
       tracesSmooth.push_back(traces[j]);
@@ -55,7 +59,12 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
     }
 #endif
   }
-  meantime = TMath::Log10(meantime / sampleSum);
+  meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
+  if (meantime > 0.0) {
+    meantime = TMath::Log10(meantime);
+  } else {
+    meantime = -1.0 * TMath::Log10(fabs(meantime));
+  }
 }
 
 WaveForm::WaveForm(const std::vector<float> tr) // copy from other vector
@@ -93,6 +102,10 @@ WaveForm::WaveForm(const WaveForm &wf) // copy consructor
   if (!wf.CFDtraces.empty()) // copy traces CFD if not empty
   {
     CFDtraces = wf.CFDtraces;
+  }
+  if (wf.fitFunc) // copy traces CFD if not empty
+  {
+    fitFunc = wf.fitFunc;
   }
 }
 
@@ -151,6 +164,7 @@ void WaveForm::Plot() {
 
   // Plot traces if not empty
   if (!traces.empty()) {
+
     graphTraces = new TGraph(nTraces);
     for (int i = 0; i < nTraces; ++i) {
       graphTraces->SetPoint(i, i, traces[i]);
@@ -179,14 +193,17 @@ void WaveForm::Plot() {
     }
     legend->AddEntry(graphTracesSmooth, "Smoothed Traces", "l");
   }
+
   TLine *line = new TLine(0.0, 0.0, 5000, 0.0);
   line->SetLineColor(kBlack);
   line->SetLineWidth(2);
   line->Draw("LSAME");
   // Draw Fit if present
-  fitFunc->SetLineColor(kGreen);
-  fitFunc->SetLineWidth(2);
-  fitFunc->Draw("LSAME");
+  if (fitFunc) {
+    fitFunc->SetLineColor(kGreen);
+    fitFunc->SetLineWidth(2);
+    fitFunc->Draw("LSAME");
+  }
   // Draw the legend
   legend->Draw();
 
@@ -222,8 +239,10 @@ void WaveForm::SetWaveForm(std::vector<float> tr) {
     unsigned int size = tr.size();
     for (unsigned int j = 0; j < size; j++) {
       traces.push_back(baseline - tr[j]);
-      meantime = meantime + traces[j] * j;
-      sampleSum = sampleSum + traces[j];
+      if (j >= GateStart and j <= GateStart + GateLenLong) {
+        meantime = meantime + traces[j] * j;
+        sampleSum = sampleSum + traces[j];
+      }
 #ifdef SMOOTH
       if (smoothBoxSz == 1) {
         tracesSmooth.push_back(traces[j]);
@@ -238,7 +257,12 @@ void WaveForm::SetWaveForm(std::vector<float> tr) {
       }
 #endif
     }
-    meantime = TMath::Log10(meantime / sampleSum);
+    meantime = (GateStart + GateLenLong * 0.5) - (meantime / sampleSum);
+    if (meantime > 0.0) {
+      meantime = TMath::Log10(meantime);
+    } else {
+      meantime = -1.0 * TMath::Log10(fabs(meantime));
+    }
   } else {
     std::cout << "err SetWaveForm: input vector is empty" << std::endl;
   }
@@ -311,26 +335,24 @@ void WaveForm::SetMeanTime() {
   float sampleSum = 0;
   if (!traces.empty()) {
     unsigned int size = traces.size();
-    for (unsigned int j = 0; j < size; j++) {
+    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
       meantime = meantime + traces[j] * j;
       sampleSum = sampleSum + traces[j];
     }
-    meantime = TMath::Log10(meantime / sampleSum);
+    meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
+    if (meantime > 0.0) {
+      meantime = TMath::Log10(meantime);
+    } else {
+      meantime = -1.0 * TMath::Log10(fabs(meantime));
+    }
   } else {
     std::cout << "err SetMeanTime: traces is empty" << std::endl;
   }
 }
 
 void WaveForm::SetMeanTime(const std::vector<float> tr) {
-  meantime = 0;
-  float sampleSum = 0;
   if (!tr.empty()) {
-    unsigned int size = tr.size();
-    for (unsigned int j = 0; j < size; j++) {
-      meantime = meantime + tr[j] * j;
-      sampleSum = sampleSum + tr[j];
-    }
-    meantime = TMath::Log10(meantime / sampleSum);
+    SetMeanTime(tr, GateStart, GateLenLong + GateStart);
   } else {
     std::cout << "err SetMeanTime: input vector is empty" << std::endl;
   }
@@ -352,7 +374,12 @@ void WaveForm::SetMeanTime(const std::vector<float> tr, UShort_t start,
         meantime = meantime + tr[j] * j;
         sampleSum = sampleSum + tr[j];
       }
-      meantime = TMath::Log10(meantime / sampleSum);
+      meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
+      if (meantime > 0.0) {
+        meantime = TMath::Log10(meantime);
+      } else {
+        meantime = -1.0 * TMath::Log10(fabs(meantime));
+      }
     } else {
       std::cout << "error: start > stop, exiting witout meantime setting"
                 << std::endl;
@@ -440,6 +467,24 @@ float WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
     }
   } else {
     std::cout << "err IntegrateWaveForm: fill traces first" << std::endl;
+  }
+  return sum;
+}
+
+float WaveForm::IntegrateSmoothWaveForm(int startTime, int stopTime) {
+  float sum = 0;
+  if (!tracesSmooth.empty() && (tracesSmooth.size() > stopTime)) {
+    if (startTime < stopTime) {
+      for (unsigned int j = startTime; j < stopTime; j++) {
+        sum = sum + tracesSmooth[j];
+      }
+    } else {
+      std::cout << "err IntegrateSmoothWaveForm: order the times properly "
+                << std::endl;
+    }
+  } else {
+    std::cout << "err IntegrateSmoothWaveForm: fill traces Smooth first"
+              << std::endl;
   }
   return sum;
 }

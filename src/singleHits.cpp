@@ -62,6 +62,22 @@ singleHits::singleHits(ULong64_t EvNum, UShort_t channel, UShort_t board,
   SetEvalEnergyShort();
   SetEvalPSD();
 }
+
+singleHits::singleHits(ULong64_t EvNum, UShort_t channel, UShort_t board,
+                       ULong64_t timestamp, UShort_t energy,
+                       UShort_t energyshort, WaveForm *WFptr) {
+  hitNum = EvNum;
+  ChNum = channel;
+  Board = board;
+  Timestamp = timestamp;
+  Energy = energy;
+  EnergyShort = energyshort;
+  PSD = 1.0 - (EnergyShort * 1.0) / Energy;
+  WF = std::make_unique<digiAnalysis::WaveForm>(*WFptr);
+  SetEvalEnergy();
+  SetEvalEnergyShort();
+  SetEvalPSD();
+}
 #endif
 
 /*Destructor*/
@@ -90,12 +106,13 @@ void singleHits::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
 void singleHits::SetSmoothWF() { WF->SetSmooth(); }
 void singleHits::SetSmoothWF(UShort_t sBoxSz) { WF->SetSmooth(sBoxSz); }
 void singleHits::SetEvalEnergy() {
-  evalEnergy =
-      (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) / 16.0;
+  evalEnergy = (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) /
+               GateLenLong * 4.4;
 }
 void singleHits::SetEvalEnergyShort() {
   evalEnergyShort =
-      (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) / 16.0;
+      (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) /
+      GateLenLong * 4.4;
 }
 void singleHits::SetEvalPSD() { evalPSD = 1.0 - evalEnergyShort / evalEnergy; }
 // void singleHits::SetDiffWF() {}
@@ -120,6 +137,7 @@ void singleHits::Print() {
 #ifdef WAVES
   std::cout << "Waves           : " << "ON" << std::endl;
   std::cout << "WaveForm        : " << "WF" << std::endl;
+  std::cout << "MeanTime        : " << WF->GetMeanTime() << std::endl;
   std::cout << "EnergyEval      : " << evalEnergy << std::endl;
   std::cout << "EnergyShortEval : " << evalEnergyShort << std::endl;
   std::cout << "PSDEval         : " << evalPSD << std::endl;

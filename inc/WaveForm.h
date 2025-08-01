@@ -63,6 +63,7 @@ public:
   void ShiftWaveForm(int BL);
   float IntegrateWaveForm();
   float IntegrateWaveForm(int startTime, int stopTime);
+  float IntegrateSmoothWaveForm(int startTime, int stopTime);
   void ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2);
   void AverageWaveForms(UShort_t sizeOfWaveForms,
                         const std::vector<WaveForm> vecOfWaveForm);
