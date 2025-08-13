@@ -53,6 +53,7 @@ public:
 
   // TTree *GetTreeFromFile(const std::string &filename);
   std::vector<std::unique_ptr<singleHits>> &GetSingleHitsVec();
+  std::vector<singleHits> GetSingleHitsVec(ushort channel);
   std::unique_ptr<singleHits> GetSingleHit(ULong64_t hitIndx);
 };
 

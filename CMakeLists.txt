@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 project(digiAnalysis)
 
 # Added to detect compiler support for C++11
@@ -40,7 +40,7 @@ include_directories(inc)
 file(GLOB sources src/*.cpp)
 
 # Gather test files from test directory
-file(GLOB test_sources test/*.cpp)
+file(GLOB test_sources CONFIGURE_DEPENDS test/*.cpp)
 
 # Loop through each test file and create an executable
 foreach(test_file ${test_sources})
@@ -50,4 +50,5 @@ foreach(test_file ${test_sources})
     # Create an executable for each test file
     add_executable(${test_name} ${test_file} ${sources})
     target_link_libraries(${test_name} ${ROOT_LIBRARIES})
+    #message(STATUS "Test sources: ${test_name}")
 endforeach()

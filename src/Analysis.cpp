@@ -172,6 +172,19 @@ std::vector<std::unique_ptr<singleHits>> &Analysis::GetSingleHitsVec() {
   return vecOfHits;
 }
 
+std::vector<singleHits> Analysis::GetSingleHitsVec(ushort channel) {
+  std::vector<singleHits> vecOfHitsChannel;
+  vecOfHitsChannel.reserve(vecOfHits.size());
+
+  for (const auto &hit :
+       vecOfHits) { // vecOfHits is vector<unique_ptr<singleHits>>
+    if (hit->GetChNum() == channel) {
+      vecOfHitsChannel.push_back(*hit); // copies the object
+    }
+  }
+  return vecOfHitsChannel;
+}
+
 std::unique_ptr<singleHits> Analysis::GetSingleHit(ULong64_t hitIndx) {
   /*Here the ownership of singleHit transferred*/
   if (hitIndx < vecOfHits.size()) {

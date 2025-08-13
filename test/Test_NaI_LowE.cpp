@@ -7,7 +7,6 @@
 #include "Analysis.h"
 #include "WaveForm.h"
 #include "globals.h"
-#include "includes.hh"
 #include "singleHits.h"
 #include <TApplication.h>
 #include <iostream>
@@ -68,9 +67,9 @@ int main(int argc, char *argv[]) {
     }
     if (hitsVector[evi]->GetChNum() == 2 and
         // hitsVector[evi]->GetEvalEnergy() > 100 and
-        hitsVector[evi]->GetEnergy() < 100 and
-        hitsVector[evi]->GetEnergy() > 80 // and
-        // fabs(hitsVector[evi]->GetMeanTime() - 2.5) < 0.2
+        hitsVector[evi]->GetEnergy() < 250 and
+        hitsVector[evi]->GetEnergy() > 230 and
+        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
         // hitsVector[evi]->GetPSD() < 0.6
         )
     // hitsVector[evi]->GetEnergy() - hitsVector[evi]->GetEnergyShort() < 0

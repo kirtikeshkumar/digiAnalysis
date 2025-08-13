@@ -58,10 +58,10 @@ int main(int argc, char *argv[]) {
   TH1F *hEEvalRatio =
       new TH1F("hEEValRatio", "Ratio of EEval vs E", 1000, 0, 200);
   TH2 *hEdiffPlot = new TH2F("EdiffPlot", "Energy vs Energy-EnergyShort", 410,
-                             0, spectralsize, 820, -spectralsize, spectralsize);
+                             0, spectralsize, 820, 0.0, 10);
   TH2 *hEdiffEvalPlot =
       new TH2F("EdiffEvalPlot", "EvalEnergy vs EvalEnergy-EvalEnergyShort", 410,
-               0, spectralsize, 820, -spectralsize, spectralsize);
+               0, spectralsize, 820, -0.0, 10.0);
   TH1F *hESpectra =
       new TH1F("hESpectra", "Energy Spectra", spectralsize, 0, spectralsize);
   TH1F *hEEvalSpectra = new TH1F("hEEvalSpectra", "Eval Energy Spectra",
@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
   double evalEnergyShort = 0;
   double energy = 0;
   double energyShort = 0;
+  double shortPSD = 0;
   digiAnalysis::WaveForm *WF = nullptr;
   for (int i = 0; i < nentries; i++) {
     if (hitsVector[i]->GetChNum() == 3
@@ -88,14 +89,16 @@ int main(int argc, char *argv[]) {
       evalEnergyShort =
           hitsVector[i]
               ->GetEvalEnergyShort(); // WF->IntegrateWaveForm(290, 440);
+      shortPSD =
+          WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290, 600);
       psd = 1.0 - evalEnergyShort * 1.0 / evalEnergy;
-      hPSDPlot->Fill(energy, psd);
+      hPSDPlot->Fill(energy, shortPSD);
       hEPlot->Fill(energy, evalEnergy);
       hESPlot->Fill(energyShort, evalEnergyShort);
       hPSDEvalPlot->Fill(hitsVector[i]->GetPSD(), psd);
       hEEvalRatio->Fill(evalEnergyShort * 1.0 / energyShort);
-      hEdiffPlot->Fill(energy, energy - energyShort);
-      hEdiffEvalPlot->Fill(evalEnergy, evalEnergy - evalEnergyShort);
+      hEdiffPlot->Fill(energy, energyShort / energy);
+      hEdiffEvalPlot->Fill(evalEnergy, evalEnergyShort / evalEnergy);
       hESpectra->Fill(energy);
       hEEvalSpectra->Fill(evalEnergy);
       if (i < 1300 and i > 1285) {
@@ -118,10 +121,10 @@ int main(int argc, char *argv[]) {
   hESPlot->Draw("COLZ");
   TCanvas *c5 = new TCanvas("c5", "PSD vs PSDEval", 800, 600);
   hPSDEvalPlot->Draw("COLZ");
-  TCanvas *c6 = new TCanvas("c6", "Energy vs Energy-EnergyShort", 800, 600);
+  TCanvas *c6 = new TCanvas("c6", "Energy vs EnergyShort/Energy", 800, 600);
   hEdiffPlot->Draw("COLZ");
   TCanvas *c7 =
-      new TCanvas("c7", "evalEnergy vs evalEnergy-evalEnergyShort", 800, 600);
+      new TCanvas("c7", "evalEnergy vs evalEnergyShort/evalEnergy", 800, 600);
   hEdiffEvalPlot->Draw("COLZ");
   TCanvas *c8 = new TCanvas("c8", "Energy Spectra", 800, 600);
   hESpectra->SetLineColor(kRed);

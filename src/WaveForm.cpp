@@ -99,9 +99,9 @@ WaveForm::WaveForm(const WaveForm &wf) // copy consructor
   {
     tracesSmooth = wf.tracesSmooth;
   }
-  if (!wf.CFDtraces.empty()) // copy traces CFD if not empty
+  if (!wf.tracesFFT.empty()) // copy traces CFD if not empty
   {
-    CFDtraces = wf.CFDtraces;
+    tracesFFT = wf.tracesFFT;
   }
   if (wf.fitFunc) // copy traces CFD if not empty
   {
@@ -129,8 +129,8 @@ WaveForm::~WaveForm() {
   tracesSmooth.clear();
   tracesSmooth.shrink_to_fit();
 
-  CFDtraces.clear();
-  CFDtraces.shrink_to_fit();
+  tracesFFT.clear();
+  tracesFFT.shrink_to_fit();
   */
 }
 
@@ -239,7 +239,7 @@ void WaveForm::SetWaveForm(std::vector<float> tr) {
     unsigned int size = tr.size();
     for (unsigned int j = 0; j < size; j++) {
       traces.push_back(baseline - tr[j]);
-      if (j >= GateStart and j <= GateStart + GateLenLong) {
+      if (j >= GateStart and j <= GateStart + GateLenShort) {
         meantime = meantime + traces[j] * j;
         sampleSum = sampleSum + traces[j];
       }
@@ -257,7 +257,7 @@ void WaveForm::SetWaveForm(std::vector<float> tr) {
       }
 #endif
     }
-    meantime = (GateStart + GateLenLong * 0.5) - (meantime / sampleSum);
+    meantime = (meantime / sampleSum);
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -271,7 +271,7 @@ void WaveForm::SetWaveForm(std::vector<float> tr) {
 void WaveForm::SetWaveForm(const WaveForm &wf) {
   traces = wf.traces;
   tracesSmooth = wf.tracesSmooth;
-  CFDtraces = wf.CFDtraces;
+  tracesFFT = wf.tracesFFT;
 
   // Copying the scalar values
   meantime = wf.meantime;
@@ -335,11 +335,11 @@ void WaveForm::SetMeanTime() {
   float sampleSum = 0;
   if (!traces.empty()) {
     unsigned int size = traces.size();
-    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
+    for (unsigned int j = GateStart; j < GateLenShort + GateStart; j++) {
       meantime = meantime + traces[j] * j;
       sampleSum = sampleSum + traces[j];
     }
-    meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
+    meantime = meantime / sampleSum;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -352,7 +352,7 @@ void WaveForm::SetMeanTime() {
 
 void WaveForm::SetMeanTime(const std::vector<float> tr) {
   if (!tr.empty()) {
-    SetMeanTime(tr, GateStart, GateLenLong + GateStart);
+    SetMeanTime(tr, GateStart, GateLenShort + GateStart);
   } else {
     std::cout << "err SetMeanTime: input vector is empty" << std::endl;
   }
@@ -374,7 +374,7 @@ void WaveForm::SetMeanTime(const std::vector<float> tr, UShort_t start,
         meantime = meantime + tr[j] * j;
         sampleSum = sampleSum + tr[j];
       }
-      meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
+      meantime = meantime / sampleSum;
       if (meantime > 0.0) {
         meantime = TMath::Log10(meantime);
       } else {
@@ -498,9 +498,9 @@ void WaveForm::ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2) {
   {
     tracesSmooth = wf1.tracesSmooth;
   }
-  if (!wf1.CFDtraces.empty()) // copy traces CFD if not empty
+  if (!wf1.tracesFFT.empty()) // copy traces CFD if not empty
   {
-    CFDtraces = wf1.CFDtraces;
+    tracesFFT = wf1.tracesFFT;
   }
 
   if (!wf2.traces.empty()) // concatenate traces if not empty
@@ -512,10 +512,10 @@ void WaveForm::ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2) {
     tracesSmooth.insert(tracesSmooth.end(), wf2.tracesSmooth.begin(),
                         wf2.tracesSmooth.end());
   }
-  if (!wf2.CFDtraces.empty()) // concatenate traces CFD if not empty
+  if (!wf2.tracesFFT.empty()) // concatenate traces CFD if not empty
   {
-    CFDtraces.insert(CFDtraces.end(), wf2.CFDtraces.begin(),
-                     wf2.CFDtraces.end());
+    tracesFFT.insert(tracesFFT.end(), wf2.tracesFFT.begin(),
+                     wf2.tracesFFT.end());
   }
 
   meantime =
@@ -645,9 +645,9 @@ WaveForm::SplitWaveForm(UShort_t numSplits) {
       newWaveForm->tracesSmooth.assign(tracesSmooth.begin() + start,
                                        tracesSmooth.begin() + end);
     }
-    if (!CFDtraces.empty()) {
-      newWaveForm->CFDtraces.assign(CFDtraces.begin() + start,
-                                    CFDtraces.begin() + end);
+    if (!tracesFFT.empty()) {
+      newWaveForm->tracesFFT.assign(tracesFFT.begin() + start,
+                                    tracesFFT.begin() + end);
     }
 
     newWaveForm->SetBaseLine();

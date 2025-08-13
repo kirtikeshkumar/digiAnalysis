@@ -17,7 +17,7 @@ class WaveForm {
 protected:
   std::vector<float> traces;
   std::vector<float> tracesSmooth;
-  std::vector<float> CFDtraces;
+  std::vector<float> tracesFFT;
   float meantime;
   float baseline;
   int blStart = GateStart - nSampleBL - 50 > 0 ? GateStart - nSampleBL - 10 : 0;
@@ -38,6 +38,7 @@ public:
 
   std::vector<float> GetTraces();
   std::vector<float> GetTracesSmooth();
+  std::vector<float> GetTracesFFT();
   float GetMeanTime();
   float GetBaseLine();
   UShort_t GetSize();
@@ -56,15 +57,17 @@ public:
   void SetBaseLine();
   void SetBaseLine(TArrayS *arr);
   void SetBaseLine(const std::vector<float> tr);
+  void SetTracesFFT();
+  void SetTracesFFT(std::vector<float> trFFT);
 
   void Plot();
-  // std::vector<float> EvalDecayTime(UShort_t FitStart, UShort_t FitEnd,
-  // UShort_t numDecayConst);
   void ShiftWaveForm(int BL);
   float IntegrateWaveForm();
   float IntegrateWaveForm(int startTime, int stopTime);
   float IntegrateSmoothWaveForm(int startTime, int stopTime);
-  void ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2);
+  void FitExponential(int start, int stop);
+  std::vector<float> GenerateWaveFromFFT();
+
   void AverageWaveForms(UShort_t sizeOfWaveForms,
                         const std::vector<WaveForm> vecOfWaveForm);
   void AverageWaveForms(ULong_t start, UShort_t numWaveForm,
@@ -72,7 +75,7 @@ public:
                         const std::vector<WaveForm> vecOfWaveForm);
   void ScaleWaveForm(double Scale);
   void AddWaveForm(const WaveForm &wf1);
-  void FitExponential(int start, int stop);
+  void ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2);
   std::vector<std::unique_ptr<WaveForm>> SplitWaveForm(UShort_t numSplits);
 
   // static UShort_t nSampleBL;   // Number of baseline samples
