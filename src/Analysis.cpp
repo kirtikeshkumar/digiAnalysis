@@ -130,7 +130,7 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
   /// READING
   //////////////////////////////////////////////////////////////////////////////
   for (ULong64_t iev = start; iev < start + numOfEvents; iev++) {
-    if ((iev - start) % 100000 == 0) {
+    if ((iev - start) % 500000 == 0) {
       std::cout << "Reading: " << indices[iev] << std::endl;
     }
     nbytes += tr->GetEntry(indices[iev]);

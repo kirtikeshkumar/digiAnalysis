@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
                 << std::endl;
       std::cout << "Got the waveform with meantime" << WF->GetMeanTime()
                 << std::endl;
-      WF->SetSmooth(32);
+      // WF->SetSmooth(32);
       WF->FitExponential(340, 1100);
       hitsVector[evi]->Print();
       std::cout << "Smooth Integral: "

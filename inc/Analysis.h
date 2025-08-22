@@ -1,7 +1,6 @@
 #ifndef Analysis_h
 #define Analysis_h
 
-#include "Events.h"
 #include "PSBar.h"
 #include "WaveForm.h"
 #include "includes.hh"
@@ -22,14 +21,12 @@
 namespace digiAnalysis {
 
 class singleHits;
-class Event;
 class PSBar;
 class WaveForm;
 // class diffWaveForm;
 
 class Analysis {
 private:
-  std::vector<std::unique_ptr<Event>> vecOfEvents;
   std::vector<std::unique_ptr<singleHits>> vecOfHits;
   std::string fDatafileName;
   double EnergyThreshold;
