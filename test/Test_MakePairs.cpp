@@ -8,7 +8,8 @@
 #include <TApplication.h>
 #include <cmath>
 #include <iostream>
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
@@ -39,8 +40,8 @@ int main(int argc, char *argv[]) {
   digiAnalysis::Analysis an(fname, 0, 100000, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
-  std::vector<digiAnalysis::singleHits> hitsVectorCh0 = an.GetSingleHitsVec(7);
-  std::vector<digiAnalysis::singleHits> hitsVectorCh1 = an.GetSingleHitsVec(5);
+  std::vector<digiAnalysis::singleHits *> hitsVectorCh0 = an.GetSingleHitsVec(7);
+  std::vector<digiAnalysis::singleHits *> hitsVectorCh1 = an.GetSingleHitsVec(5);
 
   std::cout << "got the vector of channel 0 from an: " << hitsVectorCh0.size()
             << std::endl;
@@ -50,8 +51,8 @@ int main(int argc, char *argv[]) {
   ULong64_t i = 0;
   ULong64_t j = 0;
 
-  Long64_t Ch0Time = hitsVectorCh0[0].GetTimestamp();
-  Long64_t Ch1Time = hitsVectorCh1[0].GetTimestamp();
+  Long64_t Ch0Time = hitsVectorCh0[0]->GetTimestamp();
+  Long64_t Ch1Time = hitsVectorCh1[0]->GetTimestamp();
   Long64_t TDiffCurr = Ch0Time - Ch1Time;
   Long64_t TDiffMin = 0;
   int EnergyNearestEvt = 0;
@@ -73,24 +74,30 @@ int main(int argc, char *argv[]) {
   TH1F *hE =
       new TH1F("hE", "Sum Energy Spectra of Coinc Events", 16384, 0, 16384);
 
-  while (i < hitsVectorCh0.size()) {
-    Ch0Time = hitsVectorCh0[i].GetTimestamp();
+  while (i < hitsVectorCh0.size())
+  {
+    Ch0Time = hitsVectorCh0[i]->GetTimestamp();
     TDiffMin = 100000000000000;
-    while (j < hitsVectorCh1.size()) {
-      Ch1Time = hitsVectorCh1[j].GetTimestamp();
+    while (j < hitsVectorCh1.size())
+    {
+      Ch1Time = hitsVectorCh1[j]->GetTimestamp();
       TDiffCurr = Ch1Time - Ch0Time;
-      if (fabs(TDiffCurr) < fabs(TDiffMin)) {
-        EnergyNearestEvt = hitsVectorCh1[j].GetEnergy();
+      if (fabs(TDiffCurr) < fabs(TDiffMin))
+      {
+        EnergyNearestEvt = hitsVectorCh1[j]->GetEnergy();
         TDiffMin = TDiffCurr;
         j = j + 1;
-      } else {
+      }
+      else
+      {
         hICDelT->Fill(TDiffMin / 1000.0);
-        if (fabs(TDiffMin / 1000) < 30) {
-          hECh0->Fill(hitsVectorCh0[i].GetEnergy());
+        if (fabs(TDiffMin / 1000) < 30)
+        {
+          hECh0->Fill(hitsVectorCh0[i]->GetEnergy());
           hECh1->Fill(EnergyNearestEvt);
 
           currPair.ClearPair();
-          currPair.SetPair(&hitsVectorCh0[i], &hitsVectorCh1[j - 1]);
+          currPair.SetPair(hitsVectorCh0[i], hitsVectorCh1[j - 1]);
           vecOfPairs.push_back(currPair);
           // if (fabs(currPair.GetPairHitEnergy(0) - 400) < 200 or
           //     fabs(currPair.GetPairHitEnergy(1) - 400) < 200) {
@@ -106,7 +113,8 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    if (i >= hitsVectorCh0.size() - 1 or j >= hitsVectorCh1.size() - 1) {
+    if (i >= hitsVectorCh0.size() - 1 or j >= hitsVectorCh1.size() - 1)
+    {
       break;
     }
   }
@@ -119,11 +127,13 @@ int main(int argc, char *argv[]) {
   UShort_t CheckEnergy = 0;
   UShort_t CheckWidth = 400;
 
-  while (plotnext && i < vecOfPairs.size()) {
+  while (plotnext && i < vecOfPairs.size())
+  {
 
     // std::cout << i << " Loop Entered" << std::endl;
     if (fabs(vecOfPairs[i].GetPairHitEnergy(1) - CheckEnergy) < CheckWidth and
-        fabs(vecOfPairs[i].GetPairHitEnergy(0) - CheckEnergy) < CheckWidth) {
+        fabs(vecOfPairs[i].GetPairHitEnergy(0) - CheckEnergy) < CheckWidth)
+    {
       // std::cout << "Check Passed" << std::endl;
       hit = fabs(vecOfPairs[i].GetPairHitEnergy(1) - CheckEnergy) < CheckWidth
                 ? vecOfPairs[i].GetHit(1)
@@ -131,7 +141,8 @@ int main(int argc, char *argv[]) {
       WF = hit->GetWFPtr();
       // std::cout << "hit retrieved" << std::endl;
       WF->SetSmooth(16);
-      if (WF) {
+      if (WF)
+      {
         waveformVector.push_back(*WF);
       }
       vecOfPairs[i].Print();
@@ -139,7 +150,8 @@ int main(int argc, char *argv[]) {
 
       std::cout << "Do you want to see the next waveform? (y/n): ";
       std::getline(std::cin, userInput);
-      if (userInput != "y" && userInput != "Y") {
+      if (userInput != "y" && userInput != "Y")
+      {
         plotnext = false;
       }
     }
@@ -148,7 +160,8 @@ int main(int argc, char *argv[]) {
   }
   UShort_t wfSz = WF->GetSize();
   std::cout << "Got size of waveforms" << wfSz << std::endl;
-  if (waveformVector.size() > 0) {
+  if (waveformVector.size() > 0)
+  {
     digiAnalysis::WaveForm *WFAveraged =
         new digiAnalysis::WaveForm(wfSz, waveformVector);
     WFAveraged->Plot();
