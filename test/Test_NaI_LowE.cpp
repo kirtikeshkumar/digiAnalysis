@@ -11,6 +11,7 @@
 #include <TApplication.h>
 #include <iostream>
 int main(int argc, char *argv[]) {
+#ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
@@ -135,5 +136,6 @@ int main(int argc, char *argv[]) {
   // hitsVector[evi]->Print();
   // WF->Plot();
   fApp->Run();
+#endif
   return 0;
 }

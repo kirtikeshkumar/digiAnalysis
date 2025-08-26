@@ -107,12 +107,12 @@ void singleHits::SetSmoothWF() { WF->SetSmooth(); }
 void singleHits::SetSmoothWF(UShort_t sBoxSz) { WF->SetSmooth(sBoxSz); }
 void singleHits::SetEvalEnergy() {
   evalEnergy = (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) /
-               GateLenLong * 4.4;
+               GateLenLong * EvalNormFactor;
 }
 void singleHits::SetEvalEnergyShort() {
   evalEnergyShort =
       (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) /
-      GateLenLong * 4.4;
+      GateLenLong * EvalNormFactor;
 }
 void singleHits::SetEvalPSD() { evalPSD = 1.0 - evalEnergyShort / evalEnergy; }
 // void singleHits::SetDiffWF() {}

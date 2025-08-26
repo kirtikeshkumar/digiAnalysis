@@ -26,10 +26,17 @@ int main(int argc, char *argv[]) {
   //     "run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
   //     "DataF_run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
 
+  // std::string fname =
+  //     "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
+  //     "Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp/FILTERED/"
+  //     "DataF_Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp.root";
+
   std::string fname =
       "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
-      "Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp/FILTERED/"
-      "DataF_Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp.root";
+      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_SignalDelay_50ns_"
+      "Aug26/FILTERED/"
+      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+      "SignalDelay_50ns_Aug26.root";
 
   // std::string fname =
   //     "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
@@ -75,7 +82,7 @@ int main(int argc, char *argv[]) {
   double shortPSD = 0;
   digiAnalysis::WaveForm *WF = nullptr;
   for (int i = 0; i < nentries; i++) {
-    if (hitsVector[i]->GetChNum() == 3
+    if (hitsVector[i]->GetChNum() == 9
         // and hitsVector[i]->GetMeanTime() < 3.8
     ) { // (hitsVector[i]->GetPSD() > 0.0 and
         // hitsVector[i]->GetChNum() == 0) {
