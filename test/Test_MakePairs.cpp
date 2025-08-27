@@ -8,11 +8,12 @@
 #include <TApplication.h>
 #include <cmath>
 #include <iostream>
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
+  std::string fname = "/media/kirtikesh/KKBlack/NaI/"
                       "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
                       "SignalDelay_50ns_Aug26/FILTERED/"
                       "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
@@ -104,14 +105,18 @@ int main(int argc, char *argv[]) {
   std::string userInput;
   digiAnalysis::singleHits *hit;
 
-  while (i < vecOfPairs.size()) {
-    if (fabs(vecOfPairs[i]->GetPairHitEnergy(1) - CheckEnergy) < CheckWidth) {
+  while (i < vecOfPairs.size())
+  {
+    if (fabs(vecOfPairs[i]->GetPairHitEnergy(1) - CheckEnergy) < CheckWidth)
+    {
       hECh0->Fill(vecOfPairs[i]->GetPairHitEnergy(0));
       hECh1->Fill(vecOfPairs[i]->GetPairHitEnergy(1));
-      if (plotnext) {
+      if (plotnext)
+      {
         hit = vecOfPairs[i]->GetHit(1);
         WF = hit->GetWFPtr();
-        if (WF) {
+        if (WF)
+        {
           waveformVector.push_back(*WF);
         }
         vecOfPairs[i]->Print();
@@ -119,7 +124,8 @@ int main(int argc, char *argv[]) {
         WF->Plot();
         std::cout << "Do you want to see the next waveform? (y/n): ";
         std::getline(std::cin, userInput);
-        if (userInput != "y" && userInput != "Y") {
+        if (userInput != "y" && userInput != "Y")
+        {
           plotnext = false;
         }
       }
@@ -131,7 +137,8 @@ int main(int argc, char *argv[]) {
   }
   UShort_t wfSz = WF->GetSize();
   std::cout << "Got size of waveforms" << wfSz << std::endl;
-  if (waveformVector.size() > 0) {
+  if (waveformVector.size() > 0)
+  {
     digiAnalysis::WaveForm *WFAveraged =
         new digiAnalysis::WaveForm(wfSz, waveformVector);
     WFAveraged->Plot();

@@ -10,34 +10,19 @@
 #include "singleHits.h"
 #include <TApplication.h>
 #include <iostream>
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  // std::string fname =
-  // "/media/kirtikesh/Ventoy/GGAG/DataF_CH1@V1730_167_GGAG_2inch_insideHutch_3Oct_4hr.root";
-
-  // std::string fname =
-  // "/media/kirtikesh/Ventoy/GGAG/DataF_CH1@V1730_167_GGAG_2inch_insideHutch_3Oct_calib_Na.root
-  // ";
-  // std::string fname =
-  //     "/media/kirtikesh/Ventoy/NaI/"
-  //     "run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
-  //     "DataF_run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
-
   std::string fname =
-      "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
-      "Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp/FILTERED/"
-      "DataF_Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp.root";
-
-  // std::string fname =
-  //     "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
-  //     "run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
-  //     "DataF_run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
+      "/media/kirtikesh/KKBlack/NaI/"
+      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_SignalDelay_50ns_Aug26/FILTERED/"
+      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_SignalDelay_50ns_Aug26.root";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 0, 0, 0);
+  digiAnalysis::Analysis an(fname, 0, 10000, 0);
 
   std::cout << "getting the vector from an" << std::endl;
 
@@ -62,17 +47,19 @@ int main(int argc, char *argv[]) {
   digiAnalysis::WaveForm *WF = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector;
 
-  for (evi = 0; evi < nentries && keepGoing; ++evi) {
-    if (evi % 1000 == 0) {
+  for (evi = 0; evi < nentries && keepGoing; ++evi)
+  {
+    if (evi % 1000 == 0)
+    {
       std::cout << evi << std::endl;
     }
     if (hitsVector[evi]->GetChNum() == 2 and
         // hitsVector[evi]->GetEvalEnergy() > 100 and
         hitsVector[evi]->GetEnergy() < 250 and
-        hitsVector[evi]->GetEnergy() > 230 and
-        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
+        hitsVector[evi]->GetEnergy() > 230 // and
+        // fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
         // hitsVector[evi]->GetPSD() < 0.6
-        )
+    )
     // hitsVector[evi]->GetEnergy() - hitsVector[evi]->GetEnergyShort() < 0
     // and hitsVector[evi]->GetEvalEnergy() -
     // hitsVector[evi]->GetEvalEnergyShort() > 0 and
@@ -85,7 +72,8 @@ int main(int argc, char *argv[]) {
       WF = nullptr;
       WF = hitsVector[evi]->GetWFPtr();
       WF->SetSmooth(32);
-      if (WF) {
+      if (WF)
+      {
         waveformVector.push_back(*WF);
       }
       std::cout << "Got the waveform with size" << WF->GetSize() << std::endl;
@@ -106,7 +94,8 @@ int main(int argc, char *argv[]) {
 
       std::cout << "Do you want to see the next waveform? (y/n): ";
       std::getline(std::cin, userInput);
-      if (userInput != "y" && userInput != "Y") {
+      if (userInput != "y" && userInput != "Y")
+      {
         keepGoing = false;
       }
     }
