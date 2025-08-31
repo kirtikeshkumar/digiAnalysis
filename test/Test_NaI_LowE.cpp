@@ -17,9 +17,8 @@ int main(int argc, char *argv[])
   std::cout << "hello DigiAnalysis..." << std::endl;
 
   std::string fname =
-      "/media/kirtikesh/KKBlack/NaI/"
-      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_SignalDelay_50ns_Aug26/FILTERED/"
-      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_SignalDelay_50ns_Aug26.root";
+      "/media/kirtikesh/UbuntuFiles/NaI/run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
+      "DataF_run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
 
   // test reading to singleHits
   digiAnalysis::Analysis an(fname, 0, 10000, 0);
@@ -53,12 +52,12 @@ int main(int argc, char *argv[])
     {
       std::cout << evi << std::endl;
     }
-    if (hitsVector[evi]->GetChNum() == 2 and
+    if (hitsVector[evi]->GetChNum() == 4 and
         // hitsVector[evi]->GetEvalEnergy() > 100 and
-        hitsVector[evi]->GetEnergy() < 250 and
-        hitsVector[evi]->GetEnergy() > 230 // and
-        // fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
-        // hitsVector[evi]->GetPSD() < 0.6
+        hitsVector[evi]->GetEnergy() < 50 and
+        hitsVector[evi]->GetEnergy() > 25 // and
+                                          // fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
+                                          // hitsVector[evi]->GetPSD() < 0.6
     )
     // hitsVector[evi]->GetEnergy() - hitsVector[evi]->GetEnergyShort() < 0
     // and hitsVector[evi]->GetEvalEnergy() -
@@ -71,7 +70,7 @@ int main(int argc, char *argv[])
       // digiAnalysis::WaveForm *WF = hitsVector[evi]->GetWFPtr();
       WF = nullptr;
       WF = hitsVector[evi]->GetWFPtr();
-      WF->SetSmooth(32);
+      WF->SetSmooth(80, "Gauss");
       if (WF)
       {
         waveformVector.push_back(*WF);
@@ -106,7 +105,7 @@ int main(int argc, char *argv[])
   digiAnalysis::WaveForm *WFAveraged =
       new digiAnalysis::WaveForm(wfSz, waveformVector);
   WFAveraged->FitExponential(340, 1100);
-  WFAveraged->SetSmooth(32);
+  WFAveraged->SetSmooth(32, "Gauss");
   digiAnalysis::singleHits *hitAveraged =
       new digiAnalysis::singleHits(0, 0, 0, 0, 0, 0, WFAveraged);
   hitAveraged->Print();
