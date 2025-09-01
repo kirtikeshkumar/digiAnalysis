@@ -10,18 +10,19 @@
 #include "singleHits.h"
 #include <TApplication.h>
 #include <iostream>
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname =
-      "/media/kirtikesh/UbuntuFiles/NaI/run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
-      "DataF_run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
+  std::string fname = "/media/kirtikesh/KKBlack/NaI/"
+                      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+                      "SignalDelay_50ns_Aug26/FILTERED/"
+                      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
+                      "FREEWRITE_SignalDelay_50ns_Aug26.root";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 0, 10000, 0);
+  digiAnalysis::Analysis an(fname, 0, 0000, 0);
 
   std::cout << "getting the vector from an" << std::endl;
 
@@ -46,19 +47,18 @@ int main(int argc, char *argv[])
   digiAnalysis::WaveForm *WF = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector;
 
-  for (evi = 0; evi < nentries && keepGoing; ++evi)
-  {
-    if (evi % 1000 == 0)
-    {
+  for (evi = 0; evi < nentries && keepGoing; ++evi) {
+    if (evi % 1000 == 0) {
       std::cout << evi << std::endl;
     }
-    if (hitsVector[evi]->GetChNum() == 4 and
+    if (hitsVector[evi]->GetChNum() == 9 and
         // hitsVector[evi]->GetEvalEnergy() > 100 and
-        hitsVector[evi]->GetEnergy() < 50 and
-        hitsVector[evi]->GetEnergy() > 25 // and
-                                          // fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
-                                          // hitsVector[evi]->GetPSD() < 0.6
-    )
+        // hitsVector[evi]->GetEnergy() < 50 and
+        // hitsVector[evi]->GetEnergy() > 25 and
+        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2 and
+        fabs(hitsVector[evi]->GetEnergy() - 1200) < 200
+        // hitsVector[evi]->GetPSD() < 0.6
+        )
     // hitsVector[evi]->GetEnergy() - hitsVector[evi]->GetEnergyShort() < 0
     // and hitsVector[evi]->GetEvalEnergy() -
     // hitsVector[evi]->GetEvalEnergyShort() > 0 and
@@ -71,8 +71,7 @@ int main(int argc, char *argv[])
       WF = nullptr;
       WF = hitsVector[evi]->GetWFPtr();
       WF->SetSmooth(80, "Gauss");
-      if (WF)
-      {
+      if (WF) {
         waveformVector.push_back(*WF);
       }
       std::cout << "Got the waveform with size" << WF->GetSize() << std::endl;
@@ -93,8 +92,7 @@ int main(int argc, char *argv[])
 
       std::cout << "Do you want to see the next waveform? (y/n): ";
       std::getline(std::cin, userInput);
-      if (userInput != "y" && userInput != "Y")
-      {
+      if (userInput != "y" && userInput != "Y") {
         keepGoing = false;
       }
     }
