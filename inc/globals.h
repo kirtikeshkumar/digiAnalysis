@@ -10,7 +10,7 @@ extern UShort_t GateStart;
 extern UShort_t GateLenLong;
 extern UShort_t GateLenShort;
 extern UShort_t PairCoincWindow; // in ns
-extern float EvalNormFactor;
+extern double EvalNormFactor;
 } // namespace digiAnalysis
 
 #endif

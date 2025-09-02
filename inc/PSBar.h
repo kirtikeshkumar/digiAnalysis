@@ -26,9 +26,9 @@ private:
   UInt_t QFar;
   UInt_t QNearShort;
   UInt_t QFarShort;
-  float QMean;
-  float QMeanShort;
-  float PSD;
+  double QMean;
+  double QMeanShort;
+  double PSD;
 
 #ifdef WAVES
   std::unique_ptr<WaveForm> WF; // combined Waveform containing first half as
@@ -46,9 +46,9 @@ public:
   ushort GetBarIndex() const { return BarIndex; }
   UInt_t GetQNear();
   UInt_t GetQFar();
-  float GetQMean();
-  float GetQMeanShort();
-  float GetPSD();
+  double GetQMean();
+  double GetQMeanShort();
+  double GetPSD();
   Long_t GetDelT() const;
   Long_t GetTStampNear();
   Long_t GetTStampFar();

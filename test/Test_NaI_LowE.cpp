@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
                       "FREEWRITE_SignalDelay_50ns_Aug26.root";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 0, 0000, 0);
+  digiAnalysis::Analysis an(fname, 0, 10000, 0);
 
   std::cout << "getting the vector from an" << std::endl;
 
@@ -81,6 +81,12 @@ int main(int argc, char *argv[]) {
                 << std::endl;
       // WF->SetSmooth(32);
       WF->FitExponential(340, 1100);
+      std::vector<double> traces = WF->GetTraces();
+      UShort_t subrangeStart = 1100;
+      UShort_t subrangeEnd = 2900;
+      std::vector<double> tracesSubRange(traces.begin() + subrangeStart,
+                                         traces.begin() + subrangeEnd);
+      WF->SetTracesFFT(tracesSubRange);
       hitsVector[evi]->Print();
       std::cout << "Smooth Integral: "
                 << (WF->IntegrateSmoothWaveForm(
@@ -102,8 +108,9 @@ int main(int argc, char *argv[]) {
   std::cout << "Got size of waveforms" << wfSz << std::endl;
   digiAnalysis::WaveForm *WFAveraged =
       new digiAnalysis::WaveForm(wfSz, waveformVector);
-  WFAveraged->FitExponential(340, 1100);
-  WFAveraged->SetSmooth(32, "Gauss");
+  WFAveraged->FitExponential(280, 1100);
+  WFAveraged->SetSmooth(80, "Gauss");
+  WFAveraged->SetTracesFFT();
   digiAnalysis::singleHits *hitAveraged =
       new digiAnalysis::singleHits(0, 0, 0, 0, 0, 0, WFAveraged);
   hitAveraged->Print();

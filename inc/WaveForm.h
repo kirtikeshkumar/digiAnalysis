@@ -15,18 +15,18 @@ class WaveForm: parent class contains how to handle waveform including plotting
 namespace digiAnalysis {
 class WaveForm {
 protected:
-  std::vector<float> traces;
-  std::vector<float> tracesSmooth;
-  std::vector<float> tracesFFT;
-  float meantime;
-  float baseline;
+  std::vector<double> traces;
+  std::vector<double> tracesSmooth;
+  std::vector<double> tracesFFT;
+  double meantime;
+  double baseline;
   int blStart = GateStart - nSampleBL - 50 > 0 ? GateStart - nSampleBL - 10 : 0;
   TF1 *fitFunc = nullptr;
 
 public:
   WaveForm();
   WaveForm(TArrayS *arr);
-  WaveForm(const std::vector<float> tr);
+  WaveForm(const std::vector<double> tr);
   WaveForm(const WaveForm &wf);
   WaveForm(const WaveForm &wf1,
            const WaveForm &wf2); // constructor to concatenate waveforms
@@ -36,17 +36,17 @@ public:
 
   virtual ~WaveForm();
 
-  std::vector<float> GetTraces();
-  std::vector<float> GetTracesSmooth();
-  std::vector<float> GetTracesFFT();
-  float GetMeanTime();
-  float GetBaseLine();
+  std::vector<double> GetTraces();
+  std::vector<double> GetTracesSmooth();
+  std::vector<double> GetTracesFFT();
+  double GetMeanTime();
+  double GetBaseLine();
   UShort_t GetSize();
   bool IsFit();
   double GetFitPar(int val);
   double GetFitParError(int val);
 
-  void SetWaveForm(const std::vector<float> tr);
+  void SetWaveForm(const std::vector<double> tr);
   void SetWaveForm(const WaveForm &wf);
   /**
    * @brief Smooth Waveforms.
@@ -64,21 +64,22 @@ public:
   void SetSmooth();
   void SetCFD();
   void SetMeanTime();
-  void SetMeanTime(const std::vector<float> tr);
-  void SetMeanTime(const std::vector<float> tr, UShort_t start, UShort_t stop);
+  void SetMeanTime(const std::vector<double> tr);
+  void SetMeanTime(const std::vector<double> tr, UShort_t start, UShort_t stop);
   void SetBaseLine();
   void SetBaseLine(TArrayS *arr);
-  void SetBaseLine(const std::vector<float> tr);
+  void SetBaseLine(const std::vector<double> tr);
   void SetTracesFFT();
-  void SetTracesFFT(std::vector<float> trFFT);
+  void SetTracesFFT(std::string whichTrace);
+  void SetTracesFFT(std::vector<double> trFFT);
 
   void Plot();
   void ShiftWaveForm(int BL);
-  float IntegrateWaveForm();
-  float IntegrateWaveForm(int startTime, int stopTime);
-  float IntegrateSmoothWaveForm(int startTime, int stopTime);
+  double IntegrateWaveForm();
+  double IntegrateWaveForm(int startTime, int stopTime);
+  double IntegrateSmoothWaveForm(int startTime, int stopTime);
   void FitExponential(int start, int stop);
-  std::vector<float> GenerateWaveFromFFT();
+  std::vector<double> GenerateWaveFromFFT();
 
   void AverageWaveForms(UShort_t sizeOfWaveForms,
                         const std::vector<WaveForm> vecOfWaveForm);

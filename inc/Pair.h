@@ -119,7 +119,7 @@ public:
    * @param fac1 Scaling factor for the lower channels energy.
    * @param fac2 Scaling factor for the higher channels energy.
    */
-  float GetPairEnergy(float fac1, float fac2);
+  double GetPairEnergy(double fac1, double fac2);
 
   /**
    * @brief Retrieve hit ENERGY SHORT based on a selector.
@@ -162,7 +162,7 @@ public:
    * @param Sel  Selector for which hit to return.
    * @return The corresponding Hit Evaluated Energy.
    */
-  float GetPairHitEvalEnergy(Short_t Ch);
+  double GetPairHitEvalEnergy(Short_t Ch);
 
   /**
    * @brief Retrieve hit EVALUATED ENERGY SHORT based on a selector.
@@ -176,7 +176,7 @@ public:
    * @param Sel  Selector for which hit to return.
    * @return The corresponding Hit Evaluated Energy Short.
    */
-  float GetPairHitEvalEnergyShort(Short_t Ch);
+  double GetPairHitEvalEnergyShort(Short_t Ch);
 
   /**
    * @brief Retrieve hit EVALUATED PSD based on a selector.
@@ -190,7 +190,7 @@ public:
    * @param Sel  Selector for which hit to return.
    * @return The corresponding Hit Evaluated PSD.
    */
-  float GetPairHitEvalPSD(Short_t Ch);
+  double GetPairHitEvalPSD(Short_t Ch);
 #endif
   void Print();
 };

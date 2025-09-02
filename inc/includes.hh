@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <complex>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -20,6 +21,7 @@
 #include <vector>
 
 #include "RtypesCore.h"
+#include "TVirtualFFT.h"
 #include <Rtypes.h>
 #include <TArray.h>
 #include <TArrayS.h>

@@ -32,12 +32,12 @@ WaveForm::WaveForm() // Default Constructor initializes empty vectors
 WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
 {
 #ifdef SMOOTH
-  float movingSum = 0;
+  double movingSum = 0;
 #endif
   meantime = 0;
   baseline = 0;
   SetBaseLine(arr); // Alwasy Set Base Line First
-  float sampleSum = 0;
+  double sampleSum = 0;
   unsigned int size = arr->GetSize();
   for (unsigned int j = 0; j < size; j++) {
     traces.push_back(baseline - arr->At(j));
@@ -68,7 +68,7 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
   }
 }
 
-WaveForm::WaveForm(const std::vector<float> tr) // copy from other vector
+WaveForm::WaveForm(const std::vector<double> tr) // copy from other vector
 {
   if (!tr.empty()) {
     SetBaseLine(tr);
@@ -163,6 +163,11 @@ void WaveForm::Plot() {
   TGraph *graphTraces = nullptr;
   TGraph *graphTracesSmooth = nullptr;
 
+  if (!tracesFFT.empty()) {
+    canvas->Divide(2, 1);
+    canvas->cd(1);
+  }
+
   // Plot traces if not empty
   if (!traces.empty()) {
 
@@ -208,15 +213,28 @@ void WaveForm::Plot() {
   // Draw the legend
   legend->Draw();
 
+  if (!tracesFFT.empty()) {
+    canvas->cd(2);
+    TGraph *graphTracesFFT = new TGraph(tracesFFT.size());
+    for (size_t i = 0; i < tracesFFT.size(); ++i) {
+      graphTracesFFT->SetPoint(i, i, tracesFFT[i]);
+    }
+    graphTracesFFT->SetLineColor(kBlack);
+    graphTracesFFT->SetLineWidth(2);
+    graphTracesFFT->SetTitle("FFT");
+    graphTracesFFT->Draw("AL");
+  }
+
   // Update the canvas
   canvas->Update();
 }
 
 /*Getters*/
-std::vector<float> WaveForm::GetTraces() { return traces; }
-std::vector<float> WaveForm::GetTracesSmooth() { return tracesSmooth; }
-float WaveForm::GetMeanTime() { return meantime; }
-float WaveForm::GetBaseLine() { return baseline; }
+std::vector<double> WaveForm::GetTraces() { return traces; }
+std::vector<double> WaveForm::GetTracesSmooth() { return tracesSmooth; }
+std::vector<double> WaveForm::GetTracesFFT() { return tracesFFT; }
+double WaveForm::GetMeanTime() { return meantime; }
+double WaveForm::GetBaseLine() { return baseline; }
 UShort_t WaveForm::GetSize() { return traces.size(); }
 bool WaveForm::IsFit() {
   if (fitFunc) {
@@ -229,14 +247,14 @@ double WaveForm::GetFitPar(int val) { return fitFunc->GetParameter(val); }
 double WaveForm::GetFitParError(int val) { return fitFunc->GetParError(val); }
 
 /*Setters*/
-void WaveForm::SetWaveForm(std::vector<float> tr) {
+void WaveForm::SetWaveForm(std::vector<double> tr) {
 #ifdef SMOOTH
-  float movingSum = 0;
+  double movingSum = 0;
 #endif
   if (!tr.empty()) {
     SetBaseLine(tr);
     meantime = 0;
-    float sampleSum = 0;
+    double sampleSum = 0;
     unsigned int size = tr.size();
     for (unsigned int j = 0; j < size; j++) {
       traces.push_back(baseline - tr[j]);
@@ -283,7 +301,7 @@ void WaveForm::SetSmooth(UShort_t sBoxSz, std::string kernel) {
   // std::cout << "Smoothing with boxSz: " << sBoxSz << std::endl;
   if (!traces.empty()) {
     if (kernel == "MovA") {
-      float movingSum = 0;
+      double movingSum = 0;
       SetBaseLine();
       // std::cout << "Baseline set to: " << baseline << std::endl;
       unsigned int size = traces.size();
@@ -330,7 +348,7 @@ void WaveForm::SetSmooth(UShort_t sBoxSz, std::string kernel) {
 
 void WaveForm::SetSmooth() {
   if (!traces.empty()) {
-    float movingSum = 0;
+    double movingSum = 0;
     SetBaseLine();
     unsigned int size = traces.size();
     if (smoothBoxSz == 1) {
@@ -355,7 +373,7 @@ void WaveForm::SetCFD() {}
 
 void WaveForm::SetMeanTime() {
   meantime = 0;
-  float sampleSum = 0;
+  double sampleSum = 0;
   if (!traces.empty()) {
     unsigned int size = traces.size();
     for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
@@ -373,7 +391,7 @@ void WaveForm::SetMeanTime() {
   }
 }
 
-void WaveForm::SetMeanTime(const std::vector<float> tr) {
+void WaveForm::SetMeanTime(const std::vector<double> tr) {
   if (!tr.empty()) {
     SetMeanTime(tr, GateStart, GateLenLong + GateStart);
   } else {
@@ -381,10 +399,10 @@ void WaveForm::SetMeanTime(const std::vector<float> tr) {
   }
 }
 
-void WaveForm::SetMeanTime(const std::vector<float> tr, UShort_t start,
+void WaveForm::SetMeanTime(const std::vector<double> tr, UShort_t start,
                            UShort_t stop) {
   meantime = 0;
-  float sampleSum = 0;
+  double sampleSum = 0;
   if (!tr.empty()) {
     if (start < stop) {
       if (tr.size() < stop) {
@@ -414,7 +432,7 @@ void WaveForm::SetMeanTime(const std::vector<float> tr, UShort_t start,
 
 void WaveForm::SetBaseLine() {
   baseline = 0;
-  float sum = 0;
+  double sum = 0;
 
   if (!traces.empty()) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
@@ -426,9 +444,9 @@ void WaveForm::SetBaseLine() {
   }
 }
 
-void WaveForm::SetBaseLine(std::vector<float> tr) {
+void WaveForm::SetBaseLine(std::vector<double> tr) {
   baseline = 0;
-  float sum = 0;
+  double sum = 0;
 
   if (!tr.empty()) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
@@ -442,7 +460,7 @@ void WaveForm::SetBaseLine(std::vector<float> tr) {
 
 void WaveForm::SetBaseLine(TArrayS *arr) {
   baseline = 0;
-  float sum = 0;
+  double sum = 0;
 
   if (arr && (arr->GetSize() > nSampleBL)) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
@@ -458,12 +476,70 @@ void WaveForm::SetBaseLine(TArrayS *arr) {
 
 void WaveForm::SetTracesFFT() {
   if (!traces.empty()) {
+    Int_t n = static_cast<int>(traces.size());
+    TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+    fft1->SetPoints(traces.data());
+    fft1->Transform();
+
+    int nFreq = traces.size() / 2 + 1; // only positive frequencies
+
+    for (int i = 0; i < nFreq; i++) {
+      double re, im;
+      fft1->GetPointComplex(i, re, im);
+      tracesFFT.push_back(std::sqrt(re * re + im * im));
+    }
   } else {
     std::cout << "err SetTracesFFT: traces is empty" << std::endl;
   }
 }
 
-// std::vector<float> WaveForm::EvalDecayTime(UShort_t FitStart, UShort_t
+void WaveForm::SetTracesFFT(std::string whichTrace) {
+  if (whichTrace == "orig") {
+    SetTracesFFT();
+  } else if (whichTrace == "smooth") {
+    if (!tracesSmooth.empty()) {
+      Int_t n = static_cast<int>(tracesSmooth.size());
+      TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+      fft1->SetPoints(tracesSmooth.data());
+      fft1->Transform();
+
+      int nFreq = tracesSmooth.size() / 2 + 1; // only positive frequencies
+
+      for (int i = 0; i < nFreq; i++) {
+        double re, im;
+        fft1->GetPointComplex(i, re, im);
+        tracesFFT.push_back(std::sqrt(re * re + im * im));
+      }
+    } else {
+      std::cout << "err SetTracesFFT: traces is empty" << std::endl;
+    }
+  } else {
+    std::cout << "err SetTracesFFT: Pass proper value for whichTrace"
+              << std::endl;
+    std::cout << "Valid options are: orig, smooth" << std::endl;
+  }
+}
+
+void WaveForm::SetTracesFFT(std::vector<double> trFFT) {
+  if (!trFFT.empty()) {
+    Int_t n = static_cast<int>(trFFT.size());
+    TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+    fft1->SetPoints(trFFT.data());
+    fft1->Transform();
+
+    int nFreq = trFFT.size() / 2 + 1; // only positive frequencies
+
+    for (int i = 0; i < nFreq; i++) {
+      double re, im;
+      fft1->GetPointComplex(i, re, im);
+      tracesFFT.push_back(std::sqrt(re * re + im * im));
+    }
+  } else {
+    std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
+  }
+}
+
+// std::vector<double> WaveForm::EvalDecayTime(UShort_t FitStart, UShort_t
 // FitEnd, UShort_t numDecayConst) {}
 
 void WaveForm::ShiftWaveForm(int BL) {
@@ -474,8 +550,8 @@ void WaveForm::ShiftWaveForm(int BL) {
   }
 }
 
-float WaveForm::IntegrateWaveForm() {
-  float sum = 0;
+double WaveForm::IntegrateWaveForm() {
+  double sum = 0;
   if (!traces.empty()) {
     sum = IntegrateWaveForm(0, traces.size());
   } else {
@@ -484,8 +560,8 @@ float WaveForm::IntegrateWaveForm() {
   return sum;
 }
 
-float WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
-  float sum = 0;
+double WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
+  double sum = 0;
   if (!traces.empty() && (traces.size() > stopTime)) {
     if (startTime < stopTime) {
       for (unsigned int j = startTime; j < stopTime; j++) {
@@ -501,8 +577,8 @@ float WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
   return sum;
 }
 
-float WaveForm::IntegrateSmoothWaveForm(int startTime, int stopTime) {
-  float sum = 0;
+double WaveForm::IntegrateSmoothWaveForm(int startTime, int stopTime) {
+  double sum = 0;
   if (!tracesSmooth.empty() && (tracesSmooth.size() > stopTime)) {
     if (startTime < stopTime) {
       for (unsigned int j = startTime; j < stopTime; j++) {
@@ -558,7 +634,7 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
                                 const std::vector<WaveForm> vecOfWaveForm) {
   // currently only traces is averaged
   UShort_t numWaveForm = vecOfWaveForm.size();
-  float sum = 0;
+  double sum = 0;
   baseline = 0;
 
   for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
@@ -587,7 +663,7 @@ void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
                                 UShort_t sizeOfWaveForms,
                                 const std::vector<WaveForm> vecOfWaveForm) {
   // currently only traces is averaged
-  float sum = 0;
+  double sum = 0;
   baseline = 0;
 
   for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
@@ -614,11 +690,11 @@ void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
 
 void WaveForm::ScaleWaveForm(double Scale) {
   std::transform(traces.begin(), traces.end(), traces.begin(),
-                 [Scale](float val) { return val * Scale; });
+                 [Scale](double val) { return val * Scale; });
   if (!tracesSmooth.empty()) {
     std::transform(tracesSmooth.begin(), tracesSmooth.end(),
                    tracesSmooth.begin(),
-                   [Scale](float val) { return val * Scale; });
+                   [Scale](double val) { return val * Scale; });
   }
 }
 
@@ -626,7 +702,7 @@ void WaveForm::AddWaveForm(const WaveForm &wf1) {
   if (traces.size() == wf1.traces.size()) {
     // Add each element from traces and wf1.traces using std::transform
     std::transform(traces.begin(), traces.end(), wf1.traces.begin(),
-                   traces.begin(), std::plus<float>());
+                   traces.begin(), std::plus<double>());
   } else {
     std::cout << "traces must be the same size for adding! Nothing done!!!!!!!!"
               << std::endl;
@@ -634,7 +710,7 @@ void WaveForm::AddWaveForm(const WaveForm &wf1) {
   if (tracesSmooth.size() == wf1.tracesSmooth.size()) {
     std::transform(tracesSmooth.begin(), tracesSmooth.end(),
                    wf1.tracesSmooth.begin(), tracesSmooth.begin(),
-                   std::plus<float>());
+                   std::plus<double>());
   } else {
     std::cout << "tracesSmooth not of same size hence not adding!" << std::endl;
   }

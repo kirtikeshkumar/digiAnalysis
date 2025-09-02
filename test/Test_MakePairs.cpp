@@ -101,8 +101,8 @@ int main(int argc, char *argv[]) {
   i = 0;
   UShort_t CheckEnergy = 4000;
   UShort_t CheckWidth = 4000;
-  float CheckMeanTime = 1.5;
-  float CheckMeanTimeWidth = 1.5;
+  double CheckMeanTime = 1.5;
+  double CheckMeanTimeWidth = 1.5;
   std::string userInput;
   digiAnalysis::singleHits *hit;
 

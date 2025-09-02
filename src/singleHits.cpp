@@ -90,15 +90,15 @@ UShort_t singleHits::GetBoard() { return Board; }
 ULong64_t singleHits::GetTimestamp() { return Timestamp; }
 UShort_t singleHits::GetEnergy() { return Energy; }
 UShort_t singleHits::GetEnergyShort() { return EnergyShort; }
-float singleHits::GetPSD() { return PSD; }
+double singleHits::GetPSD() { return PSD; }
 
 #ifdef WAVES
 std::unique_ptr<WaveForm> singleHits::GetWF() { return std::move(WF); }
 WaveForm *singleHits::GetWFPtr() { return WF.get(); }
-float singleHits::GetMeanTime() { return WF->GetMeanTime(); }
-float singleHits::GetEvalEnergy() { return evalEnergy; }
-float singleHits::GetEvalEnergyShort() { return evalEnergyShort; }
-float singleHits::GetEvalPSD() { return evalPSD; }
+double singleHits::GetMeanTime() { return WF->GetMeanTime(); }
+double singleHits::GetEvalEnergy() { return evalEnergy; }
+double singleHits::GetEvalEnergyShort() { return evalEnergyShort; }
+double singleHits::GetEvalPSD() { return evalPSD; }
 // std::unique_ptr<diffWaveForm> singleHits::GetDiffWF() { return
 // std::move(dWF); }
 

@@ -19,7 +19,7 @@ class WaveForm;
 
 class diffWaveForm : public WaveForm {
 private:
-  std::vector<float> difftraces;
+  std::vector<double> difftraces;
 
 public:
   diffWaveForm();
@@ -27,7 +27,7 @@ public:
 
   void computeDerivative();
 
-  std::vector<float> GetDerivative();
+  std::vector<double> GetDerivative();
 
   ClassDef(diffWaveForm, 1);
 };

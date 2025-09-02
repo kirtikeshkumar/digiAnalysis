@@ -25,14 +25,14 @@ private:
   ULong64_t Timestamp;
   UShort_t Energy;
   UShort_t EnergyShort;
-  float PSD;
+  double PSD;
 
 #ifdef WAVES
   // Needed for Waves Acquisition
   std::unique_ptr<WaveForm> WF;
-  float evalEnergy;
-  float evalEnergyShort;
-  float evalPSD;
+  double evalEnergy;
+  double evalEnergyShort;
+  double evalPSD;
 
   // Initialize depending on situation
   // std::unique_ptr<diffWaveForm> dWF;
@@ -60,15 +60,15 @@ public:
   ULong64_t GetTimestamp();
   UShort_t GetEnergy();
   UShort_t GetEnergyShort();
-  float GetPSD();
+  double GetPSD();
 
 #ifdef WAVES
   std::unique_ptr<WaveForm> GetWF();
   WaveForm *GetWFPtr();
-  float GetMeanTime();
-  float GetEvalEnergy();
-  float GetEvalEnergyShort();
-  float GetEvalPSD();
+  double GetMeanTime();
+  double GetEvalEnergy();
+  double GetEvalEnergyShort();
+  double GetEvalPSD();
   // std::unique_ptr<diffWaveForm> GetDiffWF();
 
   // Setters

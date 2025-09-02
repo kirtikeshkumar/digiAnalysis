@@ -89,7 +89,7 @@ UShort_t Pair::GetPairHitEnergy(Short_t Sel) {
 
 UShort_t Pair::GetPairEnergy() { return SumEnergy; }
 
-float Pair::GetPairEnergy(float fac1, float fac2) {
+double Pair::GetPairEnergy(double fac1, double fac2) {
   SumEnergy = GetPairHitEnergy(0) * fac1 + GetPairHitEnergy(1) * fac2;
   return SumEnergy;
 }
@@ -105,17 +105,17 @@ UShort_t Pair::GetPairHitPSD(Short_t Sel) {
 }
 
 #ifdef WAVES
-float Pair::GetPairHitEvalEnergy(Short_t Sel) {
+double Pair::GetPairHitEvalEnergy(Short_t Sel) {
   auto h = GetHit(Sel);
   return h ? h->GetEvalEnergy() : 0.0f;
 }
 
-float Pair::GetPairHitEvalEnergyShort(Short_t Sel) {
+double Pair::GetPairHitEvalEnergyShort(Short_t Sel) {
   auto h = GetHit(Sel);
   return h ? h->GetEvalEnergyShort() : 0.0f;
 }
 
-float Pair::GetPairHitEvalPSD(Short_t Sel) {
+double Pair::GetPairHitEvalPSD(Short_t Sel) {
   auto h = GetHit(Sel);
   return h ? h->GetEvalPSD() : 0.0f;
 }
