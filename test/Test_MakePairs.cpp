@@ -7,12 +7,13 @@
 #include "singleHits.h"
 #include <TApplication.h>
 #include <cmath>
+#include <fstream>
 #include <iostream>
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/media/kirtikesh/KKBlack/NaI/"
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
                       "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
                       "SignalDelay_50ns_Aug26/FILTERED/"
                       "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"

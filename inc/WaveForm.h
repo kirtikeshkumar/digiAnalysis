@@ -72,6 +72,7 @@ public:
   void SetTracesFFT();
   void SetTracesFFT(std::string whichTrace);
   void SetTracesFFT(std::vector<double> trFFT);
+  std::vector<double> EvalTracesFFT(std::vector<double> trFFT);
 
   void Plot();
   void ShiftWaveForm(int BL);

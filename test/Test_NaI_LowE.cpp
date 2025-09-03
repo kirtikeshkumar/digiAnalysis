@@ -15,14 +15,14 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/media/kirtikesh/KKBlack/NaI/"
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
                       "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
                       "SignalDelay_50ns_Aug26/FILTERED/"
                       "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
                       "FREEWRITE_SignalDelay_50ns_Aug26.root";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 0, 10000, 0);
+  digiAnalysis::Analysis an(fname, 0, 00000, 0);
 
   std::cout << "getting the vector from an" << std::endl;
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
         // hitsVector[evi]->GetEnergy() < 50 and
         // hitsVector[evi]->GetEnergy() > 25 and
         fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2 and
-        fabs(hitsVector[evi]->GetEnergy() - 1200) < 200
+        fabs(hitsVector[evi]->GetEnergy() - 200) < 100
         // hitsVector[evi]->GetPSD() < 0.6
         )
     // hitsVector[evi]->GetEnergy() - hitsVector[evi]->GetEnergyShort() < 0
@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
       // WF->SetSmooth(32);
       WF->FitExponential(340, 1100);
       std::vector<double> traces = WF->GetTraces();
-      UShort_t subrangeStart = 1100;
-      UShort_t subrangeEnd = 2900;
+      UShort_t subrangeStart = 1000;
+      UShort_t subrangeEnd = 2800;
       std::vector<double> tracesSubRange(traces.begin() + subrangeStart,
                                          traces.begin() + subrangeEnd);
       WF->SetTracesFFT(tracesSubRange);
@@ -94,6 +94,18 @@ int main(int argc, char *argv[]) {
                        digiAnalysis::GateStart + digiAnalysis::GateLenLong)) /
                        digiAnalysis::GateLenLong * 4.4
                 << std::endl;
+
+      // std::ofstream out("waveform.dat", std::ios::app);
+      // if (out.is_open()) {
+      //   for (const auto &value : traces) {
+      //     out << value << std::endl;
+      //     // std::cout << value << std::endl;
+      //   }
+      //   out.close();
+      // } else {
+      //   std::cerr << "Error opening waveform.txt for writing" << std::endl;
+      // }
+
       WF->Plot();
 
       std::cout << "Do you want to see the next waveform? (y/n): ";
@@ -110,7 +122,13 @@ int main(int argc, char *argv[]) {
       new digiAnalysis::WaveForm(wfSz, waveformVector);
   WFAveraged->FitExponential(280, 1100);
   WFAveraged->SetSmooth(80, "Gauss");
-  WFAveraged->SetTracesFFT();
+  // WFAveraged->SetTracesFFT();
+  std::vector<double> traces = WFAveraged->GetTraces();
+  UShort_t subrangeStart = 1000;
+  UShort_t subrangeEnd = 2800;
+  std::vector<double> tracesSubRange(traces.begin() + subrangeStart,
+                                     traces.begin() + subrangeEnd);
+  WFAveraged->SetTracesFFT(tracesSubRange);
   digiAnalysis::singleHits *hitAveraged =
       new digiAnalysis::singleHits(0, 0, 0, 0, 0, 0, WFAveraged);
   hitAveraged->Print();

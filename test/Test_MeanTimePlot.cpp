@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   //     "DataF_Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp.root";
 
   std::string fname =
-      "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
+      "/home/kirtikesh/analysisSSD/DATA/NaI/"
       "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_SignalDelay_50ns_"
       "Aug26/FILTERED/"
       "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"

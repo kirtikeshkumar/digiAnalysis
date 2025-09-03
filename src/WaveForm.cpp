@@ -539,6 +539,27 @@ void WaveForm::SetTracesFFT(std::vector<double> trFFT) {
   }
 }
 
+std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT) {
+  std::vector<double> res;
+  if (!trFFT.empty()) {
+    Int_t n = static_cast<int>(trFFT.size());
+    TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+    fft1->SetPoints(trFFT.data());
+    fft1->Transform();
+
+    int nFreq = trFFT.size() / 2 + 1; // only positive frequencies
+
+    for (int i = 0; i < nFreq; i++) {
+      double re, im;
+      fft1->GetPointComplex(i, re, im);
+      res.push_back(std::sqrt(re * re + im * im));
+    }
+  } else {
+    std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
+  }
+  return res;
+}
+
 // std::vector<double> WaveForm::EvalDecayTime(UShort_t FitStart, UShort_t
 // FitEnd, UShort_t numDecayConst) {}
 

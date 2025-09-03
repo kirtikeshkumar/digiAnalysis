@@ -1,0 +1,215 @@
+#include "Analysis.h"
+#include "WaveForm.h"
+#include "globals.h"
+#include "singleHits.h"
+#include <TApplication.h>
+#include <iostream>
+int main(int argc, char *argv[]) {
+#ifdef WAVES
+  TApplication *fApp = new TApplication("TEST", NULL, NULL);
+  std::cout << "hello DigiAnalysis..." << std::endl;
+
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
+                      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+                      "SignalDelay_50ns_Aug26/FILTERED/"
+                      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
+                      "FREEWRITE_SignalDelay_50ns_Aug26.root";
+
+  // test reading to singleHits
+  digiAnalysis::Analysis an(fname, 0, 100000, 0);
+
+  std::cout << "getting the vector from an" << std::endl;
+
+  // test Getting
+  std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
+      an.GetSingleHitsVec();
+
+  std::cout << "got the vector from an: " << hitsVector.size() << std::endl;
+
+  // sorting by time
+  // an.SortHits("Time", "Channel");
+
+  int nentries = hitsVector.size();
+  std::cout << "hitsVector size = " << nentries << std::endl;
+
+  digiAnalysis::WaveForm *WF = nullptr;
+  int evi = 0;
+  std::string userInput;
+  bool keepGoing = true;
+  TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
+  for (evi = 0; evi < nentries && keepGoing; ++evi) {
+    if (evi % 1000 == 0) {
+      std::cout << evi << std::endl;
+    }
+    if (hitsVector[evi]->GetChNum() == 9 and
+        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2 and
+        fabs(hitsVector[evi]->GetEnergy() - 1200) < 100) {
+      WF = hitsVector[evi]->GetWFPtr();
+      WF->SetSmooth(80);
+      std::vector<double> traces = WF->GetTracesSmooth();
+      //   std::cout << traces[1000] << std::endl;
+      //   hitsVector[evi]->Print();
+      //   WF->Plot();
+
+      int N = traces.size();
+      std::vector<double> tracesBL(N);
+      std::vector<double> tracesNew(N);
+      double sum = 0;
+      int nBL = 10;
+      double baselineVal = 0;
+      int start = 45;
+      double BLError = 3;
+
+      // Evaluate a baseline from the first few entries
+      // It is known that there is no signal here.
+      for (int i = start; i < nBL + start; i++) {
+        sum = sum + traces[i];
+      }
+      baselineVal = sum / nBL;
+
+      // now evaluate the baseline at each point
+      int prevcount = 0;
+      for (int i = start + nBL; i < N; i++) {
+        tracesBL[i - nBL / 2] = baselineVal;
+        sum = sum - traces[i - nBL];
+        sum = sum + traces[i];
+        if (prevcount > 0) {
+          prevcount -= 1;
+        }
+
+        if (fabs(traces[i] - baselineVal) > BLError) {
+          prevcount = nBL;
+        }
+        if (prevcount == 0) {
+          baselineVal = sum / nBL;
+        }
+        // if (i < 1050 and i > 900) {
+        //   std::cout << i << "\t : " << prevcount << "\t : " << traces[i]
+        //             << "\t : " << baselineVal << std::endl;
+        // }
+      }
+
+      for (int i = 0; i < N; i++) {
+        tracesNew[i] = fabs(traces[i] - tracesBL[i]);
+      }
+
+      digiAnalysis::WaveForm wf;
+      std::vector<double> tracesBLFFT = wf.EvalTracesFFT(tracesBL);
+      std::vector<double> tracesFFT = wf.EvalTracesFFT(traces);
+      std::vector<double> tracesNewFFT = wf.EvalTracesFFT(tracesNew);
+
+      TGraph *graphTraces = nullptr;
+      TGraph *graphTracesBL = nullptr;
+      TGraph *graphTracesNew = nullptr;
+      TGraph *graphTracesBLFFT = nullptr;
+      TGraph *graphTracesFFT = nullptr;
+      TGraph *graphTracesNewFFT = nullptr;
+
+      canvas->Clear();
+      canvas->Divide(2, 2);
+      canvas->cd(1);
+
+      graphTraces = new TGraph(N);
+      for (int i = 0; i < N; ++i) {
+        graphTraces->SetPoint(i, i, traces[i]);
+        // graphTraces->SetPoint(i, i, 0);
+      }
+      graphTraces->SetLineColor(kBlue);
+      graphTraces->SetLineWidth(2);
+      graphTraces->SetTitle("Traces");
+      graphTraces->Draw("AL");
+      legend->AddEntry(graphTraces, "Traces", "l");
+
+      graphTracesNew = new TGraph(N);
+      for (int i = 0; i < N; ++i) {
+        graphTracesNew->SetPoint(i, i, tracesNew[i]);
+      }
+      graphTracesNew->SetLineColor(kGreen);
+      graphTracesNew->SetLineWidth(2);
+      graphTracesNew->SetTitle("Traces New");
+      graphTracesNew->Draw("L SAME");
+      legend->AddEntry(graphTracesNew, "Traces New", "l");
+
+      double xmin = graphTracesNew->GetXaxis()->GetXmin();
+      double xmax = graphTracesNew->GetXaxis()->GetXmax();
+
+      TLine *line = new TLine(xmin, 0, xmax, 0);
+      line->SetLineColor(kBlack);
+      line->SetLineStyle(1);
+      line->Draw("SAME");
+
+      canvas->cd(2);
+
+      graphTracesBL = new TGraph(N);
+      for (int i = 0; i < N; ++i) {
+        graphTracesBL->SetPoint(i, i, tracesBL[i]);
+      }
+      graphTracesBL->SetLineColor(kRed);
+      graphTracesBL->SetLineWidth(2);
+      graphTracesBL->SetTitle("Traces BL");
+      graphTracesBL->Draw("AL");
+      legend->AddEntry(graphTracesBL, "Traces BL", "l");
+
+      TLine *line1 = new TLine(xmin, 0, xmax, 0);
+      line1->SetLineColor(kBlack);
+      line1->SetLineStyle(1);
+      line1->Draw("SAME");
+
+      canvas->cd(3);
+      //   N = 120;
+      graphTracesFFT = new TGraph(N / 2);
+      for (int i = 0; i < N / 2; ++i) {
+        if (!tracesFFT.empty()) {
+          graphTracesFFT->SetPoint(i, i, tracesFFT[i] - tracesNewFFT[i]);
+        } else {
+          graphTracesFFT->SetPoint(i, i, 0);
+        }
+      }
+      graphTracesFFT->SetLineColor(kBlue);
+      graphTracesFFT->SetLineWidth(2);
+      graphTracesFFT->SetTitle("Traces FFT");
+      graphTracesFFT->Draw("AL");
+      legend->AddEntry(graphTracesFFT, "Traces FFT diff", "l");
+
+      //   graphTracesNewFFT = new TGraph(N / 2);
+      //   for (int i = 0; i < N / 2; ++i) {
+      //     if (!tracesNewFFT.empty()) {
+      //       graphTracesNewFFT->SetPoint(i, i, tracesNewFFT[i]);
+      //     } else {
+      //       graphTracesNewFFT->SetPoint(i, i, 0);
+      //     }
+      //   }
+      //   graphTracesNewFFT->SetLineColor(kGreen);
+      //   graphTracesNewFFT->SetLineWidth(2);
+      //   graphTracesNewFFT->SetTitle("Traces New FFT");
+      //   graphTracesNewFFT->Draw("L SAME");
+      //   legend->AddEntry(graphTracesNewFFT, "Traces New FFT", "l");
+
+      canvas->cd(4);
+      graphTracesBLFFT = new TGraph(N / 2);
+      for (int i = 0; i < N / 2; ++i) {
+        if (!tracesBLFFT.empty()) {
+          graphTracesBLFFT->SetPoint(i, i, tracesBLFFT[i]);
+        } else {
+          graphTracesBLFFT->SetPoint(i, i, 0);
+        }
+      }
+      graphTracesBLFFT->SetLineColor(kRed);
+      graphTracesBLFFT->SetLineWidth(2);
+      graphTracesBLFFT->SetTitle("Traces BL FFT");
+      graphTracesBLFFT->Draw("AL");
+      legend->AddEntry(graphTracesBLFFT, "Traces BL FFT", "l");
+
+      canvas->Update();
+      std::cout << "Do you want to see the next waveform? (y/n): ";
+      std::getline(std::cin, userInput);
+      if (userInput != "y" && userInput != "Y") {
+        keepGoing = false;
+      }
+    }
+  }
+//   fApp->Run();
+#endif
+  return 0;
+}
