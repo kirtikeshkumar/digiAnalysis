@@ -10,12 +10,13 @@
 #include "singleHits.h"
 #include <TApplication.h>
 #include <iostream>
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
+  std::string fname = "/media/kirtikesh/UbuntuFiles/NaI/"
                       "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
                       "SignalDelay_50ns_Aug26/FILTERED/"
                       "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
@@ -47,8 +48,10 @@ int main(int argc, char *argv[]) {
   digiAnalysis::WaveForm *WF = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector;
 
-  for (evi = 0; evi < nentries && keepGoing; ++evi) {
-    if (evi % 1000 == 0) {
+  for (evi = 0; evi < nentries && keepGoing; ++evi)
+  {
+    if (evi % 1000 == 0)
+    {
       std::cout << evi << std::endl;
     }
     if (hitsVector[evi]->GetChNum() == 9 and
@@ -58,7 +61,7 @@ int main(int argc, char *argv[]) {
         fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2 and
         fabs(hitsVector[evi]->GetEnergy() - 200) < 100
         // hitsVector[evi]->GetPSD() < 0.6
-        )
+    )
     // hitsVector[evi]->GetEnergy() - hitsVector[evi]->GetEnergyShort() < 0
     // and hitsVector[evi]->GetEvalEnergy() -
     // hitsVector[evi]->GetEvalEnergyShort() > 0 and
@@ -71,7 +74,8 @@ int main(int argc, char *argv[]) {
       WF = nullptr;
       WF = hitsVector[evi]->GetWFPtr();
       WF->SetSmooth(80, "Gauss");
-      if (WF) {
+      if (WF)
+      {
         waveformVector.push_back(*WF);
       }
       std::cout << "Got the waveform with size" << WF->GetSize() << std::endl;
@@ -110,7 +114,8 @@ int main(int argc, char *argv[]) {
 
       std::cout << "Do you want to see the next waveform? (y/n): ";
       std::getline(std::cin, userInput);
-      if (userInput != "y" && userInput != "Y") {
+      if (userInput != "y" && userInput != "Y")
+      {
         keepGoing = false;
       }
     }
