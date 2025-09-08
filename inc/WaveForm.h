@@ -18,10 +18,14 @@ protected:
   std::vector<double> traces;
   std::vector<double> tracesSmooth;
   std::vector<double> tracesFFT;
+  std::vector<double> tracesMovBLCorr;
   double meantime;
   double baseline;
   int blStart = GateStart - nSampleBL - 50 > 0 ? GateStart - nSampleBL - 10 : 0;
   TF1 *fitFunc = nullptr;
+  static TVirtualFFT *fft;
+  static TVirtualFFT *ifft;
+  static void InitFFT(int N);
 
 public:
   WaveForm();
@@ -48,6 +52,7 @@ public:
 
   void SetWaveForm(const std::vector<double> tr);
   void SetWaveForm(const WaveForm &wf);
+  void SetTraceMovBLCorr();
   /**
    * @brief Smooth Waveforms.
    *
@@ -79,6 +84,7 @@ public:
   double IntegrateWaveForm();
   double IntegrateWaveForm(int startTime, int stopTime);
   double IntegrateSmoothWaveForm(int startTime, int stopTime);
+  double IntegrateBLCorrWaveForm(int startTime, int stopTime);
   void FitExponential(int start, int stop);
   std::vector<double> GenerateWaveFromFFT();
 

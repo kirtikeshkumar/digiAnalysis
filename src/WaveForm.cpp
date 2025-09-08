@@ -5,12 +5,13 @@
 #include "TMath.h"
 #include "globals.h"
 #include "includes.hh"
+#include <vector>
 
 // ClassImp(digiAnalysis::WaveForm);
 
 using namespace std;
 
-namespace digiAnalysis {
+namespace digiAnalysis { // namespace digiAnalysis
 /*// UShort_t WaveForm::nSampleBL = 16;
 const char *env_var_baselinesamples = std::getenv("NUM_SAMPLE_BASELINE");
 UShort_t WaveForm::nSampleBL =
@@ -21,6 +22,17 @@ const char *envVar = std::getenv("SMOOTH_BOX_SIZE");
 UShort_t WaveForm::smoothBoxSz = static_cast<UShort_t>(std::stoul(envVar));
 #endif
 */
+
+TVirtualFFT *WaveForm::fft = nullptr;
+TVirtualFFT *WaveForm::ifft = nullptr;
+void WaveForm::InitFFT(int N) {
+  if (!fft) {
+    fft = TVirtualFFT::FFT(1, &N, "R2C M K");
+  }
+  if (!ifft) {
+    ifft = TVirtualFFT::FFT(1, &N, "C2R M K");
+  }
+}
 
 /*Constructors*/
 WaveForm::WaveForm() // Default Constructor initializes empty vectors
@@ -66,6 +78,7 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
   } else {
     meantime = -1.0 * TMath::Log10(fabs(meantime));
   }
+  InitFFT(traces.size());
 }
 
 WaveForm::WaveForm(const std::vector<double> tr) // copy from other vector
@@ -83,6 +96,7 @@ WaveForm::WaveForm(const std::vector<double> tr) // copy from other vector
       SetSmooth(smoothBoxSz);
 #endif
     }
+    InitFFT(traces.size());
   } else {
     std::cout << "err WaveForm: input vector is empty" << std::endl;
   }
@@ -108,6 +122,7 @@ WaveForm::WaveForm(const WaveForm &wf) // copy consructor
   {
     fitFunc = wf.fitFunc;
   }
+  InitFFT(traces.size());
 }
 
 WaveForm::WaveForm(const WaveForm &wf1, const WaveForm &wf2) {
@@ -123,7 +138,7 @@ WaveForm::WaveForm(UShort_t sizeOfWaveForms,
 WaveForm::~WaveForm() {
   /*clear() Removes elements
   shrink_to_fit() frees unused memory*/
-  /*
+
   traces.clear();
   traces.shrink_to_fit();
 
@@ -132,7 +147,23 @@ WaveForm::~WaveForm() {
 
   tracesFFT.clear();
   tracesFFT.shrink_to_fit();
-  */
+
+  tracesMovBLCorr.clear();
+  tracesMovBLCorr.shrink_to_fit();
+
+  if (fitFunc) {
+    delete fitFunc;
+    fitFunc = nullptr;
+  }
+
+  if (WaveForm::fft) {
+    delete WaveForm::fft;
+    WaveForm::fft = nullptr;
+  }
+  if (WaveForm::ifft) {
+    delete WaveForm::ifft;
+    WaveForm::ifft = nullptr;
+  }
 }
 
 void WaveForm::Plot() {
@@ -297,6 +328,82 @@ void WaveForm::SetWaveForm(const WaveForm &wf) {
   baseline = wf.baseline;
 }
 
+void WaveForm::SetTraceMovBLCorr() {
+  SetSmooth(smoothBoxSz);
+  int N = traces.size();
+  int start = smoothBoxSz / 2;
+
+  // Evaluate a baseline from the first few entries
+  // It is known that there is no signal here.
+  double sum = 0;
+  double baselineVal = 0;
+  std::vector<double> tracesBL(N, 0.0);
+  tracesMovBLCorr.assign(N, 0.0);
+
+  int end = std::min(N, nSampleMovBL + start);
+  for (int i = start; i < end; i++) {
+    sum = sum + traces[i];
+  }
+  baselineVal = sum / nSampleMovBL;
+
+  // now evaluate the baseline at each point
+  int prevcount = 0;
+  // std::vector<double> BLDevstack;
+  double blprev = 0, bltemp = 0;
+  for (int i = start + nSampleMovBL; i < N; i++) {
+    tracesBL[i - nSampleMovBL / 2] = baselineVal;
+    sum = sum - traces[i - nSampleMovBL];
+    sum = sum + traces[i];
+
+    blprev = bltemp;
+    bltemp = sum / nSampleMovBL;
+
+    if (prevcount > 0) {
+      prevcount -= 1;
+    }
+
+    if (fabs(bltemp - blprev) > BLError) {
+      prevcount = nSampleMovBL;
+    } else if (prevcount == 0) {
+      baselineVal = bltemp;
+    }
+  }
+
+  // TVirtualFFT *fft = TVirtualFFT::FFT(1, &N, "R2C");
+  fft->SetPoints(tracesBL.data());
+  fft->Transform();
+  std::vector<double> re(N / 2 + 1), im(N / 2 + 1);
+  for (int i = 0; i <= N / 2; i++) {
+    fft->GetPointComplex(i, re[i], im[i]);
+  }
+  // TVirtualFFT *ifft = TVirtualFFT::FFT(1, &N, "C2R");
+  int cutoff = 10;
+  for (int i = 0; i <= N / 2; i++) {
+    if (i < cutoff) {
+      TComplex c(re[i], im[i]);
+      // std::cout << "re: " << re[i] << " im: " << im[i] << " c: " << c <<
+      // std::endl;
+      ifft->SetPointComplex(i, c);
+    } else {
+      TComplex c(0., 0.);
+      ifft->SetPointComplex(i, c);
+    }
+  }
+  ifft->Transform();
+  // std::vector<double> tracesBL(N);
+  ifft->GetPoints(&tracesBL[0]);
+  for (int i = 0; i < N; i++) {
+    tracesBL[i] /= N;
+  }
+
+  for (int i = 0; i < N; i++) {
+    tracesMovBLCorr[i] = traces[i] - tracesBL[i];
+  }
+
+  // delete fft;
+  // delete ifft;
+}
+
 void WaveForm::SetSmooth(UShort_t sBoxSz, std::string kernel) {
   // std::cout << "Smoothing with boxSz: " << sBoxSz << std::endl;
   if (!traces.empty()) {
@@ -374,7 +481,31 @@ void WaveForm::SetCFD() {}
 void WaveForm::SetMeanTime() {
   meantime = 0;
   double sampleSum = 0;
-  if (!traces.empty()) {
+  if (!tracesMovBLCorr.empty()) {
+    unsigned int size = tracesMovBLCorr.size();
+    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
+      meantime = meantime + tracesMovBLCorr[j] * j;
+      sampleSum = sampleSum + tracesMovBLCorr[j];
+    }
+    meantime = meantime / sampleSum;
+    if (meantime > 0.0) {
+      meantime = TMath::Log10(meantime);
+    } else {
+      meantime = -1.0 * TMath::Log10(fabs(meantime));
+    }
+  } else if (!tracesSmooth.empty()) {
+    unsigned int size = traces.size();
+    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
+      meantime = meantime + tracesSmooth[j] * j;
+      sampleSum = sampleSum + tracesSmooth[j];
+    }
+    meantime = meantime / sampleSum;
+    if (meantime > 0.0) {
+      meantime = TMath::Log10(meantime);
+    } else {
+      meantime = -1.0 * TMath::Log10(fabs(meantime));
+    }
+  } else if (!traces.empty()) {
     unsigned int size = traces.size();
     for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
       meantime = meantime + traces[j] * j;
@@ -477,15 +608,15 @@ void WaveForm::SetBaseLine(TArrayS *arr) {
 void WaveForm::SetTracesFFT() {
   if (!traces.empty()) {
     Int_t n = static_cast<int>(traces.size());
-    TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-    fft1->SetPoints(traces.data());
-    fft1->Transform();
+    // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+    fft->SetPoints(traces.data());
+    fft->Transform();
 
     int nFreq = traces.size() / 2 + 1; // only positive frequencies
 
     for (int i = 0; i < nFreq; i++) {
       double re, im;
-      fft1->GetPointComplex(i, re, im);
+      fft->GetPointComplex(i, re, im);
       tracesFFT.push_back(std::sqrt(re * re + im * im));
     }
   } else {
@@ -499,15 +630,15 @@ void WaveForm::SetTracesFFT(std::string whichTrace) {
   } else if (whichTrace == "smooth") {
     if (!tracesSmooth.empty()) {
       Int_t n = static_cast<int>(tracesSmooth.size());
-      TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-      fft1->SetPoints(tracesSmooth.data());
-      fft1->Transform();
+      // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+      fft->SetPoints(tracesSmooth.data());
+      fft->Transform();
 
       int nFreq = tracesSmooth.size() / 2 + 1; // only positive frequencies
 
       for (int i = 0; i < nFreq; i++) {
         double re, im;
-        fft1->GetPointComplex(i, re, im);
+        fft->GetPointComplex(i, re, im);
         tracesFFT.push_back(std::sqrt(re * re + im * im));
       }
     } else {
@@ -523,15 +654,15 @@ void WaveForm::SetTracesFFT(std::string whichTrace) {
 void WaveForm::SetTracesFFT(std::vector<double> trFFT) {
   if (!trFFT.empty()) {
     Int_t n = static_cast<int>(trFFT.size());
-    TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-    fft1->SetPoints(trFFT.data());
-    fft1->Transform();
+    // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+    fft->SetPoints(trFFT.data());
+    fft->Transform();
 
     int nFreq = trFFT.size() / 2 + 1; // only positive frequencies
 
     for (int i = 0; i < nFreq; i++) {
       double re, im;
-      fft1->GetPointComplex(i, re, im);
+      fft->GetPointComplex(i, re, im);
       tracesFFT.push_back(std::sqrt(re * re + im * im));
     }
   } else {
@@ -543,15 +674,15 @@ std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT) {
   std::vector<double> res;
   if (!trFFT.empty()) {
     Int_t n = static_cast<int>(trFFT.size());
-    TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-    fft1->SetPoints(trFFT.data());
-    fft1->Transform();
+    // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+    fft->SetPoints(trFFT.data());
+    fft->Transform();
 
     int nFreq = trFFT.size() / 2 + 1; // only positive frequencies
 
     for (int i = 0; i < nFreq; i++) {
       double re, im;
-      fft1->GetPointComplex(i, re, im);
+      fft->GetPointComplex(i, re, im);
       res.push_back(std::sqrt(re * re + im * im));
     }
   } else {
@@ -611,6 +742,24 @@ double WaveForm::IntegrateSmoothWaveForm(int startTime, int stopTime) {
     }
   } else {
     std::cout << "err IntegrateSmoothWaveForm: fill traces Smooth first"
+              << std::endl;
+  }
+  return sum;
+}
+
+double WaveForm::IntegrateBLCorrWaveForm(int startTime, int stopTime) {
+  double sum = 0;
+  if (!tracesMovBLCorr.empty() && (tracesMovBLCorr.size() > stopTime)) {
+    if (startTime < stopTime) {
+      for (unsigned int j = startTime; j < stopTime; j++) {
+        sum = sum + tracesMovBLCorr[j];
+      }
+    } else {
+      std::cout << "err IntegrateBLCorrWaveForm: order the times properly "
+                << std::endl;
+    }
+  } else {
+    std::cout << "err IntegrateBLCorrWaveForm: fill traces Smooth first"
               << std::endl;
   }
   return sum;
