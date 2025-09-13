@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "RtypesCore.h"
+#include "TComplex.h"
 #include "TVirtualFFT.h"
 #include <Rtypes.h>
 #include <TArray.h>

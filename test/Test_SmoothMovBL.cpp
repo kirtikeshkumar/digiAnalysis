@@ -1,26 +1,25 @@
 #include "Analysis.h"
+#include "TComplex.h"
+#include "TVirtualFFT.h"
 #include "TVirtualPad.h"
 #include "WaveForm.h"
 #include "globals.h"
 #include "singleHits.h"
 #include <TApplication.h>
 #include <iostream>
-#include "TComplex.h"
-#include "TVirtualFFT.h"
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/media/kirtikesh/UbuntuFiles/NaI/"
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
                       "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
                       "SignalDelay_50ns_Aug26/FILTERED/"
                       "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
                       "FREEWRITE_SignalDelay_50ns_Aug26.root";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 0000, 100000, 0);
+  digiAnalysis::Analysis an(fname, 0, 000000, 0);
 
   std::cout << "getting the vector from an" << std::endl;
 
@@ -40,19 +39,43 @@ int main(int argc, char *argv[])
   int evi = 0;
   std::string userInput;
   bool keepGoing = true;
-  TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
-  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
-  for (evi = 0; evi < nentries && keepGoing; ++evi) //
-  {
-    if (evi % 1000 == 0)
-    {
+
+  TH1 *hE = new TH1F("hE", "Energy", 8192, 0, 8192);
+  TH1 *hEEval = new TH1F("hEEval", "Energy Eval", 8192, 0, 8192);
+  TH1 *hERough = new TH1F("hERough", "Energy Rough", 8192, 0, 8192);
+  TH1 *hESmooth = new TH1F("hESmooth", "Energy Smooth", 8192, 0, 8192);
+  for (evi = 0; evi < nentries; ++evi) {
+    if (evi % 100000 == 0) {
       std::cout << evi << std::endl;
     }
     if (hitsVector[evi]->GetChNum() == 9 and
-        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2 and
-        fabs(hitsVector[evi]->GetEnergy() - 200) < 100)
-    {
-      hitsVector[evi]->Print();
+        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2) {
+      hE->Fill(hitsVector[evi]->GetEnergy());
+      WF = hitsVector[evi]->GetWFPtr();
+      WF->SetTraceMovBLCorr();
+      hEEval->Fill(hitsVector[evi]->GetEvalEnergy() / 2.0);
+      hESmooth->Fill(WF->IntegrateBLCorrWaveForm(
+                         digiAnalysis::GateStart,
+                         digiAnalysis::GateStart + digiAnalysis::GateLenLong) /
+                     64);
+    }
+  }
+  /*
+  TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
+  for (evi = 0; evi < nentries; ++evi) // && keepGoing
+  {
+    if (evi % 100000 == 0) {
+      std::cout << evi << std::endl;
+    }
+    if (hitsVector[evi]->GetChNum() == 5 and
+        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
+        // and
+        // fabs(hitsVector[evi]->GetEnergy() - 200) < 100
+    ) {
+      // hitsVector[evi]->Print();
+      hE->Fill(hitsVector[evi]->GetEnergy());
+      hEEval->Fill(hitsVector[evi]->GetEvalEnergy());
       WF = hitsVector[evi]->GetWFPtr();
       WF->SetSmooth(80);
       std::vector<double> traces = WF->GetTracesSmooth();
@@ -72,8 +95,7 @@ int main(int argc, char *argv[])
 
       // Evaluate a baseline from the first few entries
       // It is known that there is no signal here.
-      for (int i = start; i < nBL + start; i++)
-      {
+      for (int i = start; i < nBL + start; i++) {
         sum = sum + traces[i];
       }
       baselineVal = sum / nBL;
@@ -85,41 +107,41 @@ int main(int argc, char *argv[])
       double bldev = 0, bldevsum = 0;
       double edgediff = 0;
 
-      for (int i = start + nBL; i < N; i++)
-      {
+      for (int i = start + nBL; i < N; i++) {
         tracesBL[i - nBL / 2] = baselineVal;
         sum = sum - traces[i - nBL];
         sum = sum + traces[i];
-        edgediff = (traces[i] - traces[i - 1]) * (traces[i - nBL + 2] - traces[i - nBL + 1]);
+        edgediff = (traces[i] - traces[i - 1]) *
+                   (traces[i - nBL + 2] - traces[i - nBL + 1]);
 
         blprev = bltemp;
         bltemp = sum / nBL;
 
         BLDevstack.push_back(pow(bltemp - blprev, 2));
         bldevsum = bldevsum + BLDevstack.back();
-        if (BLDevstack.size() >= nBL)
-        {
+        if (BLDevstack.size() >= nBL) {
           bldevsum = bldevsum - BLDevstack[BLDevstack.size() - nBL];
         }
         bldev = bldevsum / TMath::Min(nBL, (int)BLDevstack.size());
 
-        if (prevcount > 0)
-        {
+        if (prevcount > 0) {
           prevcount -= 1;
         }
 
         // if (fabs(traces[i] - baselineVal) > BLError) {
-        if (fabs(bltemp - blprev) > BLError)
-        {
+        if (fabs(bltemp - blprev) > BLError) {
           prevcount = nBL;
-        }
-        else if (prevcount == 0) // edgediff > 0.001 //(fabs(traces[i] - baselineVal) < trCut)
+        } else if (prevcount == 0) // edgediff > 0.001 //(fabs(traces[i] -
+                                   // baselineVal) < trCut)
         {
           baselineVal = bltemp;
         }
         // if (i > 700 and i < 852)
         // {
-        //   std::cout << "i: " << i - nBL / 2 + 1 << "\t bltemp: " << bltemp << "\t blprev: " << blprev << "\t edgediff: " << edgediff << "\t ERCK: " << fabs((bltemp - blprev) * edgediff) << "\t PC: " << prevcount << std::endl;
+        //   std::cout << "i: " << i - nBL / 2 + 1 << "\t bltemp: " << bltemp <<
+        //   "\t blprev: " << blprev << "\t edgediff: " << edgediff << "\t ERCK:
+        //   " << fabs((bltemp - blprev) * edgediff) << "\t PC: " << prevcount
+        //   << std::endl;
         // }
         // if (prevcount == 0)
         // {
@@ -132,40 +154,46 @@ int main(int argc, char *argv[])
         // }
       }
 
-      for (int i = 0; i < N; i++)
-      {
+      for (int i = 0; i < N; i++) {
         tracesNew[i] = (traces[i] - tracesBL[i]);
       }
       digiAnalysis::WaveForm *wfNew = new digiAnalysis::WaveForm(tracesNew);
 
-      std::cout << "########### AFTER BL CORRECTION ##############" << std::endl;
-      double evalenergy = wfNew->IntegrateWaveForm(digiAnalysis::GateStart, digiAnalysis::GateStart + digiAnalysis::GateLenLong) / digiAnalysis::EvalNormFactor;
-      double evalenergyshort = wfNew->IntegrateWaveForm(digiAnalysis::GateStart, digiAnalysis::GateStart + digiAnalysis::GateLenShort) / digiAnalysis::EvalNormFactor;
-      std::cout << "EnergyEval:      " << evalenergy << std::endl;
-      std::cout << "EnergyEvalShort: " << evalenergyshort << std::endl;
-      std::cout << "EvalPSD:         " << 1.0 - evalenergyshort / evalenergy << "\n"
-                << std::endl;
+      // std::cout << "########### AFTER BL CORRECTION ##############"
+      //           << std::endl;
+      double evalenergy =
+          wfNew->IntegrateWaveForm(digiAnalysis::GateStart,
+                                   digiAnalysis::GateStart +
+                                       digiAnalysis::GateLenLong) /
+          64;
+      double evalenergyshort =
+          wfNew->IntegrateWaveForm(digiAnalysis::GateStart,
+                                   digiAnalysis::GateStart +
+                                       digiAnalysis::GateLenShort) /
+          64;
+      // std::cout << "EnergyEval:      " << evalenergy << std::endl;
+      // std::cout << "EnergyEvalShort: " << evalenergyshort << std::endl;
+      // std::cout << "EvalPSD:         " << 1.0 - evalenergyshort / evalenergy
+      //           << "\n"
+      //           << std::endl;
+      hERough->Fill(evalenergy);
 
       TVirtualFFT *fft = TVirtualFFT::FFT(1, &N, "R2C");
       fft->SetPoints(tracesBL.data());
       fft->Transform();
       std::vector<double> re(N / 2 + 1), im(N / 2 + 1);
-      for (int i = 0; i <= N / 2; i++)
-      {
+      for (int i = 0; i <= N / 2; i++) {
         fft->GetPointComplex(i, re[i], im[i]);
       }
       TVirtualFFT *ifft = TVirtualFFT::FFT(1, &N, "C2R");
       int cutoff = 10;
-      for (int i = 0; i <= N / 2; i++)
-      {
-        if (i < cutoff)
-        {
+      for (int i = 0; i <= N / 2; i++) {
+        if (i < cutoff) {
           TComplex c(re[i], im[i]);
-          // std::cout << "re: " << re[i] << " im: " << im[i] << " c: " << c << std::endl;
+          // std::cout << "re: " << re[i] << " im: " << im[i] << " c: " << c <<
+          // std::endl;
           ifft->SetPointComplex(i, c);
-        }
-        else
-        {
+        } else {
           TComplex c(0., 0.);
           ifft->SetPointComplex(i, c);
         }
@@ -173,16 +201,21 @@ int main(int argc, char *argv[])
       ifft->Transform();
       std::vector<double> tracesBLFFT(N);
       ifft->GetPoints(&tracesBLFFT[0]);
-      for (int i = 0; i < N; i++)
-      {
+      for (int i = 0; i < N; i++) {
         tracesBLFFT[i] /= N;
       }
 
       std::vector<double> tracesNewFFTCleaned(N);
-      for (int i = 0; i < N; i++)
-      {
+      for (int i = 0; i < N; i++) {
         tracesNewFFTCleaned[i] = (traces[i] - tracesBLFFT[i]);
       }
+
+      wfNew->SetWaveForm(tracesNewFFTCleaned);
+      evalenergy = wfNew->IntegrateWaveForm(digiAnalysis::GateStart,
+                                            digiAnalysis::GateStart +
+                                                digiAnalysis::GateLenLong) /
+                   64;
+      hESmooth->Fill(evalenergy);
 
       digiAnalysis::WaveForm wf;
       // std::vector<double> tracesBLFFT = wf.EvalTracesFFT(tracesBL);
@@ -203,8 +236,7 @@ int main(int argc, char *argv[])
       canvas->cd(1);
 
       graphTraces = new TGraph(N);
-      for (int i = 0; i < N; ++i)
-      {
+      for (int i = 0; i < N; ++i) {
         graphTraces->SetPoint(i, i, traces[i]);
         // graphTraces->SetPoint(i, i, 0);
       }
@@ -215,8 +247,7 @@ int main(int argc, char *argv[])
       legend->AddEntry(graphTraces, "Traces", "l");
 
       graphTracesNew = new TGraph(N);
-      for (int i = 0; i < N; ++i)
-      {
+      for (int i = 0; i < N; ++i) {
         graphTracesNew->SetPoint(i, i, tracesNew[i]);
       }
       graphTracesNew->SetLineColor(kGreen);
@@ -226,15 +257,15 @@ int main(int argc, char *argv[])
       legend->AddEntry(graphTracesNew, "Traces New", "l");
 
       graphTracesNewFFTCleaned = new TGraph(N);
-      for (int i = 0; i < N; ++i)
-      {
+      for (int i = 0; i < N; ++i) {
         graphTracesNewFFTCleaned->SetPoint(i, i, tracesNewFFTCleaned[i]);
       }
       graphTracesNewFFTCleaned->SetLineColor(kRed);
       graphTracesNewFFTCleaned->SetLineWidth(2);
       graphTracesNewFFTCleaned->SetTitle("Traces New FFT Cleaned");
       graphTracesNewFFTCleaned->Draw("L SAME");
-      legend->AddEntry(graphTracesNewFFTCleaned, "Traces New  FFT Cleaned", "l");
+      legend->AddEntry(graphTracesNewFFTCleaned, "Traces New  FFT Cleaned",
+                       "l");
 
       double xmin = graphTracesNew->GetXaxis()->GetXmin();
       double xmax = graphTracesNew->GetXaxis()->GetXmax();
@@ -247,8 +278,7 @@ int main(int argc, char *argv[])
       canvas->cd(2);
 
       graphTracesBL = new TGraph(N);
-      for (int i = 0; i < N; ++i)
-      {
+      for (int i = 0; i < N; ++i) {
         graphTracesBL->SetPoint(i, i, tracesBL[i]);
       }
       graphTracesBL->SetLineColor(kRed);
@@ -266,14 +296,10 @@ int main(int argc, char *argv[])
       // gPad->DrawFrame(0.1, 10, 100, 10000, "TtracesDiff");
       // N = 300;
       graphTracesFFT = new TGraph(N / 2);
-      for (int i = 0; i < N / 2; ++i)
-      {
-        if (!tracesFFT.empty())
-        {
+      for (int i = 0; i < N / 2; ++i) {
+        if (!tracesFFT.empty()) {
           graphTracesFFT->SetPoint(i, i, tracesFFT[i]);
-        }
-        else
-        {
+        } else {
           graphTracesFFT->SetPoint(i, i, 0);
         }
       }
@@ -284,14 +310,10 @@ int main(int argc, char *argv[])
       legend->AddEntry(graphTracesFFT, "Traces FFT", "l");
 
       graphTracesNewFFT = new TGraph(N / 2);
-      for (int i = 0; i < N / 2; ++i)
-      {
-        if (!tracesNewFFT.empty())
-        {
+      for (int i = 0; i < N / 2; ++i) {
+        if (!tracesNewFFT.empty()) {
           graphTracesNewFFT->SetPoint(i, i, tracesNewFFT[i]);
-        }
-        else
-        {
+        } else {
           graphTracesNewFFT->SetPoint(i, i, 0);
         }
       }
@@ -324,14 +346,10 @@ int main(int argc, char *argv[])
       canvas->cd(4);
       // N = tracesNew.size();
       graphTracesBLFFT = new TGraph(N);
-      for (int i = 0; i < N; ++i)
-      {
-        if (!tracesBLFFT.empty())
-        {
+      for (int i = 0; i < N; ++i) {
+        if (!tracesBLFFT.empty()) {
           graphTracesBLFFT->SetPoint(i, i, tracesBLFFT[i]);
-        }
-        else
-        {
+        } else {
           graphTracesBLFFT->SetPoint(i, i, 0);
         }
       }
@@ -346,12 +364,19 @@ int main(int argc, char *argv[])
       canvas->Update();
       std::cout << "Do you want to see the next waveform? (y/n): ";
       std::getline(std::cin, userInput);
-      if (userInput != "y" && userInput != "Y")
-      {
+      if (userInput != "y" && userInput != "Y") {
         keepGoing = false;
       }
     }
-  }
+  }*/
+  hE->Draw("HIST");
+  hEEval->SetLineColor(kBlack);
+  hEEval->Draw("HIST SAME");
+  hERough->SetLineColor(kRed);
+  hERough->Draw("HIST SAME");
+  hESmooth->SetLineColor(kGreen);
+  hESmooth->Draw("HIST SAME");
+  hE->SetTitle("Energy Comparison;Energy (a.u.);Counts");
   fApp->Run();
 #endif
   return 0;

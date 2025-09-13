@@ -11,6 +11,8 @@ extern UShort_t GateLenLong;
 extern UShort_t GateLenShort;
 extern UShort_t PairCoincWindow; // in ns
 extern double EvalNormFactor;
+extern UShort_t nSampleMovBL;
+extern double BLError;
 } // namespace digiAnalysis
 
 #endif
