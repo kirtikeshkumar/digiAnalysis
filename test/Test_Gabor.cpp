@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
                         "FREEWRITE_SignalDelay_50ns_Aug26.root";
 
     // test reading to singleHits
-    digiAnalysis::Analysis an(fname, 0000, 0000, 0);
+    digiAnalysis::Analysis an(fname, 0000, 20000, 0);
 
     std::cout << "getting the vector from an" << std::endl;
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     TSpectrum *s = new TSpectrum();
     Double_t *xpeaks = nullptr;
     Double_t *ypeaks = nullptr;
-    double peakThreshSTFT = 5;
+    double peakThreshSTFT = 5.5;
     TH1F *hFinal = new TH1F("hFinal", "Final Waveform", 4000, 0, 4000);
     for (evi = 0; evi < nentries && keepGoing; ++evi) //
     {
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
                         {
                             re = hSTFT_Re->GetBinContent(timeval, fftiter + 1);
                             im = hSTFT_Im->GetBinContent(timeval, fftiter + 1);
-                            c = (re, im);
+                            c = TComplex(re, im);
                             ifft->SetPointComplex(fftiter, c);
                         }
                         ifft->Transform();
@@ -175,31 +175,31 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            // IFFT here gives bipolar pulses (differential of the original pulse) hence integrating it to get unipolar pulse
-            double CDFtracesPeaks = 0;
-            for (int iter = 0; iter < N; iter++)
-            {
-                CDFtracesPeaks += tracesPeaks[iter];
-                tracesPeaksUni[iter] = -1.0 * CDFtracesPeaks;
-            }
-            // moving baseline back to zero and pulses become unipolar
-            for (int iter = 0; iter < N; iter++)
-            {
-                if (iter < rangeSTFT)
-                {
-                    std::vector<double> tracesShort(kernelSz);
-                    auto minIt = std::min_element(tracesPeaksUni.begin() + iter, tracesPeaksUni.begin() + iter + kernelSz);
-                    double minVal = *minIt;
-                    for (int j = 0; j < kernelSz; j++)
-                    {
-                        tracesShort[j] = gauss[j] * (tracesPeaksUni[iter + j] - minVal) / sumKernel;
-                        // tracesShort[j] = (tracesPeaksUni[iter + j] - minVal) / 100;
-                        tracesPeaksUni1[iter + j] += tracesShort[j];
-                    }
-                }
-                else
-                    tracesPeaksUni[iter] = 0.;
-            }
+            // // IFFT gives bipolar pulses if points set as c=(re,im) instead of c=TComplex(re,im) (differential of the original pulse) hence integrating it to get unipolar pulse
+            // double CDFtracesPeaks = 0;
+            // for (int iter = 0; iter < N; iter++)
+            // {
+            //     CDFtracesPeaks += tracesPeaks[iter];
+            //     tracesPeaksUni[iter] = CDFtracesPeaks;
+            // }
+            // // moving baseline back to zero and pulses become unipolar
+            // for (int iter = 0; iter < N; iter++)
+            // {
+            //     if (iter < rangeSTFT)
+            //     {
+            //         std::vector<double> tracesShort(kernelSz);
+            //         auto minIt = std::min_element(tracesPeaksUni.begin() + iter, tracesPeaksUni.begin() + iter + kernelSz);
+            //         double minVal = *minIt;
+            //         for (int j = 0; j < kernelSz; j++)
+            //         {
+            //             tracesShort[j] = gauss[j] * (tracesPeaksUni[iter + j] - minVal) / sumKernel;
+            //             // tracesShort[j] = (tracesPeaksUni[iter + j] - minVal) / 100;
+            //             tracesPeaksUni1[iter + j] += tracesShort[j];
+            //         }
+            //     }
+            //     else
+            //         tracesPeaksUni[iter] = 0.;
+            // }
 
             canvas->Clear();
             canvas->Divide(2, 1);
@@ -220,8 +220,8 @@ int main(int argc, char *argv[])
                     graphTracesTH2->SetPoint(i, i, (tracesMod[i] / 100));
                 else
                     graphTracesTH2->SetPoint(i, i, 0);
-                graphTracesPeaksTH2->SetPoint(i, i, tracesPeaksUni[i] + kernelSz / 4);
-                graphTracesPeaksTH2Fin->SetPoint(i, i, tracesPeaksUni1[i] + kernelSz / 4);
+                graphTracesPeaksTH2->SetPoint(i, i, tracesPeaks[i] + kernelSz / 4);
+                // graphTracesPeaksTH2Fin->SetPoint(i, i, tracesPeaksUni[i] / 100 + kernelSz / 4);
             }
             graphTraces->SetLineColor(kBlue);
             graphTraces->SetLineWidth(2);
@@ -250,9 +250,9 @@ int main(int argc, char *argv[])
             graphTracesPeaksTH2->SetLineColor(kBlack);
             graphTracesPeaksTH2->SetLineWidth(2);
             graphTracesPeaksTH2->Draw("AL");
-            graphTracesPeaksTH2Fin->SetLineColor(kGreen);
-            graphTracesPeaksTH2Fin->SetLineWidth(2);
-            graphTracesPeaksTH2Fin->Draw("SAME");
+            // graphTracesPeaksTH2Fin->SetLineColor(kGreen);
+            // graphTracesPeaksTH2Fin->SetLineWidth(2);
+            // graphTracesPeaksTH2Fin->Draw("SAME");
 
             canvas->Update();
 
