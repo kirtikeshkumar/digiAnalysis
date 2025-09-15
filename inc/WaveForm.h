@@ -10,6 +10,7 @@ class WaveForm: parent class contains how to handle waveform including plotting
 #include "includes.hh"
 #include <TROOT.h>
 #include <sys/types.h>
+#include <vector>
 #pragma once
 
 namespace digiAnalysis {
@@ -25,7 +26,6 @@ protected:
   TF1 *fitFunc = nullptr;
   static TVirtualFFT *fft;
   static TVirtualFFT *ifft;
-  static void InitFFT(int N);
 
 public:
   WaveForm();
@@ -43,6 +43,14 @@ public:
   std::vector<double> GetTraces();
   std::vector<double> GetTracesSmooth();
   std::vector<double> GetTracesFFT();
+
+  bool IsTracesMovBLCorrSet() { return !tracesMovBLCorr.empty(); }
+  bool IsTracesSmoothSet() { return !tracesSmooth.empty(); }
+  bool IsTracesFFTSet() { return !tracesFFT.empty(); }
+  bool IsTracesSet() { return !traces.empty(); }
+
+  static void InitFFT(int N);
+
   double GetMeanTime();
   double GetBaseLine();
   UShort_t GetSize();
@@ -52,7 +60,7 @@ public:
 
   void SetWaveForm(const std::vector<double> tr);
   void SetWaveForm(const WaveForm &wf);
-  void SetTraceMovBLCorr();
+  void SetTracesMovBLCorr();
   /**
    * @brief Smooth Waveforms.
    *
@@ -80,6 +88,7 @@ public:
   std::vector<double> EvalTracesFFT(std::vector<double> trFFT);
 
   void Plot();
+  void Plot(std::vector<double> tr);
   void ShiftWaveForm(int BL);
   double IntegrateWaveForm();
   double IntegrateWaveForm(int startTime, int stopTime);

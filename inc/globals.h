@@ -13,6 +13,7 @@ extern UShort_t PairCoincWindow; // in ns
 extern double EvalNormFactor;
 extern UShort_t nSampleMovBL;
 extern double BLError;
+extern double EnergyCutoffBLCorr; // Energy Cutoff for Baseline correction
 } // namespace digiAnalysis
 
 #endif

@@ -5,6 +5,7 @@
 #include "TMath.h"
 #include "globals.h"
 #include "includes.hh"
+#include <iostream>
 #include <vector>
 
 // ClassImp(digiAnalysis::WaveForm);
@@ -190,9 +191,11 @@ void WaveForm::Plot() {
   TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
   int nTraces = traces.size();
   int nTracesSmooth = tracesSmooth.size();
+  int nTracesMovBLCorr = tracesMovBLCorr.size();
 
   TGraph *graphTraces = nullptr;
   TGraph *graphTracesSmooth = nullptr;
+  TGraph *graphTracesMovBLCorr = nullptr;
 
   if (!tracesFFT.empty()) {
     canvas->Divide(2, 1);
@@ -231,6 +234,24 @@ void WaveForm::Plot() {
     legend->AddEntry(graphTracesSmooth, "Smoothed Traces", "l");
   }
 
+  // Plot tracesMovBLCorr if not empty
+  if (!tracesMovBLCorr.empty()) {
+    graphTracesMovBLCorr = new TGraph(nTracesMovBLCorr);
+    for (int i = 0; i < nTracesMovBLCorr; ++i) {
+      graphTracesMovBLCorr->SetPoint(i, i, tracesMovBLCorr[i]);
+    }
+    graphTracesMovBLCorr->SetLineColor(kGreen);
+    graphTracesMovBLCorr->SetLineWidth(2);
+    graphTracesMovBLCorr->SetTitle("BL Corrected Traces");
+
+    if (graphTraces) {
+      graphTracesMovBLCorr->Draw("L SAME");
+    } else {
+      graphTracesMovBLCorr->Draw("AL");
+    }
+    legend->AddEntry(graphTracesMovBLCorr, "BL Corrected Traces", "l");
+  }
+
   TLine *line = new TLine(0.0, 0.0, 5000, 0.0);
   line->SetLineColor(kBlack);
   line->SetLineWidth(2);
@@ -255,6 +276,50 @@ void WaveForm::Plot() {
     graphTracesFFT->SetTitle("FFT");
     graphTracesFFT->Draw("AL");
   }
+
+  // Update the canvas
+  canvas->Update();
+}
+
+void WaveForm::Plot(std::vector<double> tr) {
+  if (tr.empty()) {
+    std::cout << "Both traces is empty. No plot will be created." << std::endl;
+    return;
+  }
+
+  // Create a canvas
+  TObject *obj = gROOT->FindObject("canvas");
+  TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
+  if (canvas) {
+    canvas->cd();    // make it current
+    canvas->Clear(); // optional: clear previous plot
+    std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
+  } else {
+    canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+    std::cout << "Created new canvas: " << "canvas" << std::endl;
+  }
+  // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+
+  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
+  int nTraces = tr.size();
+
+  TGraph *graphTraces = nullptr;
+
+  // Plot traces if not empty
+  if (!tr.empty()) {
+
+    graphTraces = new TGraph(nTraces);
+    for (int i = 0; i < nTraces; ++i) {
+      graphTraces->SetPoint(i, i, tr[i]);
+    }
+    graphTraces->SetLineColor(kBlue);
+    graphTraces->SetLineWidth(2);
+    graphTraces->SetTitle("Traces");
+    graphTraces->Draw("AL");
+    legend->AddEntry(graphTraces, "Traces", "l");
+  }
+  // Draw the legend
+  legend->Draw();
 
   // Update the canvas
   canvas->Update();
@@ -328,76 +393,95 @@ void WaveForm::SetWaveForm(const WaveForm &wf) {
   baseline = wf.baseline;
 }
 
-void WaveForm::SetTraceMovBLCorr() {
-  SetSmooth(smoothBoxSz);
-  int N = traces.size();
-  int start = smoothBoxSz / 2;
+void WaveForm::SetTracesMovBLCorr() {
+  if (!traces.empty()) {
+    if (!IsTracesSmoothSet()) {
+      SetSmooth(smoothBoxSz);
+    }
+    int N = traces.size();
+    int start = smoothBoxSz / 2;
+    // Evaluate a baseline from the first few entries
+    // It is known that there is no signal here.
+    double sum = 0;
+    double baselineVal = 0;
+    std::vector<double> tracesBL(N, 0.0);
+    tracesMovBLCorr.assign(N, 0.0);
 
-  // Evaluate a baseline from the first few entries
-  // It is known that there is no signal here.
-  double sum = 0;
-  double baselineVal = 0;
-  std::vector<double> tracesBL(N, 0.0);
-  tracesMovBLCorr.assign(N, 0.0);
+    int end = std::min(N, nSampleMovBL + start);
+    for (int i = start; i < end; i++) {
+      sum = sum + traces[i];
+    }
+    baselineVal = sum / nSampleMovBL;
 
-  int end = std::min(N, nSampleMovBL + start);
-  for (int i = start; i < end; i++) {
-    sum = sum + traces[i];
-  }
-  baselineVal = sum / nSampleMovBL;
+    // now evaluate the baseline at each point
+    int prevcount = 0;
+    double blprev = 0, bltemp = 0;
+    for (int i = start + nSampleMovBL; i < N; i++) {
+      tracesBL[i - nSampleMovBL / 2] = baselineVal;
+      sum = sum - traces[i - nSampleMovBL];
+      sum = sum + traces[i];
 
-  // now evaluate the baseline at each point
-  int prevcount = 0;
-  // std::vector<double> BLDevstack;
-  double blprev = 0, bltemp = 0;
-  for (int i = start + nSampleMovBL; i < N; i++) {
-    tracesBL[i - nSampleMovBL / 2] = baselineVal;
-    sum = sum - traces[i - nSampleMovBL];
-    sum = sum + traces[i];
+      blprev = bltemp;
+      bltemp = sum / nSampleMovBL;
 
-    blprev = bltemp;
-    bltemp = sum / nSampleMovBL;
+      if (prevcount > 0) {
+        prevcount -= 1;
+      }
 
-    if (prevcount > 0) {
-      prevcount -= 1;
+      if (fabs(bltemp - blprev) > BLError) {
+        prevcount = nSampleMovBL;
+      } else if (prevcount == 0) {
+        baselineVal = bltemp;
+      }
     }
 
-    if (fabs(bltemp - blprev) > BLError) {
-      prevcount = nSampleMovBL;
-    } else if (prevcount == 0) {
-      baselineVal = bltemp;
+    // TVirtualFFT *fft = TVirtualFFT::FFT(1, &N, "R2C");
+    fft->SetPoints(tracesBL.data());
+    fft->Transform();
+    std::vector<double> re(N / 2 + 1), im(N / 2 + 1);
+    for (int i = 0; i <= N / 2; i++) {
+      fft->GetPointComplex(i, re[i], im[i]);
     }
-  }
 
-  // TVirtualFFT *fft = TVirtualFFT::FFT(1, &N, "R2C");
-  fft->SetPoints(tracesBL.data());
-  fft->Transform();
-  std::vector<double> re(N / 2 + 1), im(N / 2 + 1);
-  for (int i = 0; i <= N / 2; i++) {
-    fft->GetPointComplex(i, re[i], im[i]);
-  }
-  // TVirtualFFT *ifft = TVirtualFFT::FFT(1, &N, "C2R");
-  int cutoff = 10;
-  for (int i = 0; i <= N / 2; i++) {
-    if (i < cutoff) {
-      TComplex c(re[i], im[i]);
-      // std::cout << "re: " << re[i] << " im: " << im[i] << " c: " << c <<
-      // std::endl;
-      ifft->SetPointComplex(i, c);
+    // TVirtualFFT *ifft = TVirtualFFT::FFT(1, &N, "C2R");
+    int cutoff = 10;
+    for (int i = 0; i <= N / 2; i++) {
+      if (i < cutoff) {
+        TComplex c(re[i], im[i]);
+        // std::cout << "re: " << re[i] << " im: " << im[i] << " c: " << c <<
+        // std::endl;
+        ifft->SetPointComplex(i, c);
+      } else {
+        TComplex c(0., 0.);
+        ifft->SetPointComplex(i, c);
+      }
+    }
+    ifft->Transform();
+    // std::vector<double> tracesBL(N);
+    ifft->GetPoints(&tracesBL[0]);
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    for (int i = 0; i < N; i++) {
+      tracesBL[i] /= N;
+    }
+
+    meantime = 0;
+    double sampleSum = 0;
+    for (int i = 0; i < N; i++) {
+      tracesMovBLCorr[i] = tracesSmooth[i] - tracesBL[i];
+      if (i >= GateStart and i <= GateStart + GateLenShort) {
+        meantime = meantime + tracesMovBLCorr[i] * i;
+        sampleSum = sampleSum + tracesMovBLCorr[i];
+      }
+    }
+    meantime = (meantime / sampleSum);
+    if (meantime > 0.0) {
+      meantime = TMath::Log10(meantime);
     } else {
-      TComplex c(0., 0.);
-      ifft->SetPointComplex(i, c);
+      meantime = -1.0 * TMath::Log10(fabs(meantime));
     }
-  }
-  ifft->Transform();
-  // std::vector<double> tracesBL(N);
-  ifft->GetPoints(&tracesBL[0]);
-  for (int i = 0; i < N; i++) {
-    tracesBL[i] /= N;
-  }
-
-  for (int i = 0; i < N; i++) {
-    tracesMovBLCorr[i] = traces[i] - tracesBL[i];
+  } else {
+    std::cout << "err SetTracesMovBLCorr: Fill traces first" << std::endl;
   }
 
   // delete fft;

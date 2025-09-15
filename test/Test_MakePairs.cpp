@@ -95,34 +95,39 @@ int main(int argc, char *argv[]) {
   // std::cout << "Loop Exited, " << vecOfPairs.size() << " pairs found"
   //           << std::endl;
 
-  vecOfPairs[0]->Print();
-  vecOfPairs[1]->Print();
+  // vecOfPairs[0]->Print();
+  // vecOfPairs[1]->Print();
 
   bool plotnext = true;
   i = 0;
-  UShort_t CheckEnergy = 4000;
-  UShort_t CheckWidth = 4000;
-  double CheckMeanTime = 1.5;
-  double CheckMeanTimeWidth = 1.5;
+  UShort_t CheckEnergy = 6100;
+  UShort_t CheckWidth = 1900;
+  double CheckMeanTime = 2.6;
+  double CheckMeanTimeWidth = 0.2;
   std::string userInput;
   digiAnalysis::singleHits *hit;
+  digiAnalysis::singleHits *hit0;
 
   while (i < vecOfPairs.size()) {
     if (fabs(vecOfPairs[i]->GetPairHitEnergy(1) - CheckEnergy) < CheckWidth) {
       hit = vecOfPairs[i]->GetHit(1);
       bool MeanTimeCondition = true;
-      // fabs(hit->GetMeanTime() - CheckMeanTime) < CheckMeanTimeWidth;
+      MeanTimeCondition =
+          fabs(hit->GetMeanTime() - CheckMeanTime) < CheckMeanTimeWidth;
       if (MeanTimeCondition) {
-        hECh0->Fill(vecOfPairs[i]->GetPairHitEnergy(0));
+        hit0 = vecOfPairs[i]->GetHit(0);
+        vecOfPairs[i]->Print();
+        hit0->SetMovBLCorr();
+        hECh0->Fill(vecOfPairs[i]->GetPairHitEvalEnergy(0));
         hECh1->Fill(vecOfPairs[i]->GetPairHitEnergy(1));
       }
       if (plotnext and MeanTimeCondition) {
-        WF = hit->GetWFPtr();
+        WF = hit0->GetWFPtr();
         if (WF) {
           waveformVector.push_back(*WF);
         }
-        vecOfPairs[i]->Print();
-        WF->SetSmooth(40, "Gauss");
+        // vecOfPairs[i]->Print();
+        WF->SetSmooth(80, "Gauss");
         WF->Plot();
         std::cout << "Do you want to see the next waveform? (y/n): ";
         std::getline(std::cin, userInput);

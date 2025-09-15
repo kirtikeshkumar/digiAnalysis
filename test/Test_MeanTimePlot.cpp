@@ -14,43 +14,21 @@
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
-  // std::string fname =
-  //     "/media/kirtikesh/KirtikeshSSD/Waves/CeBr_CsI_0pt5Vpp/"
-  //     "Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_0pt5Vpp_8IS_300PG_"
-  //     "6000Gate_5696Holdoff_TConnector_1/FILTERED/"
-  //     "DataF_CH2@V1730_167_Am_CsI_950V_Waves_CFD_Delay150ns_Fraction50_10lsb_"
-  //     "0pt5Vpp_8IS_300PG_6000Gate_5696Holdoff_TConnector_1.root";
-
-  // std::string fname =
-  //     "/media/kirtikesh/Ventoy/NaI/"
-  //     "run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
-  //     "DataF_run_NaI1_CsSrAl_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
-
-  // std::string fname =
-  //     "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
-  //     "Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp/FILTERED/"
-  //     "DataF_Calib_Waves_NaI12_Na_Coinc_PSDCut0pt4_AmpAnode10_2Vpp.root";
-
   std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
-                      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
-                      "SignalDelay_50ns_Aug26/FILTERED/"
-                      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
-                      "FREEWRITE_SignalDelay_50ns_Aug26.root";
-
-  // std::string fname =
-  //     "/media/kirtikesh/KirtikeshSSD/DATA/NaI/"
-  //     "run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp/FILTERED/"
-  //     "DataF_run_NaI1_Cs_AnodeDynodeCoinc_AmpAnode4Dynode8_2Vpp.root";
+                      "run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_TRG_"
+                      "FREEWRITE_SignalDelay_80ns_Sep08/FILTERED/"
+                      "DataF_run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_"
+                      "TRG_FREEWRITE_SignalDelay_80ns_Sep08.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 0, 1);
+  digiAnalysis::Analysis an(fname, 0, 200000, 1);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
 #ifdef WAVES
-  int spectralsize = 8192;
-  double WFMT = 0; // MeanTime parameter for flat waveform
+  int spectralsize = 16384; // 8192
+  double WFMT = 0;          // MeanTime parameter for flat waveform
   TH2 *hMTPlot = new TH2F("MTPlot", "Energy vs MeanTime", spectralsize, 0,
                           spectralsize, 500, -4, 4);
   TH2 *hPSDPlot = new TH2F("PSDPlot", "Energy vs PSD", spectralsize, 0,
@@ -81,15 +59,18 @@ int main(int argc, char *argv[]) {
   double shortPSD = 0;
   digiAnalysis::WaveForm *WF = nullptr;
   for (int i = 0; i < nentries; i++) {
-    if (hitsVector[i]->GetChNum() == 9
+    if (i % 10000 == 0) {
+      std::cout << i << std::endl;
+    }
+    if (hitsVector[i]->GetChNum() == 5
         // and hitsVector[i]->GetMeanTime() < 3.8
     ) { // (hitsVector[i]->GetPSD() > 0.0 and
         // hitsVector[i]->GetChNum() == 0) {
       energy = hitsVector[i]->GetEnergy();
       energyShort = hitsVector[i]->GetEnergyShort();
       WF = hitsVector[i]->GetWFPtr();
-      WF->SetTraceMovBLCorr();
-      WF->SetMeanTime();
+      // WF->SetTracesMovBLCorr();
+      // WF->SetMeanTime();
       WFMT = TMath::Log10(WF->GetSize() / 2.0);
       hMTPlot->Fill(energy, hitsVector[i]->GetMeanTime());
       evalEnergy =

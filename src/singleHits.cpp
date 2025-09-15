@@ -2,6 +2,7 @@
 #include "WaveForm.h"
 #include "diffWaveFrom.h"
 #include "includes.hh"
+#include <iostream>
 
 // ClassImp(digiAnalysis::singleHits);
 
@@ -106,14 +107,52 @@ void singleHits::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
 void singleHits::SetSmoothWF() { WF->SetSmooth(); }
 void singleHits::SetSmoothWF(UShort_t sBoxSz) { WF->SetSmooth(sBoxSz); }
 void singleHits::SetEvalEnergy() {
-  evalEnergy = (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) /
-               GateLenLong * EvalNormFactor;
+  if (WF->IsTracesMovBLCorrSet()) {
+    evalEnergy =
+        (WF->IntegrateBLCorrWaveForm(GateStart, GateStart + GateLenLong)) /
+        GateLenLong * EvalNormFactor;
+  } else if (WF->IsTracesSmoothSet()) {
+    evalEnergy =
+        (WF->IntegrateSmoothWaveForm(GateStart, GateStart + GateLenLong)) /
+        GateLenLong * EvalNormFactor;
+  } else if (WF->IsTracesSet()) {
+    evalEnergy = (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) /
+                 GateLenLong * EvalNormFactor;
+  } else {
+    std::cout << "err SetEvalEnergy: No waveform set" << std::endl;
+  }
 }
+
 void singleHits::SetEvalEnergyShort() {
-  evalEnergyShort =
-      (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) /
-      GateLenLong * EvalNormFactor;
+  if (WF->IsTracesMovBLCorrSet()) {
+    evalEnergyShort =
+        (WF->IntegrateBLCorrWaveForm(GateStart, GateStart + GateLenShort)) /
+        GateLenLong * EvalNormFactor;
+  } else if (WF->IsTracesSmoothSet()) {
+    evalEnergyShort =
+        (WF->IntegrateSmoothWaveForm(GateStart, GateStart + GateLenShort)) /
+        GateLenLong * EvalNormFactor;
+
+  } else if (WF->IsTracesSet()) {
+    evalEnergyShort =
+        (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) /
+        GateLenLong * EvalNormFactor;
+  } else {
+    std::cout << "err SetEvalEnergyShort: No waveform set" << std::endl;
+  }
 }
+
+void singleHits::SetMovBLCorr() {
+  if (WF->IsTracesSet()) {
+    WF->InitFFT(WF->GetSize());
+    WF->SetTracesMovBLCorr();
+    SetEvalEnergyShort();
+    SetEvalPSD();
+  } else {
+    std::cout << "err SetMovBLCorr: No waveform set" << std::endl;
+  }
+}
+
 void singleHits::SetEvalPSD() { evalPSD = 1.0 - evalEnergyShort / evalEnergy; }
 // void singleHits::SetDiffWF() {}
 #endif

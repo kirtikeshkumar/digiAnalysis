@@ -7,19 +7,27 @@
 #include "singleHits.h"
 #include <TApplication.h>
 #include <iostream>
+#include <string>
 int main(int argc, char *argv[]) {
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
-                      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
-                      "SignalDelay_50ns_Aug26/FILTERED/"
-                      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
-                      "FREEWRITE_SignalDelay_50ns_Aug26.root";
+  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
+  //                     "run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_TRG_"
+  //                     "FREEWRITE_SignalDelay_80ns_Sep08/FILTERED/"
+  //                     "DataF_run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_"
+  //                     "TRG_FREEWRITE_SignalDelay_80ns_Sep08.root";
+
+  std::string fname =
+      "/home/kirtikesh/analysisSSD/DATA/NaI/"
+      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+      "SignalDelay_50ns_Aug26/FILTERED/"
+      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+      "SignalDelay_50ns_Aug26.root";
 
   // test reading to singleHits
-  digiAnalysis::Analysis an(fname, 0, 000000, 0);
+  digiAnalysis::Analysis an(fname, 0, 100000, 0);
 
   std::cout << "getting the vector from an" << std::endl;
 
@@ -40,40 +48,43 @@ int main(int argc, char *argv[]) {
   std::string userInput;
   bool keepGoing = true;
 
-  TH1 *hE = new TH1F("hE", "Energy", 8192, 0, 8192);
-  TH1 *hEEval = new TH1F("hEEval", "Energy Eval", 8192, 0, 8192);
-  TH1 *hERough = new TH1F("hERough", "Energy Rough", 8192, 0, 8192);
-  TH1 *hESmooth = new TH1F("hESmooth", "Energy Smooth", 8192, 0, 8192);
-  for (evi = 0; evi < nentries; ++evi) {
-    if (evi % 100000 == 0) {
-      std::cout << evi << std::endl;
-    }
-    if (hitsVector[evi]->GetChNum() == 9 and
-        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2) {
-      hE->Fill(hitsVector[evi]->GetEnergy());
-      WF = hitsVector[evi]->GetWFPtr();
-      WF->SetTraceMovBLCorr();
-      hEEval->Fill(hitsVector[evi]->GetEvalEnergy() / 2.0);
-      hESmooth->Fill(WF->IntegrateBLCorrWaveForm(
-                         digiAnalysis::GateStart,
-                         digiAnalysis::GateStart + digiAnalysis::GateLenLong) /
-                     64);
-    }
-  }
-  /*
-  TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
-  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
-  for (evi = 0; evi < nentries; ++evi) // && keepGoing
-  {
+  int spectralSz = 2048;
+  TH1 *hE = new TH1F("hE", "Energy", spectralSz, 0, spectralSz);
+  TH1 *hEEval = new TH1F("hEEval", "Energy Eval", spectralSz, 0, spectralSz);
+  TH1 *hERough = new TH1F("hERough", "Energy Rough", spectralSz, 0, spectralSz);
+  TH1 *hESmooth =
+      new TH1F("hESmooth", "Energy Smooth", spectralSz, 0, spectralSz);
+  /*for (evi = 28; evi < 45; ++evi) {
     if (evi % 100000 == 0) {
       std::cout << evi << std::endl;
     }
     if (hitsVector[evi]->GetChNum() == 5 and
-        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2
-        // and
-        // fabs(hitsVector[evi]->GetEnergy() - 200) < 100
-    ) {
-      // hitsVector[evi]->Print();
+        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2) {
+      hE->Fill(hitsVector[evi]->GetEnergy());
+      WF = hitsVector[evi]->GetWFPtr();
+      WF->SetTracesMovBLCorr();
+      std::cout << "plotting: " << evi << std::endl;
+      WF->Plot();
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+      hEEval->Fill(hitsVector[evi]->GetEvalEnergy() / 2.0);
+      hESmooth->Fill(WF->IntegrateBLCorrWaveForm(
+                         digiAnalysis::GateStart,
+                         digiAnalysis::GateStart + digiAnalysis::GateLenLong) /
+                     digiAnalysis::GateLenLong * 32.0);
+    }
+  }*/
+
+  TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
+  for (evi = 0; evi < nentries && keepGoing; ++evi) // && keepGoing
+  {
+    if (evi % 10000 == 0) {
+      std::cout << evi << std::endl;
+    }
+    if (hitsVector[evi]->GetChNum() == 9 and
+        // fabs(hitsVector[evi]->GetMeanTime() - 2.7) < 0.3 and
+        fabs(hitsVector[evi]->GetEnergy() - 200) < 100) {
+      hitsVector[evi]->Print();
       hE->Fill(hitsVector[evi]->GetEnergy());
       hEEval->Fill(hitsVector[evi]->GetEvalEnergy());
       WF = hitsVector[evi]->GetWFPtr();
@@ -214,7 +225,8 @@ int main(int argc, char *argv[]) {
       evalenergy = wfNew->IntegrateWaveForm(digiAnalysis::GateStart,
                                             digiAnalysis::GateStart +
                                                 digiAnalysis::GateLenLong) /
-                   64;
+                   digiAnalysis::GateLenLong * digiAnalysis::EvalNormFactor;
+      std::cout << "Eval Energy: " << evalenergy << std::endl;
       hESmooth->Fill(evalenergy);
 
       digiAnalysis::WaveForm wf;
@@ -368,7 +380,7 @@ int main(int argc, char *argv[]) {
         keepGoing = false;
       }
     }
-  }*/
+  }
   hE->Draw("HIST");
   hEEval->SetLineColor(kBlack);
   hEEval->Draw("HIST SAME");

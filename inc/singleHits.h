@@ -80,6 +80,7 @@ public:
   void SetEvalPSD();
   // void SetDiffWF();
   void SetCFD();
+  void SetMovBLCorr();
 #endif
   void SetPSD();
 

@@ -9,6 +9,7 @@
 #define BASE_INCLUDES_HH_
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <complex>
 #include <cstdlib>
@@ -18,6 +19,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "RtypesCore.h"
