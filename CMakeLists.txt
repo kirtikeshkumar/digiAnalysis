@@ -30,7 +30,7 @@ if(CFD)
 endif()
 
 # Find ROOT
-find_package(ROOT REQUIRED)
+find_package(ROOT REQUIRED COMPONENTS Spectrum)
 include_directories(${ROOT_INCLUDE_DIRS})
 
 # Include directories
@@ -49,6 +49,6 @@ foreach(test_file ${test_sources})
 
     # Create an executable for each test file
     add_executable(${test_name} ${test_file} ${sources})
-    target_link_libraries(${test_name} ${ROOT_LIBRARIES})
+    target_link_libraries(${test_name} ${ROOT_LIBRARIES} ROOT::Spectrum)
     #message(STATUS "Test sources: ${test_name}")
 endforeach()
