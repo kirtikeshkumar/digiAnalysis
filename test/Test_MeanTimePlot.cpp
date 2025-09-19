@@ -11,17 +11,27 @@
 #include "singleHits.h"
 #include <TApplication.h>
 #include <iostream>
+#include <string>
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
-                      "run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_TRG_"
-                      "FREEWRITE_SignalDelay_80ns_Sep08/FILTERED/"
-                      "DataF_run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_"
-                      "TRG_FREEWRITE_SignalDelay_80ns_Sep08.root";
+  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
+  //                     "run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_TRG_"
+  //                     "FREEWRITE_SignalDelay_80ns_Sep08/FILTERED/"
+  //                     "DataF_run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_"
+  //                     "TRG_FREEWRITE_SignalDelay_80ns_Sep08.root";
+
+  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
+  //                     "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+  //                     "SignalDelay_50ns_Aug26/FILTERED/"
+  //                     "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
+  //                     "FREEWRITE_SignalDelay_50ns_Aug26.root";
+
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/run_noSource_19Sep/"
+                      "FILTERED/DataF_run_noSource_19Sep.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 200000, 1);
+  digiAnalysis::Analysis an(fname, 0, 000000, 1);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -62,7 +72,7 @@ int main(int argc, char *argv[]) {
     if (i % 10000 == 0) {
       std::cout << i << std::endl;
     }
-    if (hitsVector[i]->GetChNum() == 5
+    if (hitsVector[i]->GetChNum() == 9
         // and hitsVector[i]->GetMeanTime() < 3.8
     ) { // (hitsVector[i]->GetPSD() > 0.0 and
         // hitsVector[i]->GetChNum() == 0) {
@@ -78,10 +88,10 @@ int main(int argc, char *argv[]) {
       evalEnergyShort =
           hitsVector[i]
               ->GetEvalEnergyShort(); // WF->IntegrateWaveForm(290, 440);
-      shortPSD =
-          WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290, 600);
+      // shortPSD =
+      //     WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290, 600);
       psd = 1.0 - evalEnergyShort * 1.0 / evalEnergy;
-      hPSDPlot->Fill(energy, shortPSD);
+      hPSDPlot->Fill(energy, psd);
       hEPlot->Fill(energy, evalEnergy);
       hESPlot->Fill(energyShort, evalEnergyShort);
       hPSDEvalPlot->Fill(hitsVector[i]->GetPSD(), psd);

@@ -808,7 +808,8 @@ double WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
                 << std::endl;
     }
   } else {
-    std::cout << "err IntegrateWaveForm: fill traces first" << std::endl;
+    std::cout << "err IntegrateWaveForm: fill traces first: " << traces.size()
+              << " : " << stopTime << std::endl;
   }
   return sum;
 }

@@ -1,6 +1,7 @@
 #include "singleHits.h"
 #include "WaveForm.h"
 #include "diffWaveFrom.h"
+#include "globals.h"
 #include "includes.hh"
 #include <iostream>
 
