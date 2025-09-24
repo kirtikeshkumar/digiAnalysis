@@ -692,12 +692,11 @@ void WaveForm::SetBaseLine(TArrayS *arr) {
 void WaveForm::SetTracesFFT() {
   if (!traces.empty()) {
     Int_t n = static_cast<int>(traces.size());
+    fft = TVirtualFFT::FFT(1, &n, "R2C");
     // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
     fft->SetPoints(traces.data());
     fft->Transform();
-
     int nFreq = traces.size() / 2 + 1; // only positive frequencies
-
     for (int i = 0; i < nFreq; i++) {
       double re, im;
       fft->GetPointComplex(i, re, im);
@@ -714,6 +713,7 @@ void WaveForm::SetTracesFFT(std::string whichTrace) {
   } else if (whichTrace == "smooth") {
     if (!tracesSmooth.empty()) {
       Int_t n = static_cast<int>(tracesSmooth.size());
+      fft = TVirtualFFT::FFT(1, &n, "R2C");
       // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
       fft->SetPoints(tracesSmooth.data());
       fft->Transform();
@@ -737,6 +737,7 @@ void WaveForm::SetTracesFFT(std::string whichTrace) {
 
 void WaveForm::SetTracesFFT(std::vector<double> trFFT) {
   if (!trFFT.empty()) {
+    tracesFFT.clear();
     Int_t n = static_cast<int>(trFFT.size());
     // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
     fft->SetPoints(trFFT.data());
@@ -759,6 +760,7 @@ std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT) {
   if (!trFFT.empty()) {
     Int_t n = static_cast<int>(trFFT.size());
     // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+    fft = TVirtualFFT::FFT(1, &n, "R2C");
     fft->SetPoints(trFFT.data());
     fft->Transform();
 

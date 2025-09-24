@@ -19,6 +19,10 @@ int main(int argc, char *argv[]) {
                       "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
                       "FREEWRITE_SignalDelay_50ns_Aug26.root";
 
+  // std::string fname =
+  // "/home/kirtikesh/analysisSSD/DATA/SPE/run_noSource_19Sep/"
+  //                     "FILTERED/DataF_run_noSource_19Sep.root";
+
   // test reading to singleHits
   digiAnalysis::Analysis an(fname, 0000, 20000, 0);
 
@@ -69,12 +73,13 @@ int main(int argc, char *argv[]) {
       std::cout << evi << std::endl;
     }
     if (hitsVector[evi]->GetChNum() == 9 and
-        fabs(hitsVector[evi]->GetMeanTime() - 2.6) < 0.2 and
-        fabs(hitsVector[evi]->GetEnergy() - 200) < 200) {
+        fabs(hitsVector[evi]->GetMeanTime() - 2.1) < 0.25 and
+        fabs(hitsVector[evi]->GetEnergy() - 120) < 20) {
       hitsVector[evi]->Print();
       WF = hitsVector[evi]->GetWFPtr();
-      WF->SetSmooth(80);
-      std::vector<double> traces = WF->GetTracesSmooth();
+      // WF->SetSmooth(80);
+      // std::vector<double> traces = WF->GetTracesSmooth();
+      std::vector<double> traces = WF->GetTraces();
       N = traces.size();
       std::vector<double> tracesMod(N, 0.0);
       std::vector<double> tracesPeaks(N, 0.0);
@@ -239,7 +244,8 @@ int main(int argc, char *argv[]) {
       // legend->AddEntry(graphTraces, "Traces", "l");
       double xmin = graphTraces->GetXaxis()->GetXmin();
       double xmax = graphTraces->GetXaxis()->GetXmax();
-      TLine *line = new TLine(xmin, kernelSz / 2, xmax, kernelSz / 2);
+      // TLine *line = new TLine(xmin, kernelSz / 2, xmax, kernelSz / 2);
+      TLine *line = new TLine(xmin, 0., xmax, 0.);
       line->SetLineColor(kBlack);
       line->SetLineStyle(1);
 
@@ -253,12 +259,12 @@ int main(int argc, char *argv[]) {
       line->Draw("SAME");
 
       canvas->cd(2);
-      // hSTFT->SetStats(0);
-      // hSTFT->SetMinimum(minstft);
-      // hSTFT->Draw("COLZ");
-      graphTracesPeaksTH2->SetLineColor(kBlack);
-      graphTracesPeaksTH2->SetLineWidth(2);
-      graphTracesPeaksTH2->Draw("AL");
+      hSTFT->SetStats(0);
+      hSTFT->SetMinimum(minstft);
+      hSTFT->Draw("COLZ");
+      // graphTracesPeaksTH2->SetLineColor(kBlack);
+      // graphTracesPeaksTH2->SetLineWidth(2);
+      // graphTracesPeaksTH2->Draw("AL");
       // graphTracesPeaksTH2Fin->SetLineColor(kGreen);
       // graphTracesPeaksTH2Fin->SetLineWidth(2);
       // graphTracesPeaksTH2Fin->Draw("SAME");
