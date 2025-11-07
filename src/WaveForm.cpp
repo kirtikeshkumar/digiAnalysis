@@ -468,7 +468,8 @@ void WaveForm::SetTracesMovBLCorr() {
     meantime = 0;
     double sampleSum = 0;
     for (int i = 0; i < N; i++) {
-      tracesMovBLCorr[i] = tracesSmooth[i] - tracesBL[i];
+      // tracesMovBLCorr[i] = tracesSmooth[i] - tracesBL[i];
+      tracesMovBLCorr[i] = traces[i] - tracesBL[i];
       if (i >= GateStart and i <= GateStart + GateLenShort) {
         meantime = meantime + tracesMovBLCorr[i] * i;
         sampleSum = sampleSum + tracesMovBLCorr[i];

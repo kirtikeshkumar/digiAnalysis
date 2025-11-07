@@ -19,12 +19,15 @@ int main(int argc, char *argv[]) {
   //                     "DataF_run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_"
   //                     "TRG_FREEWRITE_SignalDelay_80ns_Sep08.root";
 
-  std::string fname =
-      "/home/kirtikesh/analysisSSD/DATA/NaI/"
-      "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
-      "SignalDelay_50ns_Aug26/FILTERED/"
-      "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
-      "SignalDelay_50ns_Aug26.root";
+  // std::string fname =
+  //     "/home/kirtikesh/analysisSSD/DATA/NaI/"
+  //     "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+  //     "SignalDelay_50ns_Aug26/FILTERED/"
+  //     "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
+  //     "SignalDelay_50ns_Aug26.root";
+
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/run_noSource_19Sep/"
+                      "FILTERED/DataF_run_noSource_19Sep.root";
 
   // test reading to singleHits
   digiAnalysis::Analysis an(fname, 0, 100000, 0);
@@ -83,13 +86,14 @@ int main(int argc, char *argv[]) {
     }
     if (hitsVector[evi]->GetChNum() == 9 and
         // fabs(hitsVector[evi]->GetMeanTime() - 2.7) < 0.3 and
-        fabs(hitsVector[evi]->GetEnergy() - 200) < 100) {
+        fabs(hitsVector[evi]->GetEnergy() - 500) < 20) {
       hitsVector[evi]->Print();
       hE->Fill(hitsVector[evi]->GetEnergy());
       hEEval->Fill(hitsVector[evi]->GetEvalEnergy());
       WF = hitsVector[evi]->GetWFPtr();
-      WF->SetSmooth(80);
-      std::vector<double> traces = WF->GetTracesSmooth();
+      // WF->SetSmooth(80);
+      // std::vector<double> traces = WF->GetTracesSmooth();
+      std::vector<double> traces = WF->GetTraces();
       //   std::cout << traces[1000] << std::endl;
       //   hitsVector[evi]->Print();
       //   WF->Plot();
@@ -101,7 +105,7 @@ int main(int argc, char *argv[]) {
       int nBL = 16;
       double baselineVal = 0;
       int start = 45;
-      double BLError = 0.15;
+      double BLError = 0.5;
       double trCut = 1;
 
       // Evaluate a baseline from the first few entries

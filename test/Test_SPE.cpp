@@ -9,8 +9,11 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/run_noSource_19Sep/"
-                      "FILTERED/DataF_run_noSource_19Sep.root";
+  std::string fname =
+      "/home/kirtikesh/analysisSSD/DATA/SPE/"
+      "run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_"
+      "Bias2100V/FILTERED/"
+      "DataF_run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_Bias2100V.root";
 
   digiAnalysis::Analysis an(fname, 0, 00000, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -23,17 +26,21 @@ int main(int argc, char *argv[]) {
   digiAnalysis::WaveForm *WF = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector;
 
+  // Waveform Plotting
+
   for (evi = 0; evi < nentries && keepGoing; ++evi) {
     // if (evi % 1 == 0) {
     //   std::cout << evi << " : " << keepGoing << std::endl;
     // }
-    if (fabs(hitsVector[evi]->GetEnergy() - 4000) <
-        2000 // and
-             // fabs(hitsVector[evi]->GetMeanTime() - 2.15) < 0.25
+    if (fabs(hitsVector[evi]->GetEnergy() - 8300) <
+        100 // and
+            //   hitsVector[evi]->GetTimestamp() / 1e12 > 30000 and
+            //  fabs(hitsVector[evi]->GetMeanTime() - 2.7) < 0.1
     ) {
       WF = nullptr;
       WF = hitsVector[evi]->GetWFPtr();
       //   WF->SetSmooth(80, "Gauss");
+      hitsVector[evi]->Print();
       WF->SetTracesFFT();
       WF->Plot();
       if (WF) {
@@ -55,6 +62,25 @@ int main(int argc, char *argv[]) {
   WFAveraged->SetSmooth(80, "Gauss");
   WFAveraged->SetTracesFFT();
   WFAveraged->Plot();
+
+  // Energy after moving baseline correction
+  TH1 *hE = new TH1F("hE", "Energy", 16384, 0, 16384);
+  TH1 *hEEval = new TH1F("hEEval", "Energy Eval", 16384, 0, 16384);
+  for (evi = 0; evi < nentries && keepGoing; ++evi) {
+    hE->Fill(hitsVector[evi]->GetEnergy());
+    WF = nullptr;
+    WF = hitsVector[evi]->GetWFPtr();
+    WF->SetTracesMovBLCorr();
+    hitsVector[evi]->SetEvalEnergy();
+    hEEval->Fill(hitsVector[evi]->GetEvalEnergy());
+  }
+  TCanvas *canvas1 = new TCanvas("canvas1", "Energy Hists", 1600, 1000);
+  canvas1->cd();
+  hE->Draw("HIST");
+  hEEval->SetLineColor(kBlack);
+  hEEval->Draw("HIST SAME");
+  canvas1->Update();
+  //   WFAveraged->Plot();
   std::cout << "Ending the run" << std::endl;
   fApp->Run();
 

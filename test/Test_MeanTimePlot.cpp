@@ -27,8 +27,17 @@ int main(int argc, char *argv[]) {
   //                     "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
   //                     "FREEWRITE_SignalDelay_50ns_Aug26.root";
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/run_noSource_19Sep/"
-                      "FILTERED/DataF_run_noSource_19Sep.root";
+  std::string fname =
+      "/home/kirtikesh/analysisSSD/DATA/SPE/"
+      "run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_"
+      "Bias2100V/FILTERED/"
+      "DataF_run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_Bias2100V.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/analysisSSD/DATA/SPE/"
+  //     "run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_"
+  //     "Bias2100V/RAW/"
+  //     "DataR_run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_Bias2100V.root";
 
   // Read to singleHits
   digiAnalysis::Analysis an(fname, 0, 000000, 1);
@@ -72,7 +81,7 @@ int main(int argc, char *argv[]) {
     if (i % 10000 == 0) {
       std::cout << i << std::endl;
     }
-    if (hitsVector[i]->GetChNum() == 9
+    if (hitsVector[i]->GetChNum() == 0
         // and hitsVector[i]->GetMeanTime() < 3.8
     ) { // (hitsVector[i]->GetPSD() > 0.0 and
         // hitsVector[i]->GetChNum() == 0) {
