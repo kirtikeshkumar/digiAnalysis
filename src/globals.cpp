@@ -19,8 +19,8 @@ UShort_t smoothBoxSz = 16;
 // UShort_t GateLenLong = 250; // NaI 500MSPS has *2 ns
 // UShort_t GateLenShort = 15; // NaI 500MSPS has *2 ns
 
-UShort_t GateStart = 198;   // 1GSPS
-UShort_t GateLenLong = 420; // 1GSPS
+UShort_t GateStart = 188;   // 1GSPS
+UShort_t GateLenLong = 200; // 1GSPS
 UShort_t GateLenShort = 65; // 1GSPS
 
 UShort_t PairCoincWindow = 96; // in ns
