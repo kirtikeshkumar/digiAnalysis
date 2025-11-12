@@ -6,22 +6,26 @@
 #include <TApplication.h>
 #include <algorithm>
 #include <iostream>
+#include <map>
+#include <utility>
 #include <vector>
 
 int PeakLocation(digiAnalysis::WaveForm *WF, int peakWidth,
                  int startPoint = -1);
 
+std::pair<std::vector<int>, std::vector<int>>
+DetectPeakValleys(digiAnalysis::WaveForm *WF, double threshold = 0);
+
 int main(int argc, char *argv[]) {
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
-  std::string fname =
-      "/home/kirtikesh/analysisSSD/DATA/SPE/"
-      "run_Nov07_Direct_FreeWrites_CFD_2lsb_Delay_20ns_BlueLED_Pico05_Fiber_"
-      "Bias1800V/FILTERED/"
-      "DataF_run_Nov07_Direct_FreeWrites_CFD_2lsb_Delay_20ns_BlueLED_Pico05_"
-      "Fiber_Bias1800V.root";
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
+                      "run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
+                      "BlueLED_PicoOFFHalfON_Fiber_Bias1800V/FILTERED/"
+                      "DataF_run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
+                      "20ns_BlueLED_PicoOFFHalfON_Fiber_Bias1800V.root";
 
-  digiAnalysis::Analysis an(fname, 0, 1, 0);
+  digiAnalysis::Analysis an(fname, 30, 1, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
   int nentries = hitsVector.size();
@@ -38,32 +42,62 @@ int main(int argc, char *argv[]) {
   std::set<int> selectedPeaks;
   auto res = identifiedPeaks.insert(peak);
   std::vector<double> traces = WF->GetTracesSmooth();
-  while (traces[peak] - traces[peak + 2 * Width] <=
-         0.86) { // this is the value expected from a gaussian peak with
-                 // width=sigma
-    std::cout << "The width of identified peak at: " << peak
-              << " is broader than required, CONTINUING" << std::endl;
-    if (!res.second) { // Here I check if the peak identified in the previous
-                       // run was different from previously identified peaks.
-                       // This is required since if the previous peak is at
-                       // the same location, i need to move farther for the
-                       // next peak
-      startpoint += 2 * Width;
-    } else {
-      startpoint = peak + 2 * Width;
-    }
-    if (startpoint >= WF->GetSize()) {
-      std::cout << "No Peak of required or smaller width could be found"
-                << std::endl;
-      break;
-    } else {
-      peak = PeakLocation(WF, Width, startpoint);
-      res = identifiedPeaks.insert(peak);
-      std::cout << peak << " " << res.second << std::endl;
-    }
+  double threshold = 4;
+  // while ((traces[peak] - traces[peak + Width]) / traces[peak] <= 0.4 or
+  //        traces[peak] < threshold) { // this is the value expected from a
+  //                                    // gaussian peak with width=sigma
+  //   std::cout << "The width of identified peak at: " << peak
+  //             << " is broader than required ("
+  //             << (traces[peak] - traces[peak + Width]) / traces[peak]
+  //             << ") CONTINUING" << std::endl;
+  //   if (!res.second) { // Here I check if the peak identified in the previous
+  //                      // run was different from previously identified peaks.
+  //                      // This is required since if the previous peak is at
+  //                      // the same location, i need to move farther for the
+  //                      // next peak
+  //     startpoint += 2 * Width;
+  //   } else {
+  //     startpoint = peak + 2 * Width;
+  //   }
+  //   if (startpoint >= WF->GetSize()) {
+  //     std::cout << "No Peak of required or smaller width could be found"
+  //               << std::endl;
+  //     break;
+  //   } else {
+  //     peak = PeakLocation(WF, Width, startpoint);
+  //     res = identifiedPeaks.insert(peak);
+  //     std::cout << peak << " " << res.second << std::endl;
+  //   }
+  // }
+
+  std::cout << "Peak Position: " << peak << " ("
+            << (traces[peak] - traces[peak + Width]) / traces[peak] << ")"
+            << std::endl;
+
+  WF->SetSmooth(13);
+  traces = WF->GetTracesSmooth();
+  auto results = WF->DetectPeakValleys(3.5);
+  std::cout << "size of peaks: " << results.first.size() << std::endl;
+  std::cout << "size of valleys: " << results.second.size() << std::endl;
+  int iter = 0;
+  std::cout << std::endl << "PEAKS:____________" << std::endl;
+  while (iter < results.first.size()) {
+    int peakPos = results.first[iter];
+    double ratiohi = 1.0 - traces[peakPos + 1] / traces[peakPos];
+    double ratiolo = 1.0 - traces[peakPos + 2] / traces[peakPos];
+    std::cout << iter << ":" << peakPos << ":" << ratiolo << ":" << ratiohi
+              << std::endl;
+    iter += 1;
   }
 
-  std::cout << "Peak Position: " << peak << std::endl;
+  iter = 0;
+
+  std::cout << std::endl << "VALLEYS:____________" << std::endl;
+  while (iter < results.second.size()) {
+    std::cout << iter << ":" << results.second[iter] << std::endl;
+    iter += 1;
+  }
+
   WF->Plot();
   fApp->Run();
 #endif
@@ -80,7 +114,7 @@ int PeakLocation(digiAnalysis::WaveForm *WF, int peakWidth, int startPoint) {
 
   int peakPos = startPoint;
   int iPlus = 1, iMinus = 1;
-  WF->SetSmooth(4 * peakWidth);
+  WF->SetSmooth(2.5 * peakWidth);
   std::vector<double> traces = WF->GetTracesSmooth();
   double peakVal = traces[peakPos];
   double valPlus, valMinus;
@@ -117,4 +151,53 @@ int PeakLocation(digiAnalysis::WaveForm *WF, int peakWidth, int startPoint) {
     }
   }
   return peakPos;
+}
+
+std::pair<std::vector<int>, std::vector<int>>
+DetectPeakValleys(digiAnalysis::WaveForm *WF, double threshold) {
+  std::vector<double> traces = WF->GetTracesSmooth();
+  std::vector<int> peak;
+  std::vector<int> valley;
+  std::vector<int> valleyTemp;
+  int iter = 0, peakPos = 0, valleyPos = 0;
+  bool findPeak = true, findValley = true, peakFound = false;
+  double peakVal = traces[peakPos], valleyVal = traces[valleyPos], currVal;
+  std::cout << "traces size: " << traces.size() << std::endl;
+  while (iter < traces.size()) {
+    // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " : "
+    //           << peakVal << " : " << valleyPos << " : " << valleyVal
+    //           << std::endl;
+    currVal = traces[iter];
+    if (findPeak and currVal < peakVal) {
+      findPeak = false;
+      findValley = true;
+      if (peakVal > threshold) {
+        peak.push_back(peakPos);
+        peakFound = true;
+        if (!valleyTemp.empty()) {
+          valley.push_back(valleyTemp.back());
+        }
+      }
+    } else {
+      peakPos = iter;
+      peakVal = currVal;
+    }
+
+    if (findValley and currVal > valleyVal) {
+      findPeak = true;
+      findValley = false;
+      valleyTemp.push_back(valleyPos);
+      if (peakFound == true) {
+        peakFound = false;
+        valley.push_back(valleyTemp.back());
+      }
+    } else {
+      valleyPos = iter;
+      valleyVal = currVal;
+    }
+
+    iter += 1;
+  }
+  std::cout << "peak vector in function " << peak.size() << std::endl;
+  return std::make_pair(peak, valley);
 }
