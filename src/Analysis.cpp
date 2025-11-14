@@ -143,7 +143,7 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
       std::cout << "Reading: " << indices[iev] << std::endl;
     }
     nbytes += tr->GetEntry(indices[iev]);
-    if (Energy > EThreshold) {
+    if (Energy >= EThreshold) {
 #ifndef WAVES
       std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
           iev, Channel, Board, Timestamp, Energy, EnergyShort);

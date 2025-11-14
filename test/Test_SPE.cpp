@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "singleHits.h"
 #include <TApplication.h>
+#include <TH1.h>
 #include <iostream>
 int main(int argc, char *argv[]) {
 #ifdef WAVES
@@ -15,7 +16,19 @@ int main(int argc, char *argv[]) {
                       "DataF_run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
                       "20ns_BlueLED_PicoOFFHalfON_Fiber_Bias1800V.root";
 
-  digiAnalysis::Analysis an(fname, 30, 000001, 0);
+  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
+  //                     "run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
+  //                     "BlueLED_PicoOFF_Fiber_Bias1800V/FILTERED/"
+  //                     "DataF_run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
+  //                     "20ns_BlueLED_PicoOFF_Fiber_Bias1800V.root";
+
+  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
+  //                     "run_Nov07_Direct_FreeWrites_CFD_2lsb_Delay_20ns_BlueLED_"
+  //                     "Pico25_Fiber_Bias1800V/FILTERED/"
+  //                     "DataF_run_Nov07_Direct_FreeWrites_CFD_2lsb_Delay_20ns_"
+  //                     "BlueLED_Pico25_Fiber_Bias1800V.root";
+
+  digiAnalysis::Analysis an(fname, 0, 0, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
   int nentries = hitsVector.size();
@@ -31,12 +44,64 @@ int main(int argc, char *argv[]) {
       std::ceil(10. * peakFWHM / 2.35)); // assuming gaussian peak
 
   // Waveform integration of single PE peaks
+  TH1 *hSPE = new TH1F("hSPE", "SPE Energy", 16384, 0, 16384);
+  std::cout << "Integrating single photoelectrons from waveform" << std::endl;
   for (evi = 0; evi < nentries && keepGoing; ++evi) {
+    if (evi % 100000 == 0) {
+      std::cout << "Analyzing Event: " << evi << std::endl;
+    }
+    // if (hitsVector[evi]->GetTimestamp() / 1E12 >= 120) {
+    //   continue;
+    // }
     WF = nullptr;
     hitsVector[evi]->SetSmoothWF(sbSize);
     WF = hitsVector[evi]->GetWFPtr();
     auto pvVec = WF->DetectPeakValleys(peakThreshold);
+    // Now check if peak to be integrated over
+    // valley of previous and next peak to be > 20 from the peak
+    // for first peak, location to be > 100
+    // for last peak, location to be < wfsize-100
+    int iter = 0;
+    auto peaks = pvVec.first;
+    auto valleys = pvVec.second;
+    int startCheck = 100;
+    int stopCheck = WF->GetSize() - 100;
+    int distToValleys = 20;
+    double integratedVal;
+    int integrateRange = 20;
+    double lowEnergy = 1490, hiEnergy = 1500;
+    while (iter < peaks.size()) {
+      int peakPos = peaks[iter];
+      if (peakPos >= WF->GetSize() - startCheck) {
+        break;
+      }
+      if (peakPos > startCheck and peakPos < stopCheck and
+          ((peakPos - valleys[2 * iter - 1]) > distToValleys) and
+          (valleys[2 * iter + 2] - peakPos > distToValleys)) {
+        // Integrate this peak in +- 20
+        integratedVal = WF->IntegrateSmoothWaveForm(peakPos - integrateRange,
+                                                    peakPos + integrateRange);
+        hSPE->Fill(integratedVal);
+
+        if (integratedVal >= lowEnergy and integratedVal <= hiEnergy) {
+          std::cout << evi << ": Peak Position = " << peakPos << std::endl;
+          hitsVector[evi]->Print();
+          WF->Plot();
+          std::cout << "Do you want to see the next waveform? (y/n): ";
+          std::getline(std::cin, userInput);
+          if (userInput != "y" && userInput != "Y") {
+            keepGoing = false;
+          }
+          std::cout << "\n\n";
+        }
+      }
+      iter += 1;
+    }
   }
+  TCanvas *canvas1 = new TCanvas("canvas1", "Energy Hists", 1600, 1000);
+  canvas1->cd();
+  hSPE->Draw("HIST");
+  canvas1->Update();
 
   // Waveform Plotting
   // for (evi = 0; evi < nentries && keepGoing; ++evi) {

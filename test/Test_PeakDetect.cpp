@@ -74,17 +74,18 @@ int main(int argc, char *argv[]) {
             << (traces[peak] - traces[peak + Width]) / traces[peak] << ")"
             << std::endl;
 
-  WF->SetSmooth(13);
+  WF->SetSmooth(14);
   traces = WF->GetTracesSmooth();
-  auto results = WF->DetectPeakValleys(3.5);
+  // auto results = WF->DetectPeakValleys(3.5);
+  auto results = DetectPeakValleys(WF, 3.5);
   std::cout << "size of peaks: " << results.first.size() << std::endl;
   std::cout << "size of valleys: " << results.second.size() << std::endl;
   int iter = 0;
   std::cout << std::endl << "PEAKS:____________" << std::endl;
   while (iter < results.first.size()) {
     int peakPos = results.first[iter];
-    double ratiohi = 1.0 - traces[peakPos + 1] / traces[peakPos];
-    double ratiolo = 1.0 - traces[peakPos + 2] / traces[peakPos];
+    double ratiohi = 1.0 - traces[peakPos + 2] / traces[peakPos];
+    double ratiolo = 1.0 - traces[peakPos - 2] / traces[peakPos];
     std::cout << iter << ":" << peakPos << ":" << ratiolo << ":" << ratiohi
               << std::endl;
     iter += 1;
@@ -93,9 +94,12 @@ int main(int argc, char *argv[]) {
   iter = 0;
 
   std::cout << std::endl << "VALLEYS:____________" << std::endl;
-  while (iter < results.second.size()) {
-    std::cout << iter << ":" << results.second[iter] << std::endl;
+  while (iter < 10) {
+    std::cout << iter << ":" << results.second[iter] << ":"
+              << traces[results.second[iter]] << std::endl;
     iter += 1;
+    if (iter >= results.second.size())
+      break;
   }
 
   WF->Plot();
@@ -168,7 +172,7 @@ DetectPeakValleys(digiAnalysis::WaveForm *WF, double threshold) {
     //           << peakVal << " : " << valleyPos << " : " << valleyVal
     //           << std::endl;
     currVal = traces[iter];
-    if (findPeak and currVal < peakVal) {
+    if (findPeak and (peakVal > currVal)) {
       findPeak = false;
       findValley = true;
       if (peakVal > threshold) {
@@ -183,7 +187,7 @@ DetectPeakValleys(digiAnalysis::WaveForm *WF, double threshold) {
       peakVal = currVal;
     }
 
-    if (findValley and currVal > valleyVal) {
+    if (findValley and (valleyVal < currVal)) {
       findPeak = true;
       findValley = false;
       valleyTemp.push_back(valleyPos);

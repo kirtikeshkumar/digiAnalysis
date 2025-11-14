@@ -15,29 +15,11 @@
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
-  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
-  //                     "run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_TRG_"
-  //                     "FREEWRITE_SignalDelay_80ns_Sep08/FILTERED/"
-  //                     "DataF_run_Na_NaI12_FAGain_10_10_CFDTHR_5_255_Mode_EXT_"
-  //                     "TRG_FREEWRITE_SignalDelay_80ns_Sep08.root";
-
-  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/NaI/"
-  //                     "run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
-  //                     "SignalDelay_50ns_Aug26/FILTERED/"
-  //                     "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_"
-  //                     "FREEWRITE_SignalDelay_50ns_Aug26.root";
-
-  std::string fname =
-      "/home/kirtikesh/analysisSSD/DATA/SPE/"
-      "run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_"
-      "Bias2100V/FILTERED/"
-      "DataF_run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_Bias2100V.root";
-
-  // std::string fname =
-  //     "/home/kirtikesh/analysisSSD/DATA/SPE/"
-  //     "run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_"
-  //     "Bias2100V/RAW/"
-  //     "DataR_run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_Bias2100V.root";
+  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
+                      "run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
+                      "BlueLED_PicoOFFHalfON_Fiber_Bias1800V/FILTERED/"
+                      "DataF_run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
+                      "20ns_BlueLED_PicoOFFHalfON_Fiber_Bias1800V.root";
 
   // Read to singleHits
   digiAnalysis::Analysis an(fname, 0, 000000, 1);

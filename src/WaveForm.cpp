@@ -1123,6 +1123,8 @@ WaveForm::DetectPeakValleys(double threshold) {
         peakFound = true;
         if (!valleyTemp.empty()) {
           valley.push_back(valleyTemp.back());
+        } else {
+          valley.push_back(-1);
         }
       }
     } else {
@@ -1145,6 +1147,8 @@ WaveForm::DetectPeakValleys(double threshold) {
 
     iter += 1;
   }
+  if (peakFound == true)
+    valley.push_back(iter);
   return std::make_pair(peak, valley);
 }
 
