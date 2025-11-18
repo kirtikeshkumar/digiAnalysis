@@ -16,10 +16,10 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
   std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
-                      "run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
-                      "BlueLED_PicoOFFHalfON_Fiber_Bias1800V/FILTERED/"
-                      "DataF_run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
-                      "20ns_BlueLED_PicoOFFHalfON_Fiber_Bias1800V.root";
+                      "run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
+                      "Dark_Fiber_Bias1800V/FILTERED/"
+                      "DataF_run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
+                      "20ns_Dark_Fiber_Bias1800V.root";
 
   // Read to singleHits
   digiAnalysis::Analysis an(fname, 0, 000000, 1);
@@ -63,7 +63,9 @@ int main(int argc, char *argv[]) {
     if (i % 10000 == 0) {
       std::cout << i << std::endl;
     }
-    if (hitsVector[i]->GetChNum() == 0
+    if (hitsVector[i]->GetChNum() == 0 and
+        hitsVector[i]->GetTimestamp() / 1E12 > 1600 and
+        hitsVector[i]->GetTimestamp() / 1E12 < 3200
         // and hitsVector[i]->GetMeanTime() < 3.8
     ) { // (hitsVector[i]->GetPSD() > 0.0 and
         // hitsVector[i]->GetChNum() == 0) {

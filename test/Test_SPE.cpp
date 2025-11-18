@@ -11,10 +11,10 @@ int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
 
   std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
-                      "run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
-                      "BlueLED_PicoOFFHalfON_Fiber_Bias1800V/FILTERED/"
-                      "DataF_run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
-                      "20ns_BlueLED_PicoOFFHalfON_Fiber_Bias1800V.root";
+                      "run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
+                      "Dark_Fiber_Bias1800V/FILTERED/"
+                      "DataF_run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
+                      "20ns_Dark_Fiber_Bias1800V.root";
 
   // std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
   //                     "run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
@@ -50,9 +50,10 @@ int main(int argc, char *argv[]) {
     if (evi % 100000 == 0) {
       std::cout << "Analyzing Event: " << evi << std::endl;
     }
-    // if (hitsVector[evi]->GetTimestamp() / 1E12 >= 120) {
-    //   continue;
-    // }
+    if (hitsVector[evi]->GetTimestamp() / 1E12 <= 1600 or
+        hitsVector[evi]->GetTimestamp() / 1E12 >= 3200) {
+      continue;
+    }
     WF = nullptr;
     hitsVector[evi]->SetSmoothWF(sbSize);
     WF = hitsVector[evi]->GetWFPtr();
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
     int distToValleys = 20;
     double integratedVal;
     int integrateRange = 20;
-    double lowEnergy = 1490, hiEnergy = 1500;
+    double lowEnergy = 7500, hiEnergy = 8500;
     while (iter < peaks.size()) {
       int peakPos = peaks[iter];
       if (peakPos >= WF->GetSize() - startCheck) {
@@ -83,7 +84,10 @@ int main(int argc, char *argv[]) {
                                                     peakPos + integrateRange);
         hSPE->Fill(integratedVal);
 
-        if (integratedVal >= lowEnergy and integratedVal <= hiEnergy) {
+        // if (integratedVal >= lowEnergy and integratedVal <= hiEnergy) {
+        if (hitsVector[evi]->GetEnergy() >= lowEnergy and
+            hitsVector[evi]->GetEnergy() <= hiEnergy and
+            hitsVector[evi]->GetMeanTime() < 2.34) {
           std::cout << evi << ": Peak Position = " << peakPos << std::endl;
           hitsVector[evi]->Print();
           WF->Plot();
