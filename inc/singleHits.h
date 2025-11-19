@@ -70,6 +70,8 @@ public:
   double GetEvalEnergyShort();
   double GetEvalPSD();
   // std::unique_ptr<diffWaveForm> GetDiffWF();
+  std::pair<std::vector<int>, std::vector<int>>
+  DetectPeakValleys(double threshold);
 
   // Setters
   void SetWF(const WaveForm &wf);

@@ -104,6 +104,11 @@ double singleHits::GetEvalPSD() { return evalPSD; }
 // std::unique_ptr<diffWaveForm> singleHits::GetDiffWF() { return
 // std::move(dWF); }
 
+std::pair<std::vector<int>, std::vector<int>>
+singleHits::DetectPeakValleys(double threshold) {
+  return WF->DetectPeakValleys(threshold);
+}
+
 void singleHits::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
 void singleHits::SetSmoothWF() { WF->SetSmooth(); }
 void singleHits::SetSmoothWF(UShort_t sBoxSz) { WF->SetSmooth(sBoxSz); }
@@ -156,6 +161,7 @@ void singleHits::SetMovBLCorr() {
 
 void singleHits::SetEvalPSD() { evalPSD = 1.0 - evalEnergyShort / evalEnergy; }
 // void singleHits::SetDiffWF() {}
+
 #endif
 
 void singleHits::SetPSD() { PSD = 1.0 - (EnergyShort * 1.0) / Energy; }
