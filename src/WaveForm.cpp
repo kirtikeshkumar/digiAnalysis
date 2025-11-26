@@ -349,6 +349,11 @@ void WaveForm::Plot(std::vector<double> tr) {
     graphTraces->Draw("AL");
     legend->AddEntry(graphTraces, "Traces", "l");
   }
+  // Draw the Baseline
+  TLine *line = new TLine(0.0, 0.0, nTraces, 0.0);
+  line->SetLineColor(kBlack);
+  line->SetLineWidth(2);
+  line->Draw("LSAME");
   // Draw the legend
   legend->Draw();
 
@@ -380,7 +385,7 @@ void WaveForm::SetWaveForm(std::vector<double> tr) {
 #endif
   if (!tr.empty()) {
     if (!traces.empty()) {
-      std::cout << " WARNING: Replacing already filled traces" << std::endl;
+      // std::cout << " WARNING: Replacing already filled traces" << std::endl;
       traces.clear();
     }
     SetBaseLine(tr);
@@ -1108,48 +1113,92 @@ WaveForm::DetectPeakValleys(double threshold) {
   std::vector<int> valleyTemp;
   int iter = 0, peakPos = 0, valleyPos = 0;
   bool findPeak = true, findValley = true, peakFound = false;
-  double peakVal = tracesSmooth[peakPos], valleyVal = tracesSmooth[valleyPos],
-         currVal;
-  while (iter < tracesSmooth.size()) {
-    // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " : "
-    //           << peakVal << " : " << valleyPos << " : " << valleyVal
-    //           << std::endl;
-    currVal = tracesSmooth[iter];
-    if (findPeak and currVal < peakVal) {
-      findPeak = false;
-      findValley = true;
-      if (peakVal > threshold) {
-        peak.push_back(peakPos);
-        peakFound = true;
-        if (!valleyTemp.empty()) {
-          valley.push_back(valleyTemp.back());
-        } else {
-          valley.push_back(-1);
+  if (IsTracesSmoothSet()) {
+    double peakVal = tracesSmooth[peakPos], valleyVal = tracesSmooth[valleyPos],
+           currVal;
+    while (iter < tracesSmooth.size()) {
+      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " : "
+      //           << peakVal << " : " << valleyPos << " : " << valleyVal
+      //           << std::endl;
+      currVal = tracesSmooth[iter];
+      if (findPeak and currVal < peakVal) {
+        findPeak = false;
+        findValley = true;
+        if (peakVal > threshold) {
+          peak.push_back(peakPos);
+          peakFound = true;
+          if (!valleyTemp.empty()) {
+            valley.push_back(valleyTemp.back());
+          } else {
+            valley.push_back(-1);
+          }
         }
+      } else {
+        peakPos = iter;
+        peakVal = currVal;
       }
-    } else {
-      peakPos = iter;
-      peakVal = currVal;
-    }
 
-    if (findValley and currVal > valleyVal) {
-      findPeak = true;
-      findValley = false;
-      valleyTemp.push_back(valleyPos);
-      if (peakFound == true) {
-        peakFound = false;
-        valley.push_back(valleyTemp.back());
+      if (findValley and currVal > valleyVal) {
+        findPeak = true;
+        findValley = false;
+        valleyTemp.push_back(valleyPos);
+        if (peakFound == true) {
+          peakFound = false;
+          valley.push_back(valleyTemp.back());
+        }
+      } else {
+        valleyPos = iter;
+        valleyVal = currVal;
       }
-    } else {
-      valleyPos = iter;
-      valleyVal = currVal;
-    }
 
-    iter += 1;
+      iter += 1;
+    }
+    if (peakFound == true)
+      valley.push_back(iter);
+    return std::make_pair(peak, valley);
+  } else {
+    double peakVal = traces[peakPos], valleyVal = traces[valleyPos], currVal;
+    while (iter < traces.size()) {
+      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " : "
+      //           << peakVal << " : " << valleyPos << " : " << valleyVal
+      //           << std::endl;
+      currVal = traces[iter];
+      if (findPeak and currVal < peakVal) {
+        findPeak = false;
+        findValley = true;
+        if (peakVal > threshold) {
+          peak.push_back(peakPos);
+          peakFound = true;
+          if (!valleyTemp.empty()) {
+            valley.push_back(valleyTemp.back());
+          } else {
+            valley.push_back(-1);
+          }
+        }
+      } else {
+        peakPos = iter;
+        peakVal = currVal;
+      }
+
+      if (findValley and currVal > valleyVal) {
+        findPeak = true;
+        findValley = false;
+        valleyTemp.push_back(valleyPos);
+        if (peakFound == true) {
+          peakFound = false;
+          valley.push_back(valleyTemp.back());
+        }
+      } else {
+        valleyPos = iter;
+        valleyVal = currVal;
+      }
+
+      iter += 1;
+    }
+    if (peakFound == true)
+      valley.push_back(iter);
+    return std::make_pair(peak, valley);
   }
-  if (peakFound == true)
-    valley.push_back(iter);
-  return std::make_pair(peak, valley);
 }
 
 } // namespace digiAnalysis

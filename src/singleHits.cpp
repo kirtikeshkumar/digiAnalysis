@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "includes.hh"
 #include <iostream>
+#include <vector>
 
 // ClassImp(digiAnalysis::singleHits);
 
@@ -110,6 +111,7 @@ singleHits::DetectPeakValleys(double threshold) {
 }
 
 void singleHits::SetWF(const WaveForm &wf) { WF->SetWaveForm(wf); }
+void singleHits::SetWF(const std::vector<double> tr) { WF->SetWaveForm(tr); }
 void singleHits::SetSmoothWF() { WF->SetSmooth(); }
 void singleHits::SetSmoothWF(UShort_t sBoxSz) { WF->SetSmooth(sBoxSz); }
 void singleHits::SetEvalEnergy() {

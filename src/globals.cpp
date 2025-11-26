@@ -10,7 +10,7 @@ UShort_t smoothBoxSz = 16;
 // UShort_t GateLenLong = 2000; // NaI 500MSPS has *2 ns
 // UShort_t GateLenShort = 275; // NaI 500MSPS has *2 ns
 
-UShort_t GateStart = 74;     // NaI 500MSPS has *2 ns
+UShort_t GateStart = 150;    // NaI 500MSPS has *2 ns
 UShort_t GateLenLong = 1150; // NaI 500MSPS has *2 ns
 UShort_t GateLenShort = 250; // NaI 500MSPS has *2 ns
 

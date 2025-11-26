@@ -75,6 +75,7 @@ public:
 
   // Setters
   void SetWF(const WaveForm &wf);
+  void SetWF(const std::vector<double> tr);
   void SetSmoothWF();
   void SetSmoothWF(UShort_t sBoxSz);
   void SetEvalEnergy();

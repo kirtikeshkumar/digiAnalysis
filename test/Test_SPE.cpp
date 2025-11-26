@@ -10,11 +10,16 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
-                      "run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
-                      "Dark_Fiber_Bias1800V/FILTERED/"
-                      "DataF_run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
-                      "20ns_Dark_Fiber_Bias1800V.root";
+  std::string fname =
+      "/home/kirtikesh/analysisSSD/DATA/SPE/"
+      "run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_Bias2100V/FILTERED/"
+      "DataF_run_Nov06_Direct_SelfTrigger_10lsb_BlueLED_Pico15_Bias2100V.root";
+
+  // std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
+  //                     "run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
+  //                     "Dark_Fiber_Bias1800V/FILTERED/"
+  //                     "DataF_run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
+  //                     "20ns_Dark_Fiber_Bias1800V.root";
 
   // std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
   //                     "run_Nov11_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
@@ -38,22 +43,23 @@ int main(int argc, char *argv[]) {
   bool keepGoing = true;
   digiAnalysis::WaveForm *WF = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector;
-  double peakThreshold = 3.5;
+  double peakThreshold = 10;
   double peakFWHM = 3.; // From PMT datasheet
   int sbSize = static_cast<int>(
       std::ceil(10. * peakFWHM / 2.35)); // assuming gaussian peak
 
   // Waveform integration of single PE peaks
   TH1 *hSPE = new TH1F("hSPE", "SPE Energy", 16384, 0, 16384);
+  TH1 *hPEH = new TH1F("hPEH", "PE Height", 5000, 0, 5000);
   std::cout << "Integrating single photoelectrons from waveform" << std::endl;
   for (evi = 0; evi < nentries && keepGoing; ++evi) {
     if (evi % 100000 == 0) {
       std::cout << "Analyzing Event: " << evi << std::endl;
     }
-    if (hitsVector[evi]->GetTimestamp() / 1E12 <= 1600 or
-        hitsVector[evi]->GetTimestamp() / 1E12 >= 3200) {
-      continue;
-    }
+    // if (hitsVector[evi]->GetTimestamp() / 1E12 <= 1600 or
+    //     hitsVector[evi]->GetTimestamp() / 1E12 >= 3200) {
+    //   continue;
+    // }
     WF = nullptr;
     hitsVector[evi]->SetSmoothWF(sbSize);
     WF = hitsVector[evi]->GetWFPtr();
@@ -68,36 +74,37 @@ int main(int argc, char *argv[]) {
     int startCheck = 100;
     int stopCheck = WF->GetSize() - 100;
     int distToValleys = 20;
+    int distToPeaks = 40;
     double integratedVal;
-    int integrateRange = 20;
+    int integrateRange = 10;
     double lowEnergy = 7500, hiEnergy = 8500;
+    // std::cout << evi << ":" << peaks.size() << std::endl;
     while (iter < peaks.size()) {
       int peakPos = peaks[iter];
       if (peakPos >= WF->GetSize() - startCheck) {
         break;
       }
-      if (peakPos > startCheck and peakPos < stopCheck and
-          ((peakPos - valleys[2 * iter - 1]) > distToValleys) and
-          (valleys[2 * iter + 2] - peakPos > distToValleys)) {
+      if (peakPos > startCheck and peakPos < stopCheck) {
         // Integrate this peak in +- 20
-        integratedVal = WF->IntegrateSmoothWaveForm(peakPos - integrateRange,
-                                                    peakPos + integrateRange);
+        integratedVal = WF->IntegrateSmoothWaveForm(
+            peakPos - integrateRange, peakPos + 2 * integrateRange);
         hSPE->Fill(integratedVal);
+        hPEH->Fill(WF->GetTracesSmooth()[peakPos]);
 
         // if (integratedVal >= lowEnergy and integratedVal <= hiEnergy) {
-        if (hitsVector[evi]->GetEnergy() >= lowEnergy and
-            hitsVector[evi]->GetEnergy() <= hiEnergy and
-            hitsVector[evi]->GetMeanTime() < 2.34) {
-          std::cout << evi << ": Peak Position = " << peakPos << std::endl;
-          hitsVector[evi]->Print();
-          WF->Plot();
-          std::cout << "Do you want to see the next waveform? (y/n): ";
-          std::getline(std::cin, userInput);
-          if (userInput != "y" && userInput != "Y") {
-            keepGoing = false;
-          }
-          std::cout << "\n\n";
-        }
+        // if (hitsVector[evi]->GetEnergy() >= lowEnergy and
+        //     hitsVector[evi]->GetEnergy() <= hiEnergy and
+        //     hitsVector[evi]->GetMeanTime() < 2.34) {
+        //   std::cout << evi << ": Peak Position = " << peakPos << std::endl;
+        //   hitsVector[evi]->Print();
+        //   WF->Plot();
+        //   std::cout << "Do you want to see the next waveform? (y/n): ";
+        //   std::getline(std::cin, userInput);
+        //   if (userInput != "y" && userInput != "Y") {
+        //     keepGoing = false;
+        //   }
+        //   std::cout << "\n\n";
+        // }
       }
       iter += 1;
     }
@@ -107,15 +114,20 @@ int main(int argc, char *argv[]) {
   hSPE->Draw("HIST");
   canvas1->Update();
 
+  TCanvas *canvas2 = new TCanvas("canvas2", "Peak Height", 1600, 1000);
+  canvas2->cd();
+  hPEH->Draw("HIST");
+  canvas2->Update();
+
   // Waveform Plotting
   // for (evi = 0; evi < nentries && keepGoing; ++evi) {
   //   // if (evi % 1 == 0) {
   //   //   std::cout << evi << " : " << keepGoing << std::endl;
   //   // }
   //   if (fabs(hitsVector[evi]->GetEnergy() - 300) <
-  //       100 // and
-  //           //   hitsVector[evi]->GetTimestamp() / 1e12 > 30000 and
-  //           //  fabs(hitsVector[evi]->GetMeanTime() - 2.7) < 0.1
+  //       50 // and
+  //          //   hitsVector[evi]->GetTimestamp() / 1e12 > 30000 and
+  //          //  fabs(hitsVector[evi]->GetMeanTime() - 2.7) < 0.1
   //   ) {
   //     WF = nullptr;
   //     WF = hitsVector[evi]->GetWFPtr();
@@ -126,7 +138,6 @@ int main(int argc, char *argv[]) {
   //     if (WF) {
   //       waveformVector.push_back(*WF);
   //     }
-
   //     std::cout << "Do you want to see the next waveform? (y/n): ";
   //     std::getline(std::cin, userInput);
   //     if (userInput != "y" && userInput != "Y") {
