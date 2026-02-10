@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(digiAnalysis)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Added to detect compiler support for C++11
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
@@ -20,13 +21,13 @@ option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
 option(CFD "Enable or Disable Waveform CFD" OFF)
 
 if(WAVES)
-    add_definitions(-DWAVES)
+    add_compile_definitions(-DWAVES)
 endif()
 if(SMOOTH)
-    add_definitions(-DSMOOTH)
+    add_compile_definitions(-DSMOOTH)
 endif()
 if(CFD)
-    add_definitions(-DCFD)
+    add_compile_definitions(-DCFD)
 endif()
 
 # Find ROOT

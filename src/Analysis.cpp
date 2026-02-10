@@ -33,6 +33,16 @@ Analysis::Analysis(std::string datafilename, ULong64_t start,
   LoadData(start, numOfEvents, EnergyThreshold);
 }
 
+Analysis::Analysis(UShort_t channel, std::string datafilename, ULong64_t start,
+                   ULong64_t numOfEvents, double EThreshold) {
+  if (datafilename.empty()) {
+    throw std::logic_error("Data file name is empty!");
+  }
+  fDatafileName = datafilename;
+  EnergyThreshold = EThreshold;
+  LoadData(channel, start, numOfEvents, EnergyThreshold);
+}
+
 void Analysis::LoadData(ULong64_t numOfEvents, double EThreshold) {
   LoadData(0, numOfEvents, EThreshold);
 }
@@ -153,6 +163,147 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
 #endif
       vecOfHits.push_back(std::move(hit));
     }
+  }
+}
+
+void Analysis::LoadData(UShort_t channel, ULong64_t start,
+                        ULong64_t numOfEvents, double EThreshold) {
+
+  TFile *fp = new TFile(fDatafileName.c_str(), "READ");
+
+  if (!fp || fp->IsZombie()) {
+    std::cerr << "Error: Unable to open file " << fDatafileName << std::endl;
+    return; // Exit or handle the error appropriately
+  }
+
+  TTree *tr = (TTree *)fp->Get("Data_F");
+
+  // Check if the TTree was retrieved successfully
+  if (!tr) {
+    std::cerr << "Error: Unable to retrieve TTree 'Data_F' from file."
+              << std::endl;
+    // fp->Close();
+    // return; // Exit or handle the error appropriately
+    tr = (TTree *)fp->Get("Data_R");
+    if (!tr) {
+      std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
+                << std::endl;
+      fp->Close();
+      return; // Exit or handle the error appropriately
+    }
+  }
+  // Declaration of leaves types
+  UShort_t Channel;
+  ULong64_t Timestamp;
+  UShort_t Board;
+  UShort_t Energy;
+  UShort_t EnergyShort;
+  // #ifdef WAVES
+  TArrayS *Samples = nullptr;
+  // #endif
+
+  std::cout << "Loading data from: " << fDatafileName << " (" << numOfEvents
+            << " events) for Channel: " << channel << std::endl;
+  // TTree *tr = GetTreeFromFile(fDatafileName);
+
+  // Set branch addresses.
+  tr->SetBranchAddress("Channel", &Channel);
+  tr->SetBranchAddress("Timestamp", &Timestamp);
+  tr->SetBranchAddress("Board", &Board);
+  tr->SetBranchAddress("Energy", &Energy);
+  tr->SetBranchAddress("EnergyShort", &EnergyShort);
+#ifdef WAVES
+  tr->SetBranchAddress("Samples", &Samples);
+  std::cout << "Branch waves set" << std::endl;
+#endif
+
+  Long64_t nentries = tr->GetEntries();
+  Long64_t nbytes = 0;
+
+  if (numOfEvents + start > nentries) {
+    std::cout << "Warning in LoadData: Cannot fetch till" << start + numOfEvents
+              << " entries from file containing " << nentries << " entries"
+              << std::endl;
+    numOfEvents = nentries - start;
+  }
+
+  if (start > nentries) {
+    std::cout << "Warning in LoadData: Cannot fetch " << start
+              << " th entry from file containing " << nentries << " entries"
+              << std::endl;
+    start = 0;
+    numOfEvents = nentries;
+  }
+
+  if (numOfEvents == 0) {
+    std::cout << "Warning in LoadData: 0 numOfEvents passed to LoadData, "
+                 "fetching all entries after "
+              << start << std::endl;
+    numOfEvents = nentries - start;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  /// SORTING
+  //////////////////////////////////////////////////////////////////////////////
+
+  std::cout << "Now sorting: " << nentries
+            << " entries in order of Channel Number and Timestamp" << std::endl;
+
+  tr->BuildIndex("Channel", "Timestamp");
+  TTreeIndex *index = (TTreeIndex *)tr->GetTreeIndex();
+  if (!index) {
+    std::cerr << "Error creating tree index!" << std::endl;
+    gROOT->ProcessLine(".q");
+    return;
+  }
+  Long64_t *indices = index->GetIndex();
+  if (!indices) {
+    std::cerr << "Error retrieving index array!" << std::endl;
+    gROOT->ProcessLine(".q");
+    return;
+  }
+
+  std::cout << "sorting done" << std::endl;
+  //////////////////////////////////////////////////////////////////////////////
+  /// READING
+  //////////////////////////////////////////////////////////////////////////////
+  ULong64_t nev = 0;
+  Long64_t first = -1;
+  const Long64_t *values = index->GetIndexValues();
+  for (Long64_t i = 0; i < index->GetN(); ++i) {
+    if (values[i] == channel) {
+      first = i;
+      break;
+    }
+  }
+  if (first < 0) {
+    std::cout << "Channel " << channel << " not found\n";
+    return;
+  }
+  ULong64_t iev = first;
+  std::cout << "Starting Reading from Event: " << iev << std::endl;
+  while (nev < numOfEvents && iev < nentries) {
+    if (iev % 100000 == 0) {
+      std::cout << "Reading: " << iev << std::endl;
+    }
+    nbytes += tr->GetEntry(indices[iev]);
+    if (Channel < channel) {
+      iev += 1;
+      continue;
+    } else if (Energy >= EThreshold and Channel == channel) {
+#ifndef WAVES
+      std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
+          iev, Channel, Board, Timestamp, Energy, EnergyShort);
+#else
+      std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
+          iev, Channel, Board, Timestamp, Energy, EnergyShort, Samples);
+#endif
+      vecOfHits.push_back(std::move(hit));
+      nev += 1;
+    } else if (Channel > channel) {
+      break;
+    }
+    iev += 1;
   }
 }
 
