@@ -38,10 +38,12 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fname =
-      "/media/kirtikesh/SSD3/DATA/LeadPit/"
-      "Bkg_Jan23_NaI_123_inside_Linear_4_outSide_Far_Waves_9/FILTERED/"
-      "DataF_Bkg_Jan23_NaI_123_inside_Linear_4_outSide_Far_Waves_9.root";
-  digiAnalysis::Analysis an(3, fname, 0, 500000, 1);
+      "/home/kirtikesh/Analysis/DATA/LeadPit/NaI_1_Checks/"
+      "NaI_1_Cs_Source_HV1800_Waves_160FC_0pt5Vpp_GroundToLead/FILTERED/"
+      "DataF_NaI_1_Cs_Source_HV1800_Waves_160FC_0pt5Vpp_GroundToLead."
+      "root";
+  UShort_t channel = 0;
+  digiAnalysis::Analysis an(fname, 65730, 0000, 10);
   std::cout << "getting the vector from an" << std::endl;
 
   // test Getting
@@ -49,13 +51,13 @@ int main(int argc, char *argv[]) {
       an.GetSingleHitsVec();
   std::cout << "got the vector from an" << hitsVector.size() << std::endl;
 
-  an.SortHits("PSD", "Energy");
+  // an.SortHits("PSD", "Energy");
   int nentries = hitsVector.size();
   std::cout << "hitsVector size = " << nentries << std::endl;
 
 #ifdef WAVES
-  UShort_t channel = 2;
 
+  // To PLot Based on Cuts
   TH2 *hPSDPlot =
       new TH2F("PSDPlot", "Energy vs PSD", 16384, 0, 16384, 4096, 0, 1);
   for (const auto &hit : hitsVector) {
@@ -97,6 +99,8 @@ int main(int argc, char *argv[]) {
           waveformVector.push_back(*wfptr);
         }
         hitsVector[i]->Print();
+        wfptr->SetSmooth(150);
+        wfptr->SetTracesFFT("smooth");
         wfptr->Plot();
         std::cout << "Do you want to see the next waveform? (y/n): ";
         std::getline(std::cin, userInput);
@@ -108,8 +112,22 @@ int main(int argc, char *argv[]) {
   }
   UShort_t wfSz = wfptr->GetSize();
   digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
-  WFAveraged.SetSmooth(32);
+  WFAveraged.SetSmooth(150);
+  WFAveraged.SetTracesFFT("smooth");
+
+  std::vector<double> Baseline = WFAveraged.GetTracesSmooth();
+  TFile *f = new TFile("baseline.root", "RECREATE");
+  TTree *t = new TTree("tree", "Baseline");
+  std::vector<double> *Baseline_ptr = &Baseline;
+  t->Branch("Baseline", &Baseline_ptr);
+  t->Fill();
+  t->Write();
+  f->Close();
+
   WFAveraged.Plot();
+
+  // To plot particular Events
+
   fApp->Run();
 #endif
 }

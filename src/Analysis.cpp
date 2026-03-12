@@ -269,6 +269,7 @@ void Analysis::LoadData(UShort_t channel, ULong64_t start,
   //////////////////////////////////////////////////////////////////////////////
   ULong64_t nev = 0;
   Long64_t first = -1;
+  Long64_t last = -1;
   const Long64_t *values = index->GetIndexValues();
   for (Long64_t i = 0; i < index->GetN(); ++i) {
     if (values[i] == channel) {
@@ -276,17 +277,31 @@ void Analysis::LoadData(UShort_t channel, ULong64_t start,
       break;
     }
   }
+  for (Long64_t i = first; i < index->GetN(); ++i) {
+    if (values[i] != channel) {
+      last = i;
+      break;
+    }
+  }
+
   if (first < 0) {
     std::cout << "Channel " << channel << " not found\n";
     return;
   }
   ULong64_t iev = first;
-  std::cout << "Starting Reading from Event: " << iev << std::endl;
+  if (first <= start and last >= start) {
+    iev = start;
+    std::cout << "Reading " << numOfEvents << " from " << start << std::endl;
+  } else {
+    std::cout << "WARNING: start event is not in range of channel events: "
+              << first << " - " << last << std::endl;
+    std::cout << "Reading " << numOfEvents << " from start" << std::endl;
+  }
   while (nev < numOfEvents && iev < nentries) {
+    nbytes += tr->GetEntry(indices[iev]);
     if (iev % 100000 == 0) {
       std::cout << "Reading: " << iev << std::endl;
     }
-    nbytes += tr->GetEntry(indices[iev]);
     if (Channel < channel) {
       iev += 1;
       continue;

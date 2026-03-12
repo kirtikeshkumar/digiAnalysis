@@ -119,6 +119,10 @@ WaveForm::WaveForm(const WaveForm &wf) // copy consructor
   {
     tracesFFT = wf.tracesFFT;
   }
+  if (!wf.tracesFFTPhase.empty()) // copy traces CFD if not empty
+  {
+    tracesFFTPhase = wf.tracesFFTPhase;
+  }
   if (wf.fitFunc) // copy traces CFD if not empty
   {
     fitFunc = wf.fitFunc;
@@ -148,6 +152,9 @@ WaveForm::~WaveForm() {
 
   tracesFFT.clear();
   tracesFFT.shrink_to_fit();
+
+  tracesFFTPhase.clear();
+  tracesFFTPhase.shrink_to_fit();
 
   tracesMovBLCorr.clear();
   tracesMovBLCorr.shrink_to_fit();
@@ -361,10 +368,90 @@ void WaveForm::Plot(std::vector<double> tr) {
   canvas->Update();
 }
 
+void WaveForm::Plot(std::vector<double> tr1, std::vector<double> tr2) {
+  if (tr1.empty()) {
+    std::cout << "traces 1 is empty." << std::endl;
+  }
+  if (tr2.empty()) {
+    std::cout << "traces 2 is empty." << std::endl;
+  }
+
+  // Create a canvas
+  TObject *obj = gROOT->FindObject("canvas");
+  TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
+  if (canvas) {
+    canvas->cd();    // make it current
+    canvas->Clear(); // optional: clear previous plot
+    std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
+  } else {
+    canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+    std::cout << "Created new canvas: " << "canvas" << std::endl;
+  }
+  // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+
+  // TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
+  int nTraces1 = tr1.size();
+  int nTraces2 = tr2.size();
+
+  TGraph *graphTraces1 = nullptr;
+  TGraph *graphTraces2 = nullptr;
+
+  canvas->Divide(2, 1);
+
+  // std::cout << "Created Split canvas" << std::endl;
+  // double peakHt = 0;
+
+  // Plot traces if not empty
+  if (!tr1.empty()) {
+    canvas->cd(1);
+    graphTraces1 = new TGraph(nTraces1);
+    for (int i = 0; i < nTraces1; ++i) {
+      graphTraces1->SetPoint(i, i, tr1[i]);
+    }
+    graphTraces1->SetLineColor(kBlue);
+    graphTraces1->SetLineWidth(2);
+    graphTraces1->SetTitle("Traces 1");
+    graphTraces1->Draw("AL");
+    // legend->AddEntry(graphTraces1, "Traces 1", "l");
+
+    // Draw the Baseline
+    TLine *line = new TLine(0.0, 0.0, nTraces1, 0.0);
+    line->SetLineColor(kBlack);
+    line->SetLineWidth(2);
+    line->Draw("LSAME");
+    // std::cout << "Plotted the first Waveform" << std::endl;
+  }
+
+  if (!tr2.empty()) {
+    canvas->cd(2);
+    graphTraces2 = new TGraph(nTraces2);
+    for (size_t i = 0; i < tr2.size(); ++i) {
+      graphTraces2->SetPoint(i, i, tr2[i]);
+    }
+    graphTraces2->SetLineColor(kBlack);
+    graphTraces2->SetLineWidth(2);
+    graphTraces2->SetTitle("Traces 2");
+    graphTraces2->Draw("AL");
+    // legend->AddEntry(graphTraces1, "Traces 2", "l");
+
+    // Draw the Baseline
+    TLine *line = new TLine(0.0, 0.0, nTraces1, 0.0);
+    line->SetLineColor(kBlack);
+    line->SetLineWidth(2);
+    line->Draw("LSAME");
+
+    std::cout << "Plotted the second Waveform" << std::endl;
+  }
+
+  // Update the canvas
+  canvas->Update();
+}
+
 /*Getters*/
 std::vector<double> WaveForm::GetTraces() { return traces; }
 std::vector<double> WaveForm::GetTracesSmooth() { return tracesSmooth; }
 std::vector<double> WaveForm::GetTracesFFT() { return tracesFFT; }
+std::vector<double> WaveForm::GetTracesFFTPhase() { return tracesFFTPhase; }
 double WaveForm::GetMeanTime() { return meantime; }
 double WaveForm::GetBaseLine() { return baseline; }
 UShort_t WaveForm::GetSize() { return traces.size(); }
@@ -427,11 +514,13 @@ void WaveForm::SetWaveForm(const WaveForm &wf) {
   traces.clear();
   tracesSmooth.clear();
   tracesFFT.clear();
+  tracesFFTPhase.clear();
   tracesMovBLCorr.clear();
 
   traces = wf.traces;
   tracesSmooth = wf.tracesSmooth;
   tracesFFT = wf.tracesFFT;
+  tracesFFTPhase = wf.tracesFFTPhase;
   tracesMovBLCorr = wf.tracesMovBLCorr;
 
   // Copying the scalar values
@@ -754,6 +843,7 @@ void WaveForm::SetTracesFFT() {
       double re, im;
       fft->GetPointComplex(i, re, im);
       tracesFFT.push_back(std::sqrt(re * re + im * im));
+      tracesFFTPhase.push_back(TMath::ATan2(im, re));
     }
   } else {
     std::cout << "err SetTracesFFT: traces is empty" << std::endl;
@@ -777,6 +867,7 @@ void WaveForm::SetTracesFFT(std::string whichTrace) {
         double re, im;
         fft->GetPointComplex(i, re, im);
         tracesFFT.push_back(std::sqrt(re * re + im * im));
+        tracesFFTPhase.push_back(TMath::ATan2(im, re));
       }
     } else {
       std::cout << "err SetTracesFFT: traces is empty" << std::endl;
@@ -788,20 +879,22 @@ void WaveForm::SetTracesFFT(std::string whichTrace) {
   }
 }
 
-void WaveForm::SetTracesFFT(std::vector<double> trFFT) {
-  if (!trFFT.empty()) {
+void WaveForm::SetTracesFFT(std::vector<double> trace) {
+  if (!trace.empty()) {
     tracesFFT.clear();
-    Int_t n = static_cast<int>(trFFT.size());
+    tracesFFTPhase.clear();
+    Int_t n = static_cast<int>(trace.size());
     // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-    fft->SetPoints(trFFT.data());
+    fft->SetPoints(trace.data());
     fft->Transform();
 
-    int nFreq = trFFT.size() / 2 + 1; // only positive frequencies
+    int nFreq = trace.size() / 2 + 1; // only positive frequencies
 
     for (int i = 0; i < nFreq; i++) {
       double re, im;
       fft->GetPointComplex(i, re, im);
       tracesFFT.push_back(std::sqrt(re * re + im * im));
+      tracesFFTPhase.push_back(TMath::ATan2(im, re));
     }
   } else {
     std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
@@ -914,9 +1007,13 @@ void WaveForm::ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2) {
   {
     tracesSmooth = wf1.tracesSmooth;
   }
-  if (!wf1.tracesFFT.empty()) // copy traces CFD if not empty
+  if (!wf1.tracesFFT.empty()) // copy traces FFT if not empty
   {
     tracesFFT = wf1.tracesFFT;
+  }
+  if (!wf1.tracesFFTPhase.empty()) // copy traces FFT if not empty
+  {
+    tracesFFTPhase = wf1.tracesFFTPhase;
   }
 
   if (!wf2.traces.empty()) // concatenate traces if not empty
@@ -928,10 +1025,15 @@ void WaveForm::ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2) {
     tracesSmooth.insert(tracesSmooth.end(), wf2.tracesSmooth.begin(),
                         wf2.tracesSmooth.end());
   }
-  if (!wf2.tracesFFT.empty()) // concatenate traces CFD if not empty
+  if (!wf2.tracesFFT.empty()) // concatenate traces FFT if not empty
   {
     tracesFFT.insert(tracesFFT.end(), wf2.tracesFFT.begin(),
                      wf2.tracesFFT.end());
+  }
+  if (!wf2.tracesFFTPhase.empty()) // concatenate traces CFD if not empty
+  {
+    tracesFFTPhase.insert(tracesFFTPhase.end(), wf2.tracesFFTPhase.begin(),
+                          wf2.tracesFFTPhase.end());
   }
 
   meantime =
@@ -1064,6 +1166,10 @@ WaveForm::SplitWaveForm(UShort_t numSplits) {
     if (!tracesFFT.empty()) {
       newWaveForm->tracesFFT.assign(tracesFFT.begin() + start,
                                     tracesFFT.begin() + end);
+    }
+    if (!tracesFFTPhase.empty()) {
+      newWaveForm->tracesFFTPhase.assign(tracesFFTPhase.begin() + start,
+                                         tracesFFTPhase.begin() + end);
     }
 
     newWaveForm->SetBaseLine();

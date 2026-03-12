@@ -15,14 +15,12 @@
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/"
-                      "run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_20ns_"
-                      "Dark_Fiber_Bias1800V/FILTERED/"
-                      "DataF_run_Nov17_1GSPS_Direct_FreeWrites_CFD_3lsb_Delay_"
-                      "20ns_Dark_Fiber_Bias1800V.root";
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/LeadPit/NaI_1_Checks/Calibration/"
+      "DataF_NaI_1_Na_Source_Gain_Calibration_HV1900_Waves_160FC.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 000000, 1);
+  digiAnalysis::Analysis an(fname, 0, 000000, 10);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -63,11 +61,12 @@ int main(int argc, char *argv[]) {
     if (i % 10000 == 0) {
       std::cout << i << std::endl;
     }
-    if (hitsVector[i]->GetChNum() == 0 and
-        hitsVector[i]->GetTimestamp() / 1E12 > 1600 and
-        hitsVector[i]->GetTimestamp() / 1E12 < 3200
-        // and hitsVector[i]->GetMeanTime() < 3.8
-    ) { // (hitsVector[i]->GetPSD() > 0.0 and
+    if (hitsVector[i]->GetChNum() ==
+        0 // and
+          // hitsVector[i]->GetTimestamp() / 1E12 > 1600 and
+          // hitsVector[i]->GetTimestamp() / 1E12 < 3200
+          // and hitsVector[i]->GetMeanTime() < 3.8
+    ) {   // (hitsVector[i]->GetPSD() > 0.0 and
         // hitsVector[i]->GetChNum() == 0) {
       energy = hitsVector[i]->GetEnergy();
       energyShort = hitsVector[i]->GetEnergyShort();

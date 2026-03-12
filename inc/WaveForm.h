@@ -20,6 +20,7 @@ protected:
   std::vector<double> traces;
   std::vector<double> tracesSmooth;
   std::vector<double> tracesFFT;
+  std::vector<double> tracesFFTPhase;
   std::vector<double> tracesMovBLCorr;
   double meantime;
   double baseline;
@@ -44,8 +45,10 @@ public:
   virtual ~WaveForm();
 
   std::vector<double> GetTraces();
+  int GetTracesSize() { return traces.size(); }
   std::vector<double> GetTracesSmooth();
   std::vector<double> GetTracesFFT();
+  std::vector<double> GetTracesFFTPhase();
 
   bool IsTracesMovBLCorrSet() { return !tracesMovBLCorr.empty(); }
   bool IsTracesSmoothSet() { return !tracesSmooth.empty(); }
@@ -87,11 +90,12 @@ public:
   void SetBaseLine(const std::vector<double> tr);
   void SetTracesFFT();
   void SetTracesFFT(std::string whichTrace);
-  void SetTracesFFT(std::vector<double> trFFT);
+  void SetTracesFFT(std::vector<double> trace);
   std::vector<double> EvalTracesFFT(std::vector<double> trFFT);
 
   void Plot();
   void Plot(std::vector<double> tr);
+  void Plot(std::vector<double> tr1, std::vector<double> tr2);
   void ShiftWaveForm(int BL);
   double IntegrateWaveForm();
   double IntegrateWaveForm(int startTime, int stopTime);
