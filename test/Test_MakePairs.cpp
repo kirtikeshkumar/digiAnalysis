@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 int main(int argc, char *argv[]) {
+#ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
@@ -160,4 +161,5 @@ int main(int argc, char *argv[]) {
 
   fApp->Run();
   return 0;
+#endif
 }
