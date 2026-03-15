@@ -14,12 +14,12 @@
 #include <ratio>
 #include <vector>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI_12_CoincidenceStudies_Na_HV_GainMatch_10min_2Vpp/FILTERED/"
+      "/media/kirtikesh/UbuntuFiles1/"
       "DataF_NaI_12_CoincidenceStudies_Na_HV_GainMatch_10min_2Vpp.root";
 
   digiAnalysis::Analysis an(fname, 0, 0000, 0);
@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
       an.GetSingleHitsVec();
   int nentries = hitsVector.size();
   std::cout << "got the vector from an" << nentries << std::endl;
+  std::vector<digiAnalysis::Pair *> vecOfPairs;
 
   an.SortHits("Channel", "Time");
 
@@ -36,9 +37,11 @@ int main(int argc, char *argv[]) {
   UShort_t numChannels = 0;
   UShort_t currChannel = -1;
   std::vector<UShort_t> channels; // stores the value of channel number
-  std::vector<int> chStart; // stores the index of first entry from the channel
-  for (int i = 0; i < nentries; i++) {
-    if (hitsVector[i]->GetChNum() != currChannel) {
+  std::vector<int> chStart;       // stores the index of first entry from the channel
+  for (int i = 0; i < nentries; i++)
+  {
+    if (hitsVector[i]->GetChNum() != currChannel)
+    {
       currChannel = hitsVector[i]->GetChNum();
       numChannels += 1;
       channels.push_back(currChannel);
@@ -47,7 +50,8 @@ int main(int argc, char *argv[]) {
   }
 
   std::cout << "There are " << numChannels << " channels (";
-  for (int iter = 0; iter < numChannels; iter++) {
+  for (int iter = 0; iter < numChannels; iter++)
+  {
     std::cout << channels[iter] << ", ";
   }
   std::cout << ") in the data." << std::endl;
@@ -65,16 +69,19 @@ int main(int argc, char *argv[]) {
   std::vector<Long64_t> currTime;
   Long64_t minTime = std::numeric_limits<Long64_t>::max();
   // initialize with the smallest start time
-  for (int iter = 0; iter < numChannels; iter++) {
+  for (int iter = 0; iter < numChannels; iter++)
+  {
     currIndex[iter] = currIndex[iter] + chStart[iter];
     currTime[iter] = hitsVector[currIndex[iter]]->GetTimestamp();
-    if (currTime[iter] < minTime) {
+    if (currTime[iter] < minTime)
+    {
       minTime = hitsVector[currIndex[iter]]->GetTimestamp();
       startIndex = currIndex[iter];
       startChannel = iter;
     }
   }
   currIndex[startChannel] += 1;
+  currTime[startChannel] = hitsVector[currIndex[startChannel]]->GetTimestamp();
 
   // now iterativley find the closest event
   bool isEnd = false;
@@ -82,16 +89,48 @@ int main(int argc, char *argv[]) {
   Long64_t chTime = 0;
   std::vector<bool> isChEnd(numChannels, false);
   std::vector<Long64_t> chDelT(numChannels, 0);
+  digiAnalysis::Pair coincPair;
 
-  while (!isEnd) {
+  while (!isEnd)
+  {
     chDelT.clear();
-    for (int iterCh = 0; iterCh < numChannels; iterCh++) {
-      if (!isChEnd[iterCh]) {
-        chDelT.push_back(currTime[iterCh] - startTime);
-      } else {
-        chDelT.push_back(std::numeric_limits<Long64_t>::max());
-      }
+    // evaluate the time difference between current event and the next event in each channel
+    for (int iterCh = 0; iterCh < numChannels; iterCh++)
+    {
+      !isChEnd[iterCh] ? chDelT.push_back(currTime[iterCh] - startTime) : chDelT.push_back(std::numeric_limits<Long64_t>::max());
     }
+    // find the nearest event
+    auto it = std::min_element(chDelT.begin(), chDelT.end());
+    minTime = *it;
+    stopChannel = std::distance(chDelT.begin(), it);
+
+    // create pair if within the timeframe
+    if (minTime < timeWindow)
+    {
+      coincPair.ClearPair();
+      coincPair.SetPair(hitsVector[startIndex].get(), hitsVector[currIndex[stopChannel]].get());
+      vecOfPairs.push_back(new digiAnalysis::Pair(coincPair));
+    }
+
+    // update the entries for next run
+    startChannel = stopChannel;
+    startIndex = currIndex[stopChannel];
+    stopChannel = -1;
+    currIndex[startChannel] += 1;
+    currTime[startChannel] = hitsVector[currIndex[startChannel]]->GetTimestamp();
+    startTime = hitsVector[startIndex]->GetTimestamp();
+
+    // check if channel has finished
+    bool endcheck = true;
+    for (int iterCh = 0; iterCh < numChannels; iterCh++)
+    {
+      if ((iterCh + 1 < numChannels && currIndex[iterCh] == chStart[iterCh + 1]) || currIndex[iterCh] == nentries)
+      {
+        isChEnd[iterCh] = true;
+      }
+      endcheck = endcheck && isChEnd[iterCh];
+    }
+    isEnd = endcheck;
   }
 
   fApp->Run();
