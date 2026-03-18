@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
   TH1 *hDelT = new TH1F("hDelT", "hDelT", 10000, 0, timeWindow / 1E6);
   TH2 *hE1E2 = new TH2I("hE1E2", "hE1E2", 8192, 0, 8192, 8192, 0, 8192);
   TH1 *hETot = new TH1F("hETot", "hETot", 16384, 0, 2000);
+  TH2 *hE1ETot = new TH2I("hE1ETot", "hE1ETot", 8192, 0, 8192, 16384, 0, 16384);
 
   // within same detector
   //
@@ -166,14 +167,17 @@ int main(int argc, char *argv[]) {
   for (int iter = 0; iter < nPairs; iter++) {
     // Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 1.0174 -
     //           38.84; // Gain match case
-    Energy1 =
-        vecOfPairs[iter]->GetPairHitEnergy(0) * 0.0907585 - 0.4613; // 1900V
+    vecOfPairs[iter]->GetPairHitEnergy(0) > 767
+        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.094816 - 6.4627
+        : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.086837 -
+                    0.33888; // 1900V
     Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 1.0973 - 58.91;
     double ETot = Energy1 + Energy2;
     // if (ETot > 1700 and ETot < 2000 and Energy2 > 1200 and Energy2 < 1400)
     hDelT->Fill(vecOfPairs[iter]->GetPairDelTime() / 1E6);
     hE1E2->Fill(Energy1, Energy2);
     hETot->Fill(ETot);
+    hE1ETot->Fill(Energy1, ETot);
   }
   TCanvas *c1 = new TCanvas("c1", "timeDiff", 800, 600);
   hDelT->Draw("HIST");
@@ -181,6 +185,38 @@ int main(int argc, char *argv[]) {
   hE1E2->Draw("COLZ");
   TCanvas *c3 = new TCanvas("c3", "ETotal", 800, 600);
   hETot->Draw("HIST");
+  TCanvas *c4 = new TCanvas("c4", "E1ETotal", 800, 600);
+  hE1ETot->Draw("COLZ");
+
+  bool keepGoing = true;
+  std::string userInput;
+  UShort_t wfSz;
+  std::vector<digiAnalysis::WaveForm> waveformVector;
+  for (int iter = 0; iter < nPairs && keepGoing; iter++) {
+    vecOfPairs[iter]->GetPairHitEnergy(0) > 767
+        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.094816 - 6.4627
+        : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.086837 -
+                    0.33888; // 1900V
+    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 1.0973 -
+              58.91; // *0.98145 - 14.6;
+    if (Energy1 < 10 and Energy2 > 600) {
+      vecOfPairs[iter]->GetHit(0)->GetWFPtr()->Plot();
+      wfSz = vecOfPairs[iter]->GetHit(0)->GetWFPtr()->GetSize();
+      waveformVector.push_back(*vecOfPairs[iter]->GetHit(0)->GetWFPtr());
+      std::cout << "Energy is approx: " << Energy1 << " keV" << std::endl;
+      std::cout << "Do you want to see the next waveform? (y/n): ";
+      std::getline(std::cin, userInput);
+      if (userInput != "y" && userInput != "Y") {
+        keepGoing = false;
+      }
+    }
+  }
+
+  digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
+  WFAveraged.SetSmooth(150);
+  WFAveraged.SetTracesFFT("smooth");
+  WFAveraged.Plot();
+
   fApp->Run();
   return 0;
 }

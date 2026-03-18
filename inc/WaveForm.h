@@ -24,7 +24,8 @@ protected:
   std::vector<double> tracesMovBLCorr;
   double meantime;
   double baseline;
-  int blStart = GateStart - nSampleBL - 50 > 0 ? GateStart - nSampleBL - 50 : 0;
+  int blStart =
+      GateStart - nSampleBL - 200 > 0 ? GateStart - nSampleBL - 200 : 0;
   TF1 *fitFunc = nullptr;
   static TVirtualFFT *fft;
   static TVirtualFFT *ifft;
