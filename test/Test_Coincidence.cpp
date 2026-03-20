@@ -23,19 +23,16 @@ int main(int argc, char *argv[]) {
   //     "DataF_NaI_12_CoincidenceStudies_Na_HV_GainMatch_10min_2Vpp.root";
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI_12_CoincidenceStudies_Na_HV_1900V_1365V_96nsCoinc_60min_2Vpp_WAVES/"
-      "FILTERED/"
-      "SDataF_NaI_12_CoincidenceStudies_Na_HV_1900V_1365V_96nsCoinc_60min_2Vpp_"
-      "WAVES."
-      "root";
+      "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
+      "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  digiAnalysis::Analysis an(fname, 0, 0, 0);
+  digiAnalysis::Analysis an(fname, 0, 100000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
   int nentries = hitsVector.size();
-  std::cout << "got the vector from an" << nentries << std::endl;
+  std::cout << "got the vector from an: " << nentries << std::endl;
   std::vector<digiAnalysis::Pair *> vecOfPairs;
 
   an.SortHits("Channel", "Time");
@@ -68,9 +65,12 @@ int main(int argc, char *argv[]) {
   // Estimate the number of events in a given time window around an event
   int timeWindow = 1000000; // in ps
   TH1 *hDelT = new TH1F("hDelT", "hDelT", 10000, 0, timeWindow / 1E6);
-  TH2 *hE1E2 = new TH2I("hE1E2", "hE1E2", 8192, 0, 8192, 8192, 0, 8192);
-  TH1 *hETot = new TH1F("hETot", "hETot", 16384, 0, 2000);
-  TH2 *hE1ETot = new TH2I("hE1ETot", "hE1ETot", 8192, 0, 8192, 16384, 0, 16384);
+  TH2 *hE1E2 = new TH2I("hE1E2", "hE1E2", 4000, 0, 4000, 4000, 0, 4000);
+  TH1 *hETot = new TH1F("hETot", "hETot", 8000, 0, 8000);
+  TH2 *hE1ETot = new TH2I("hE1ETot", "hE1ETot", 4000, 0, 4000, 8000, 0, 8000);
+  TH2 *hE1PSD = new TH2I("hE1PSD", "hE1PSD", 4000, 0, 4000, 1000, -1, 1);
+  TH2 *hE1MT = new TH2I("hE1MT", "hE1MT", 4000, 0, 4000, 1000, -5, 5);
+  TH2 *hPSDMT = new TH2I("hPSDMT", "hPSDMT", 1000, -10, 10, 1000, -5, 5);
 
   // within same detector
   //
@@ -107,23 +107,15 @@ int main(int argc, char *argv[]) {
     chDelT.clear();
     // evaluate the time difference between current event and the next event in
     // each channel
-    // std::cout << "startCH: " << startChannel << " Index: " << startIndex
-    //           << " Time: " << startTime << std::endl;
     for (int iterCh = 0; iterCh < numChannels; iterCh++) {
       !isChEnd[iterCh]
           ? chDelT.push_back(currTime[iterCh] - startTime)
           : chDelT.push_back(std::numeric_limits<ULong64_t>::max());
-      // std::cout << "iterch: " << iterCh << " Index: " << currIndex[iterCh]
-      //           << " Time: " << currTime[iterCh]
-      //           << " chDelT: " << chDelT[iterCh] << std::endl;
     }
     // find the nearest event
     auto it = std::min_element(chDelT.begin(), chDelT.end());
     minTime = *it;
     stopChannel = std::distance(chDelT.begin(), it);
-    // std::cout << "minTime of: " << minTime << " in stopChannel: " <<
-    // stopChannel
-    //           << std::endl;
 
     // create pair if within the timeframe
     if ((minTime < timeWindow) and (startChannel != stopChannel)) {
@@ -132,7 +124,6 @@ int main(int argc, char *argv[]) {
                         hitsVector[currIndex[stopChannel]].get());
       vecOfPairs.push_back(new digiAnalysis::Pair(coincPair));
     }
-
     // update the entries for next run
     startChannel = stopChannel;
     startIndex = currIndex[stopChannel];
@@ -152,32 +143,40 @@ int main(int argc, char *argv[]) {
           currIndex[iterCh] == nentries) {
         isChEnd[iterCh] = true;
       }
-      // std::cout << " Ch " << iterCh << " End: " << isChEnd[iterCh];
       endcheck = endcheck && isChEnd[iterCh];
     }
-    // std::cout << std::endl;
     isEnd = endcheck;
-    // std::cout << "End: " << isEnd << std::endl;
   }
 
   int nPairs = vecOfPairs.size();
   std::cout << nPairs << " Pairs were formed in the data." << std::endl;
   double Energy1 = 0;
   double Energy2 = 0;
+  double PSD = 0, MT = 0;
   for (int iter = 0; iter < nPairs; iter++) {
     // Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 1.0174 -
     //           38.84; // Gain match case
-    vecOfPairs[iter]->GetPairHitEnergy(0) > 767
-        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.094816 - 6.4627
-        : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.086837 -
-                    0.33888; // 1900V
-    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 1.0973 - 58.91;
+    PSD = vecOfPairs[iter]->GetHit(0)->GetPSD();
+#ifdef WAVES
+    MT = vecOfPairs[iter]->GetHit(0)->GetMeanTime();
+#endif
+    vecOfPairs[iter]->GetPairHitEnergy(0) > 694
+        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
+        : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 - 0.4222;
+    // 1900V
+    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
+              14.6; //* 1.0973 - 58.91; //
     double ETot = Energy1 + Energy2;
-    // if (ETot > 1700 and ETot < 2000 and Energy2 > 1200 and Energy2 < 1400)
+    // if (ETot > 600 and ETot < 800)
     hDelT->Fill(vecOfPairs[iter]->GetPairDelTime() / 1E6);
     hE1E2->Fill(Energy1, Energy2);
     hETot->Fill(ETot);
     hE1ETot->Fill(Energy1, ETot);
+    hE1PSD->Fill(Energy1, PSD);
+#ifdef WAVES
+    hE1MT->Fill(Energy1, MT);
+    hPSDMT->Fill(PSD, MT);
+#endif
   }
   TCanvas *c1 = new TCanvas("c1", "timeDiff", 800, 600);
   hDelT->Draw("HIST");
@@ -187,23 +186,37 @@ int main(int argc, char *argv[]) {
   hETot->Draw("HIST");
   TCanvas *c4 = new TCanvas("c4", "E1ETotal", 800, 600);
   hE1ETot->Draw("COLZ");
+  TCanvas *c5 = new TCanvas("c5", "E1PSD", 800, 600);
+  hE1PSD->Draw("COLZ");
+#ifdef WAVES
+  TCanvas *c6 = new TCanvas("c6", "E1MT", 800, 600);
+  hE1MT->Draw("COLZ");
+  TCanvas *c7 = new TCanvas("c7", "PSD MT", 800, 600);
+  hPSDMT->Draw("COLZ");
+#endif
 
+#ifdef WAVES
   bool keepGoing = true;
   std::string userInput;
   UShort_t wfSz;
   std::vector<digiAnalysis::WaveForm> waveformVector;
   for (int iter = 0; iter < nPairs && keepGoing; iter++) {
-    vecOfPairs[iter]->GetPairHitEnergy(0) > 767
-        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.094816 - 6.4627
-        : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.086837 -
-                    0.33888; // 1900V
-    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 1.0973 -
-              58.91; // *0.98145 - 14.6;
-    if (Energy1 < 10 and Energy2 > 600) {
+    vecOfPairs[iter]->GetPairHitEnergy(0) > 694
+        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
+        : Energy1 =
+              vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 - 0.4222; // 1900V
+    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
+              14.6; //* 1.0973 - 58.91;
+    MT = vecOfPairs[iter]->GetHit(0)->GetMeanTime();
+    if (Energy1 < 5 and Energy1 > 0 and MT > 3.05 and MT < 3.06 and
+        (Energy2 + Energy1 > 650) and (Energy2 + Energy1 < 680)) {
+      vecOfPairs[iter]->GetHit(0)->GetWFPtr()->SetTracesFFT();
       vecOfPairs[iter]->GetHit(0)->GetWFPtr()->Plot();
       wfSz = vecOfPairs[iter]->GetHit(0)->GetWFPtr()->GetSize();
       waveformVector.push_back(*vecOfPairs[iter]->GetHit(0)->GetWFPtr());
-      std::cout << "Energy is approx: " << Energy1 << " keV" << std::endl;
+      std::cout << "Energy of D1 is approx: " << Energy1 << " keV" << std::endl;
+      std::cout << "Energy Total is approx: " << Energy1 + Energy2 << " keV"
+                << std::endl;
       std::cout << "Do you want to see the next waveform? (y/n): ";
       std::getline(std::cin, userInput);
       if (userInput != "y" && userInput != "Y") {
@@ -216,7 +229,7 @@ int main(int argc, char *argv[]) {
   WFAveraged.SetSmooth(150);
   WFAveraged.SetTracesFFT("smooth");
   WFAveraged.Plot();
-
+#endif
   fApp->Run();
   return 0;
 }

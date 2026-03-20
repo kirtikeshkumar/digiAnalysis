@@ -15,12 +15,17 @@
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/NaI_1_Checks/Calibration/"
+  //     "DataF_NaI_1_Na_Source_Gain_Calibration_HV1900_Waves_160FC.root";
+
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/NaI_1_Checks/Calibration/"
-      "DataF_NaI_1_Na_Source_Gain_Calibration_HV1900_Waves_160FC.root";
+      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+      "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
+      "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 000000, 10);
+  digiAnalysis::Analysis an(0, fname, 0, 000000, 0);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
