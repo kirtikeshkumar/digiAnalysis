@@ -12,7 +12,8 @@
 #include <TApplication.h>
 #include <iostream>
 #include <string>
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
   // std::string fname =
@@ -20,12 +21,12 @@ int main(int argc, char *argv[]) {
   //     "DataF_NaI_1_Na_Source_Gain_Calibration_HV1900_Waves_160FC.root";
 
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+      "/media/kirtikesh/UbuntuFiles/NaI/LowEnergy/"
       "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
       "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(0, fname, 0, 000000, 0);
+  digiAnalysis::Analysis an(0, fname, 0, 10000, 0);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -62,8 +63,10 @@ int main(int argc, char *argv[]) {
   double energyShort = 0;
   double shortPSD = 0;
   digiAnalysis::WaveForm *WF = nullptr;
-  for (int i = 0; i < nentries; i++) {
-    if (i % 10000 == 0) {
+  for (int i = 0; i < nentries; i++)
+  {
+    if (i % 10000 == 0)
+    {
       std::cout << i << std::endl;
     }
     if (hitsVector[i]->GetChNum() ==
@@ -71,8 +74,9 @@ int main(int argc, char *argv[]) {
           // hitsVector[i]->GetTimestamp() / 1E12 > 1600 and
           // hitsVector[i]->GetTimestamp() / 1E12 < 3200
           // and hitsVector[i]->GetMeanTime() < 3.8
-    ) {   // (hitsVector[i]->GetPSD() > 0.0 and
-        // hitsVector[i]->GetChNum() == 0) {
+    )
+    { // (hitsVector[i]->GetPSD() > 0.0 and
+      // hitsVector[i]->GetChNum() == 0) {
       energy = hitsVector[i]->GetEnergy();
       energyShort = hitsVector[i]->GetEnergyShort();
       WF = hitsVector[i]->GetWFPtr();
@@ -97,7 +101,8 @@ int main(int argc, char *argv[]) {
       hEdiffEvalPlot->Fill(evalEnergy, evalEnergyShort / evalEnergy);
       hESpectra->Fill(energy);
       hEEvalSpectra->Fill(evalEnergy);
-      if (i < 1300 and i > 1285) {
+      if (i < 1300 and i > 1285)
+      {
         std::cout << i << std::endl;
         hitsVector[i]->Print();
         std::cout << "Eval Energy     : " << evalEnergy << std::endl;

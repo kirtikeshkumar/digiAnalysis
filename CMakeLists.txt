@@ -21,13 +21,13 @@ option(SMOOTH "Enable or Disable Waveform Smoothing" OFF)
 option(CFD "Enable or Disable Waveform CFD" OFF)
 
 if(WAVES)
-    add_compile_definitions(-DWAVES)
+    add_compile_definitions(WAVES)
 endif()
 if(SMOOTH)
-    add_compile_definitions(-DSMOOTH)
+    add_compile_definitions(SMOOTH)
 endif()
 if(CFD)
-    add_compile_definitions(-DCFD)
+    add_compile_definitions(CFD)
 endif()
 
 # Find ROOT
