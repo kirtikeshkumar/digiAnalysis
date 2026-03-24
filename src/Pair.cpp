@@ -1,6 +1,8 @@
 #include "Pair.h"
 
 using namespace std;
+using namespace digiAnalysis;
+ClassImp(Pair);
 
 namespace digiAnalysis {
 

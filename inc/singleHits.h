@@ -8,6 +8,7 @@ This file saves individual hits as registered
 #include "WaveForm.h"
 #include "globals.h"
 // #include "diffWaveFrom.h"
+#include "TObject.h"
 #include "includes.hh"
 #pragma once
 
@@ -16,7 +17,7 @@ namespace digiAnalysis {
 class WaveForm;
 // class diffWaveForm;
 
-class singleHits {
+class singleHits : public TObject {
 private:
   // Compulsary Member Variables
   ULong64_t hitNum;
@@ -89,7 +90,7 @@ public:
 
   void Print();
 
-  // ClassDef(singleHits, 1);
+  ClassDef(singleHits, 1);
 };
 } // namespace digiAnalysis
 #endif

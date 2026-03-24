@@ -1,8 +1,10 @@
 #ifndef PSBar_h
 #define PSBar_h
 
+#include "TObject.h"
 #include "WaveForm.h"
 #include "singleHits.h"
+#include <Rtypes.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -16,7 +18,7 @@ namespace digiAnalysis {
 class singleHits;
 class WaveForm;
 
-class PSBar {
+class PSBar : public TObject {
 private:
   ushort BarIndex;    // Index of Bar starting from 0
   ULong64_t TimeNear; // DAQ timestamp of smaller channel
@@ -66,6 +68,7 @@ public:
 #endif
 
   ~PSBar();
+  ClassDef(PSBar, 1);
 };
 } // namespace digiAnalysis
 #endif

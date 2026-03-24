@@ -6,8 +6,10 @@ class WaveForm: parent class contains how to handle waveform including plotting
 #ifndef WaveForm_h
 #define WaveForm_h
 
+#include "TObject.h"
 #include "globals.h"
 #include "includes.hh"
+#include <RtypesCore.h>
 #include <TPolyLine.h>
 #include <TROOT.h>
 #include <sys/types.h>
@@ -15,7 +17,7 @@ class WaveForm: parent class contains how to handle waveform including plotting
 #pragma once
 
 namespace digiAnalysis {
-class WaveForm {
+class WaveForm : public TObject {
 protected:
   std::vector<double> traces;
   std::vector<double> tracesSmooth;
@@ -67,6 +69,8 @@ public:
 
   void SetWaveForm(const std::vector<double> tr);
   void SetWaveForm(const WaveForm &wf);
+  void SetWaveForm(const WaveForm &wf, UShort_t start, UShort_t stop,
+                   UShort_t blstart = 0, UShort_t nsample = 0);
   void SetTracesMovBLCorr();
   /**
    * @brief Smooth Waveforms.
@@ -93,6 +97,7 @@ public:
   void SetTracesFFT(std::string whichTrace);
   void SetTracesFFT(std::vector<double> trace);
   std::vector<double> EvalTracesFFT(std::vector<double> trFFT);
+  double EvalBaseLine(int start, int numSamples) const;
 
   void Plot();
   void Plot(std::vector<double> tr);
@@ -120,7 +125,7 @@ public:
   // static UShort_t nSampleBL;   // Number of baseline samples
   // static UShort_t smoothBoxSz; // Size of smoothing box
 
-  //  ClassDef(WaveForm, 1);
+  ClassDef(WaveForm, 1);
 };
 
 } // namespace digiAnalysis

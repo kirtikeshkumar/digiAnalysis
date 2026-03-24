@@ -35,7 +35,8 @@ int main(int argc, char *argv[]) {
 
   digiAnalysis::WaveForm *WF = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector;
-  std::vector<digiAnalysis::Pair *> vecOfPairs = an.GetPairsVec();
+  std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
+      an.GetPairsVec();
 
   // Long64_t Ch0Time = hitsVectorCh0[0]->GetTimestamp();
   // Long64_t Ch1Time = hitsVectorCh1[0]->GetTimestamp();

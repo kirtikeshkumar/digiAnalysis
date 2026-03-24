@@ -32,13 +32,39 @@ endif()
 
 # Find ROOT
 find_package(ROOT REQUIRED COMPONENTS Spectrum)
+include(${ROOT_USE_FILE})
 include_directories(${ROOT_INCLUDE_DIRS})
+message(STATUS "ROOT_USE_FILE = ${ROOT_USE_FILE}")
+message(STATUS "ROOT_INCLUDE_DIRS = ${ROOT_INCLUDE_DIRS}")
 
 # Include directories
-include_directories(inc)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
+
+set(DICT_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/WaveForm.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/singleHits.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/Pair.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/PSBar.h
+)
+
+
+ROOT_GENERATE_DICTIONARY(G__digiAnalysis
+    ${DICT_HEADERS}
+    LINKDEF inc/DictLinkDef.h 
+    MODULE digiAnalysisLib
+)
+
 
 # Gather source files from src directory
 file(GLOB sources src/*.cpp)
+
+add_library(digiAnalysisLib SHARED
+    ${sources}
+    G__digiAnalysis.cxx
+)
+
+target_link_libraries(digiAnalysisLib ${ROOT_LIBRARIES} ROOT::Spectrum)
+target_include_directories(digiAnalysisLib PUBLIC inc)
 
 # Gather test files from test directory
 file(GLOB test_sources CONFIGURE_DEPENDS test/*.cpp)
@@ -49,7 +75,7 @@ foreach(test_file ${test_sources})
     get_filename_component(test_name ${test_file} NAME_WE)
 
     # Create an executable for each test file
-    add_executable(${test_name} ${test_file} ${sources})
-    target_link_libraries(${test_name} ${ROOT_LIBRARIES} ROOT::Spectrum)
+    add_executable(${test_name} ${test_file})
+    target_link_libraries(${test_name} digiAnalysisLib ${ROOT_LIBRARIES} ROOT::Spectrum)
     #message(STATUS "Test sources: ${test_name}")
 endforeach()

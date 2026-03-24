@@ -6,7 +6,8 @@
 #include <iostream>
 #include <vector>
 
-// ClassImp(digiAnalysis::singleHits);
+using namespace digiAnalysis;
+ClassImp(singleHits);
 
 using namespace std;
 

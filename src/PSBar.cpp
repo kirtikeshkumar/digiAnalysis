@@ -4,6 +4,9 @@
 #include "includes.hh"
 #include "singleHits.h"
 
+using namespace digiAnalysis;
+ClassImp(PSBar);
+
 using namespace std;
 
 namespace digiAnalysis {

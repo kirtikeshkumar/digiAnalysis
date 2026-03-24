@@ -8,7 +8,8 @@
 #include <iostream>
 #include <vector>
 
-// ClassImp(digiAnalysis::WaveForm);
+using namespace digiAnalysis;
+ClassImp(WaveForm);
 
 using namespace std;
 
@@ -528,6 +529,76 @@ void WaveForm::SetWaveForm(const WaveForm &wf) {
   baseline = wf.baseline;
 }
 
+void WaveForm::SetWaveForm(const WaveForm &source, UShort_t startIdx,
+                           UShort_t endIdx, UShort_t blstart,
+                           UShort_t nsample) {
+  // Validate range
+  if (startIdx < 0 || endIdx > static_cast<int>(source.traces.size()) ||
+      startIdx >= endIdx) {
+    return; // Silent fail or throw exception as needed
+  }
+
+  int rangeSize = endIdx - startIdx;
+  // std::cout << "rangeSize = " << rangeSize << std::endl;
+
+  // Resize all vectors to range size, initialize to 0.0
+  traces.resize(rangeSize, 0.0);
+  tracesSmooth.resize(rangeSize, 0.0);
+  // tracesFFT.resize(rangeSize, 0.0);
+  // tracesFFTPhase.resize(rangeSize, 0.0);
+  // tracesMovBLCorr.resize(rangeSize, 0.0);
+
+  // std::cout << "traces resized" << std::endl;
+
+  // Copy only the specified range
+  if (nsample != 0) {
+    baseline = source.EvalBaseLine(startIdx + blstart, nsample);
+  } else {
+    baseline = source.baseline;
+  }
+
+  for (int i = 0; i < rangeSize; ++i) {
+    int srcIdx = startIdx + i;
+    // std::cout << i << " : " << srcIdx << std::endl;
+    if (i < source.traces.size()) {
+      if (nsample != 0) {
+        traces[i] = source.traces[srcIdx] - baseline;
+      } else {
+        traces[i] = source.traces[srcIdx];
+      }
+    }
+
+    if (i < source.tracesSmooth.size()) {
+      if (nsample != 0) {
+        tracesSmooth[i] = source.tracesSmooth[srcIdx] - baseline;
+      } else {
+        tracesSmooth[i] = source.tracesSmooth[srcIdx];
+      }
+    }
+
+    // if (i < source.tracesFFT.size()) {
+    //   tracesFFT[i] = source.tracesFFT[srcIdx];
+    // }
+
+    // if (i < source.tracesFFTPhase.size()) {
+    //   tracesFFTPhase[i] = source.tracesFFTPhase[srcIdx];
+    // }
+
+    // if (i < source.tracesMovBLCorr.size()) {
+    //   tracesMovBLCorr[i] = source.tracesMovBLCorr[srcIdx];
+    // }
+  }
+
+  // std::cout << "traces copied" << std::endl;
+
+  // reset other members
+  meantime = 0.0;
+  if (fitFunc) {
+    delete fitFunc;
+    fitFunc = nullptr;
+  }
+}
+
 void WaveForm::SetTracesMovBLCorr() {
   if (!traces.empty()) {
     if (!IsTracesSmoothSet()) {
@@ -923,6 +994,22 @@ std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT) {
   return res;
 }
 
+double WaveForm::EvalBaseLine(int start, int numSample) const {
+  double baselineret = 0;
+  double sum = 0;
+
+  if (!traces.empty() && traces.size() > numSample + start) {
+    for (unsigned int j = start; j < numSample + start; j++) {
+      sum = sum + traces[j];
+    }
+    baselineret = sum / numSample;
+  } else {
+    std::cout << "err SetBaseLine: traces is empty or shorter than numSample"
+              << std::endl;
+  }
+  return baselineret;
+}
+
 // std::vector<double> WaveForm::EvalDecayTime(UShort_t FitStart, UShort_t
 // FitEnd, UShort_t numDecayConst) {}
 
@@ -1068,7 +1155,7 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
     }
     traces.push_back(sum);
   }
-  SetMeanTime();
+  // SetMeanTime();
 }
 
 void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
@@ -1097,7 +1184,7 @@ void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
     }
     traces.push_back(sum);
   }
-  SetMeanTime();
+  // SetMeanTime();
 }
 
 void WaveForm::ScaleWaveForm(double Scale) {

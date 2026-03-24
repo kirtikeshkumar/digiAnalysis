@@ -25,8 +25,7 @@
 #include <ratio>
 #include <vector>
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
   // std::string fname =
@@ -53,11 +52,9 @@ int main(int argc, char *argv[])
   UShort_t numChannels = 0;
   UShort_t currChannel = -1;
   std::vector<UShort_t> channels; // stores the value of channel number
-  std::vector<int> chStart;       // stores the index of first entry from the channel
-  for (int i = 0; i < nentries; i++)
-  {
-    if (hitsVector[i]->GetChNum() != currChannel)
-    {
+  std::vector<int> chStart; // stores the index of first entry from the channel
+  for (int i = 0; i < nentries; i++) {
+    if (hitsVector[i]->GetChNum() != currChannel) {
       currChannel = hitsVector[i]->GetChNum();
       numChannels += 1;
       channels.push_back(currChannel);
@@ -66,14 +63,12 @@ int main(int argc, char *argv[])
   }
 
   std::cout << "There are " << numChannels << " channels (";
-  for (int iter = 0; iter < numChannels; iter++)
-  {
+  for (int iter = 0; iter < numChannels; iter++) {
     std::cout << channels[iter] << ", ";
   }
   std::cout << ") in the data." << std::endl;
 
-  for (int iter = 0; iter < numChannels; iter++)
-  {
+  for (int iter = 0; iter < numChannels; iter++) {
     std::cout << "Channel " << channels[iter] << " starts at: " << chStart[iter]
               << std::endl;
   }
@@ -99,12 +94,10 @@ int main(int argc, char *argv[])
   ULong64_t minTime = std::numeric_limits<ULong64_t>::max();
 
   // initialize with the smallest start time
-  for (int iter = 0; iter < numChannels; iter++)
-  {
+  for (int iter = 0; iter < numChannels; iter++) {
     currIndex[iter] = currIndex[iter] + chStart[iter];
     currTime.push_back(hitsVector[currIndex[iter]]->GetTimestamp());
-    if (currTime[iter] < minTime)
-    {
+    if (currTime[iter] < minTime) {
       minTime = hitsVector[currIndex[iter]]->GetTimestamp();
       startIndex = currIndex[iter];
       startChannel = iter;
@@ -121,13 +114,11 @@ int main(int argc, char *argv[])
   std::vector<ULong64_t> chDelT(numChannels, 0);
   digiAnalysis::Pair coincPair;
 
-  while (!isEnd)
-  {
+  while (!isEnd) {
     chDelT.clear();
     // evaluate the time difference between current event and the next event in
     // each channel
-    for (int iterCh = 0; iterCh < numChannels; iterCh++)
-    {
+    for (int iterCh = 0; iterCh < numChannels; iterCh++) {
       !isChEnd[iterCh]
           ? chDelT.push_back(currTime[iterCh] - startTime)
           : chDelT.push_back(std::numeric_limits<ULong64_t>::max());
@@ -138,8 +129,7 @@ int main(int argc, char *argv[])
     stopChannel = std::distance(chDelT.begin(), it);
 
     // create pair if within the timeframe
-    if ((minTime < timeWindow) and (startChannel != stopChannel))
-    {
+    if ((minTime < timeWindow) and (startChannel != stopChannel)) {
       coincPair.ClearPair();
       coincPair.SetPair(hitsVector[startIndex].get(),
                         hitsVector[currIndex[stopChannel]].get());
@@ -158,12 +148,10 @@ int main(int argc, char *argv[])
 
     // check if channel has finished
     bool endcheck = true;
-    for (int iterCh = 0; iterCh < numChannels; iterCh++)
-    {
+    for (int iterCh = 0; iterCh < numChannels; iterCh++) {
       if ((iterCh + 1 < numChannels &&
            currIndex[iterCh] == chStart[iterCh + 1]) ||
-          currIndex[iterCh] == nentries)
-      {
+          currIndex[iterCh] == nentries) {
         isChEnd[iterCh] = true;
       }
       endcheck = endcheck && isChEnd[iterCh];
@@ -176,8 +164,7 @@ int main(int argc, char *argv[])
   double Energy1 = 0;
   double Energy2 = 0;
   double PSD = 0, MT = 0;
-  for (int iter = 0; iter < nPairs; iter++)
-  {
+  for (int iter = 0; iter < nPairs; iter++) {
     // Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 1.0174 -
     //           38.84; // Gain match case
     PSD = vecOfPairs[iter]->GetHit(0)->GetPSD();
@@ -224,8 +211,7 @@ int main(int argc, char *argv[])
   std::string userInput;
   UShort_t wfSz;
   std::vector<digiAnalysis::WaveForm> waveformVector;
-  for (int iter = 0; iter < nPairs && keepGoing; iter++)
-  {
+  for (int iter = 0; iter < nPairs && keepGoing; iter++) {
     vecOfPairs[iter]->GetPairHitEnergy(0) > 694
         ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
         : Energy1 =
@@ -233,9 +219,8 @@ int main(int argc, char *argv[])
     Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
               14.6; //* 1.0973 - 58.91;
     MT = vecOfPairs[iter]->GetHit(0)->GetMeanTime();
-    if (Energy1 < 5 and Energy1 > 0 and MT > 3.05 and MT < 3.06 and
-        (Energy2 + Energy1 > 650) and (Energy2 + Energy1 < 680))
-    {
+    if (Energy1 < 15 and Energy1 > 10 and MT > 3.05 and MT < 3.06 and
+        (Energy2 + Energy1 > 650) and (Energy2 + Energy1 < 680)) {
       vecOfPairs[iter]->GetHit(0)->GetWFPtr()->SetTracesFFT();
       vecOfPairs[iter]->GetHit(0)->GetWFPtr()->Plot();
       wfSz = vecOfPairs[iter]->GetHit(0)->GetWFPtr()->GetSize();
@@ -245,8 +230,7 @@ int main(int argc, char *argv[])
                 << std::endl;
       std::cout << "Do you want to see the next waveform? (y/n): ";
       std::getline(std::cin, userInput);
-      if (userInput != "y" && userInput != "Y")
-      {
+      if (userInput != "y" && userInput != "Y") {
         keepGoing = false;
       }
     }

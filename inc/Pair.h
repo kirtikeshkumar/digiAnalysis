@@ -5,7 +5,9 @@
 #include "WaveForm.h"
 #include "includes.hh"
 #include "singleHits.h"
+#include <Rtypes.h>
 #pragma once
+#include "TObject.h"
 #include <iomanip>
 #include <iostream>
 #include <variant>
@@ -14,10 +16,10 @@ namespace digiAnalysis {
 class singleHits;
 class WaveForm;
 
-class Pair {
+class Pair : public TObject {
 private:
-  singleHits *hit1;
-  singleHits *hit2;
+  std::unique_ptr<singleHits> hit1;
+  std::unique_ptr<singleHits> hit2;
   UShort_t SumEnergy;
   ULong64_t PairDelTime;
 
@@ -193,6 +195,7 @@ public:
   double GetPairHitEvalPSD(Short_t Ch);
 #endif
   void Print();
+  ClassDef(Pair, 1);
 };
 } // namespace digiAnalysis
 #endif
