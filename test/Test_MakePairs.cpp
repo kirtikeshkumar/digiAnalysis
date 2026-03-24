@@ -9,7 +9,8 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]) {
   //         hECh1->Fill(EnergyNearestEvt);
 
   //         currPair.ClearPair();
-  //         currPair.SetPair(hitsVectorCh0[i], hitsVectorCh1[j - 1]);
+  //         currPair.SetPair(*hitsVectorCh0[i], *hitsVectorCh1[j - 1]);
   //         vecOfPairs.push_back(new digiAnalysis::Pair(currPair));
   //         // if (fabs(currPair.GetPairHitEnergy(0) - 400) < 200 or
   //         //     fabs(currPair.GetPairHitEnergy(1) - 400) < 200) {
@@ -110,22 +111,27 @@ int main(int argc, char *argv[]) {
   digiAnalysis::singleHits *hit;
   digiAnalysis::singleHits *hit0;
 
-  while (i < vecOfPairs.size()) {
-    if (fabs(vecOfPairs[i]->GetPairHitEnergy(1) - CheckEnergy) < CheckWidth) {
-      hit = vecOfPairs[i]->GetHit(1);
+  while (i < vecOfPairs.size())
+  {
+    if (fabs(vecOfPairs[i]->GetPairHitEnergy(1) - CheckEnergy) < CheckWidth)
+    {
+      hit = vecOfPairs[i]->GetHitPtr(1);
       bool MeanTimeCondition = true;
       MeanTimeCondition =
           fabs(hit->GetMeanTime() - CheckMeanTime) < CheckMeanTimeWidth;
-      if (MeanTimeCondition) {
-        hit0 = vecOfPairs[i]->GetHit(0);
+      if (MeanTimeCondition)
+      {
+        hit0 = vecOfPairs[i]->GetHitPtr(0);
         vecOfPairs[i]->Print();
         hit0->SetMovBLCorr();
         hECh0->Fill(vecOfPairs[i]->GetPairHitEvalEnergy(0));
         hECh1->Fill(vecOfPairs[i]->GetPairHitEnergy(1));
       }
-      if (plotnext and MeanTimeCondition) {
+      if (plotnext and MeanTimeCondition)
+      {
         WF = hit0->GetWFPtr();
-        if (WF) {
+        if (WF)
+        {
           waveformVector.push_back(*WF);
         }
         // vecOfPairs[i]->Print();
@@ -133,7 +139,8 @@ int main(int argc, char *argv[]) {
         WF->Plot();
         std::cout << "Do you want to see the next waveform? (y/n): ";
         std::getline(std::cin, userInput);
-        if (userInput != "y" && userInput != "Y") {
+        if (userInput != "y" && userInput != "Y")
+        {
           plotnext = false;
         }
       }
@@ -145,7 +152,8 @@ int main(int argc, char *argv[]) {
   }
   UShort_t wfSz = WF->GetSize();
   std::cout << "Got size of waveforms" << wfSz << std::endl;
-  if (waveformVector.size() > 0) {
+  if (waveformVector.size() > 0)
+  {
     digiAnalysis::WaveForm *WFAveraged =
         new digiAnalysis::WaveForm(wfSz, waveformVector);
     WFAveraged->Plot();

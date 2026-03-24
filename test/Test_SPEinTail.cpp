@@ -17,7 +17,8 @@
 #include <string>
 #include <vector>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
   // std::string fname =
@@ -52,9 +53,11 @@ int main(int argc, char *argv[]) {
   std::string userInput;
   double intSPE, intWave;
   int wfSz;
-  for (int iter = 0; iter < nPairs && keepGoing; iter++) {
-    if (iter % 1 == 0) {
-      hit = vecOfPairs[iter]->GetHit(0);
+  for (int iter = 0; iter < nPairs && keepGoing; iter++)
+  {
+    if (iter % 1 == 0)
+    {
+      hit = vecOfPairs[iter]->GetHitPtr(0);
       std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() << std::endl;
     }
 
@@ -63,7 +66,8 @@ int main(int argc, char *argv[]) {
         : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 -
                     0.4222; // Calibration to get the energy
                             // 1900V
-    if (Energy1 > 90 and Energy1 < 100) {
+    if (Energy1 > 90 and Energy1 < 100)
+    {
       WF = nullptr;
       WF = hit->GetWFPtr();
       WF->SetSmooth(65);
@@ -87,13 +91,16 @@ int main(int argc, char *argv[]) {
       int iterPeaks = 0;
       int isolationRange = 250;
       int saveRange = isolationRange - 50;
-      while (iterPeaks < results.first.size()) {
+      while (iterPeaks < results.first.size())
+      {
         int peakPos = results.first[iterPeaks];
         if ((peakPos > 2500 and peakPos < 4500) and
-            (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
+            (peakPos - results.first[iterPeaks - 1] > isolationRange))
+        {
           if ((iterPeaks + 1 < results.first.size() and
                (results.first[iterPeaks + 1] - peakPos) > isolationRange) ||
-              (iterPeaks + 1 == results.first.size())) {
+              (iterPeaks + 1 == results.first.size()))
+          {
             digiAnalysis::WaveForm WFSPE;
             WFSPE.SetWaveForm(*WF, peakPos - saveRange, peakPos + saveRange,
                               saveRange - 100, 50);
