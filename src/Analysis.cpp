@@ -10,247 +10,111 @@
 
 using namespace std;
 
-namespace digiAnalysis
-{
-  Analysis::Analysis()
-  {
-    EnergyThreshold = 0;
-    fDatafileName = "";
+namespace digiAnalysis {
+Analysis::Analysis() {
+  EnergyThreshold = 0;
+  fDatafileName = "";
+}
+
+Analysis::Analysis(std::string datafilename, ULong64_t numOfEvents,
+                   double EThreshold) {
+  if (datafilename.empty()) {
+    throw std::logic_error("Data file name is empty!");
+  }
+  fDatafileName = datafilename;
+  EnergyThreshold = EThreshold;
+  LoadData(numOfEvents, EnergyThreshold);
+}
+
+Analysis::Analysis(std::string datafilename, ULong64_t start,
+                   ULong64_t numOfEvents, double EThreshold) {
+  if (datafilename.empty()) {
+    throw std::logic_error("Data file name is empty!");
+  }
+  fDatafileName = datafilename;
+  EnergyThreshold = EThreshold;
+  LoadData(start, numOfEvents, EnergyThreshold);
+}
+
+Analysis::Analysis(UShort_t channel, std::string datafilename, ULong64_t start,
+                   ULong64_t numOfEvents, double EThreshold) {
+  if (datafilename.empty()) {
+    throw std::logic_error("Data file name is empty!");
+  }
+  fDatafileName = datafilename;
+  EnergyThreshold = EThreshold;
+  LoadData(channel, start, numOfEvents, EnergyThreshold);
+}
+
+void Analysis::LoadData(ULong64_t numOfEvents, double EThreshold) {
+  LoadData(0, numOfEvents, EThreshold);
+}
+
+void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
+                        double EThreshold) {
+
+  TFile *fp = new TFile(fDatafileName.c_str(), "READ");
+
+  if (!fp || fp->IsZombie()) {
+    std::cerr << "Error: Unable to open file " << fDatafileName << std::endl;
+    return; // Exit or handle the error appropriately
   }
 
-  Analysis::Analysis(std::string datafilename, ULong64_t numOfEvents,
-                     double EThreshold)
-  {
-    if (datafilename.empty())
-    {
-      throw std::logic_error("Data file name is empty!");
-    }
-    fDatafileName = datafilename;
-    EnergyThreshold = EThreshold;
-    LoadData(numOfEvents, EnergyThreshold);
-  }
+  TTree *tr = (TTree *)fp->Get("Data_F");
+  bool isPair = false;
 
-  Analysis::Analysis(std::string datafilename, ULong64_t start,
-                     ULong64_t numOfEvents, double EThreshold)
-  {
-    if (datafilename.empty())
-    {
-      throw std::logic_error("Data file name is empty!");
-    }
-    fDatafileName = datafilename;
-    EnergyThreshold = EThreshold;
-    LoadData(start, numOfEvents, EnergyThreshold);
-  }
-
-  Analysis::Analysis(UShort_t channel, std::string datafilename, ULong64_t start,
-                     ULong64_t numOfEvents, double EThreshold)
-  {
-    if (datafilename.empty())
-    {
-      throw std::logic_error("Data file name is empty!");
-    }
-    fDatafileName = datafilename;
-    EnergyThreshold = EThreshold;
-    LoadData(channel, start, numOfEvents, EnergyThreshold);
-  }
-
-  void Analysis::LoadData(ULong64_t numOfEvents, double EThreshold)
-  {
-    LoadData(0, numOfEvents, EThreshold);
-  }
-
-  void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
-                          double EThreshold)
-  {
-
-    TFile *fp = new TFile(fDatafileName.c_str(), "READ");
-
-    if (!fp || fp->IsZombie())
-    {
-      std::cerr << "Error: Unable to open file " << fDatafileName << std::endl;
-      return; // Exit or handle the error appropriately
-    }
-
-    TTree *tr = (TTree *)fp->Get("Data_F");
-    bool isPair = false;
-
-    // Check if the TTree was retrieved successfully
-    if (!tr)
-    {
-      std::cerr << "Error: Unable to retrieve TTree 'Data_F' from file."
+  // Check if the TTree was retrieved successfully
+  if (!tr) {
+    std::cerr << "Error: Unable to retrieve TTree 'Data_F' from file."
+              << std::endl;
+    // fp->Close();
+    // return; // Exit or handle the error appropriately
+    tr = (TTree *)fp->Get("Data_R");
+    if (!tr) {
+      std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
                 << std::endl;
-      // fp->Close();
-      // return; // Exit or handle the error appropriately
-      tr = (TTree *)fp->Get("Data_R");
-      if (!tr)
-      {
-        std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
-                  << std::endl;
-        tr = (TTree *)fp->Get("Data_Pair");
-        if (!tr)
-        {
-          std::cerr << "Error: Unable to retrieve TTree 'Data_Pair' from file."
-                    << std::endl;
-          fp->Close();
-          return; // Exit or handle the error appropriately
-        }
-        else
-        {
-          isPair = true;
-        }
-      }
-    }
-
-    Long64_t nentries = tr->GetEntries();
-    Long64_t nbytes = 0;
-
-    if (numOfEvents + start > nentries)
-    {
-      std::cout << "Warning in LoadData: Cannot fetch till "
-                << start + numOfEvents << " entries from file containing "
-                << nentries << " entries" << std::endl;
-      numOfEvents = nentries - start;
-    }
-
-    if (start > nentries)
-    {
-      std::cout << "Warning in LoadData: Cannot fetch " << start
-                << " th entry from file containing " << nentries << " entries"
-                << std::endl;
-      start = 0;
-      numOfEvents = nentries;
-    }
-
-    if (numOfEvents == 0)
-    {
-      std::cout << "Warning in LoadData: 0 numOfEvents passed to LoadData, "
-                   "fetching all entries after "
-                << start << std::endl;
-      numOfEvents = nentries - start;
-    }
-
-    if (!isPair)
-    {
-      // Declaration of leaves types
-      UShort_t Channel;
-      ULong64_t Timestamp;
-      UShort_t Board;
-      UShort_t Energy;
-      UShort_t EnergyShort;
-      // #ifdef WAVES
-      TArrayS *Samples = nullptr;
-      // #endif
-
-      std::cout << "Loading data from: " << fDatafileName << " (" << numOfEvents
-                << " events)" << std::endl;
-      // TTree *tr = GetTreeFromFile(fDatafileName);
-
-      // Set branch addresses.
-      tr->SetBranchAddress("Channel", &Channel);
-      tr->SetBranchAddress("Timestamp", &Timestamp);
-      tr->SetBranchAddress("Board", &Board);
-      tr->SetBranchAddress("Energy", &Energy);
-      tr->SetBranchAddress("EnergyShort", &EnergyShort);
-#ifdef WAVES
-      tr->SetBranchAddress("Samples", &Samples);
-      std::cout << "Branch waves set" << std::endl;
-#endif
-
-      //////////////////////////////////////////////////////////////////////////////
-      /// SORTING
-      //////////////////////////////////////////////////////////////////////////////
-
-      std::cout << "Now sorting: " << nentries << " entries in order of timestamp"
-                << std::endl;
-
-      tr->BuildIndex("Timestamp", "0");
-      TTreeIndex *index = (TTreeIndex *)tr->GetTreeIndex();
-      if (!index)
-      {
-        std::cerr << "Error creating tree index!" << std::endl;
-        gROOT->ProcessLine(".q");
-        return;
-      }
-      Long64_t *indices = index->GetIndex();
-      if (!indices)
-      {
-        std::cerr << "Error retrieving index array!" << std::endl;
-        gROOT->ProcessLine(".q");
-        return;
-      }
-
-      std::cout << "sorting done" << std::endl;
-      //////////////////////////////////////////////////////////////////////////////
-      /// READING
-      //////////////////////////////////////////////////////////////////////////////
-      for (ULong64_t iev = start; iev < start + numOfEvents; iev++)
-      {
-        if ((iev - start) % 100000 == 0)
-        {
-          std::cout << "Reading: " << indices[iev] << std::endl;
-        }
-        nbytes += tr->GetEntry(indices[iev]);
-        if (Energy >= EThreshold)
-        {
-#ifndef WAVES
-          std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
-              iev, Channel, Board, Timestamp, Energy, EnergyShort);
-#else
-          std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
-              iev, Channel, Board, Timestamp, Energy, EnergyShort, Samples);
-#endif
-          vecOfHits.push_back(std::move(hit));
-        }
-      }
-    }
-    else
-    {
-      // Code to load pairs
-      Pair *detPair = new Pair();
-      tr->SetBranchAddress("pair", &detPair);
-      for (ULong64_t iev = start; iev < start + numOfEvents; iev++)
-      {
-        if ((iev - start) % 100000 == 0)
-        {
-          std::cout << "Reading: " << iev << std::endl;
-        }
-        nbytes += tr->GetEntry(iev);
-        detPair->Print();
-        vecOfPairs.push_back(std::make_unique<Pair>(*detPair));
-      }
-    }
-  }
-
-  void Analysis::LoadData(UShort_t channel, ULong64_t start,
-                          ULong64_t numOfEvents, double EThreshold)
-  {
-
-    TFile *fp = new TFile(fDatafileName.c_str(), "READ");
-
-    if (!fp || fp->IsZombie())
-    {
-      std::cerr << "Error: Unable to open file " << fDatafileName << std::endl;
-      return; // Exit or handle the error appropriately
-    }
-
-    TTree *tr = (TTree *)fp->Get("Data_F");
-
-    // Check if the TTree was retrieved successfully
-    if (!tr)
-    {
-      std::cerr << "Error: Unable to retrieve TTree 'Data_F' from file."
-                << std::endl;
-      // fp->Close();
-      // return; // Exit or handle the error appropriately
-      tr = (TTree *)fp->Get("Data_R");
-      if (!tr)
-      {
-        std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
+      tr = (TTree *)fp->Get("Data_Pair");
+      if (!tr) {
+        std::cerr << "Error: Unable to retrieve TTree 'Data_Pair' from file."
                   << std::endl;
         fp->Close();
         return; // Exit or handle the error appropriately
+      } else {
+        isPair = true;
       }
     }
+  }
+
+  Long64_t nentries = tr->GetEntries();
+
+  std::cout << "Loading data from: " << fDatafileName << " (" << numOfEvents
+            << " / " << nentries << " events)" << std::endl;
+
+  Long64_t nbytes = 0;
+
+  if (numOfEvents + start > nentries) {
+    std::cout << "Warning in LoadData: Cannot fetch till "
+              << start + numOfEvents << " entries from file containing "
+              << nentries << " entries" << std::endl;
+    numOfEvents = nentries - start;
+  }
+
+  if (start > nentries) {
+    std::cout << "Warning in LoadData: Cannot fetch " << start
+              << " th entry from file containing " << nentries << " entries"
+              << std::endl;
+    start = 0;
+    numOfEvents = nentries;
+  }
+
+  if (numOfEvents == 0) {
+    std::cout << "Warning in LoadData: 0 numOfEvents passed to LoadData, "
+                 "fetching all entries after "
+              << start << std::endl;
+    numOfEvents = nentries - start;
+  }
+
+  if (!isPair) {
     // Declaration of leaves types
     UShort_t Channel;
     ULong64_t Timestamp;
@@ -261,8 +125,6 @@ namespace digiAnalysis
     TArrayS *Samples = nullptr;
     // #endif
 
-    std::cout << "Loading data from: " << fDatafileName << " (" << numOfEvents
-              << " events) for Channel: " << channel << std::endl;
     // TTree *tr = GetTreeFromFile(fDatafileName);
 
     // Set branch addresses.
@@ -276,52 +138,22 @@ namespace digiAnalysis
     std::cout << "Branch waves set" << std::endl;
 #endif
 
-    Long64_t nentries = tr->GetEntries();
-    Long64_t nbytes = 0;
-
-    if (numOfEvents + start > nentries)
-    {
-      std::cout << "Warning in LoadData: Cannot fetch till" << start + numOfEvents
-                << " entries from file containing " << nentries << " entries"
-                << std::endl;
-      numOfEvents = nentries - start;
-    }
-
-    if (start > nentries)
-    {
-      std::cout << "Warning in LoadData: Cannot fetch " << start
-                << " th entry from file containing " << nentries << " entries"
-                << std::endl;
-      start = 0;
-      numOfEvents = nentries;
-    }
-
-    if (numOfEvents == 0)
-    {
-      std::cout << "Warning in LoadData: 0 numOfEvents passed to LoadData, "
-                   "fetching all entries after "
-                << start << std::endl;
-      numOfEvents = nentries - start;
-    }
-
     //////////////////////////////////////////////////////////////////////////////
     /// SORTING
     //////////////////////////////////////////////////////////////////////////////
 
-    std::cout << "Now sorting: " << nentries
-              << " entries in order of Channel Number and Timestamp" << std::endl;
+    std::cout << "Now sorting: " << nentries << " entries in order of timestamp"
+              << std::endl;
 
-    tr->BuildIndex("Channel", "Timestamp");
+    tr->BuildIndex("Timestamp", "0");
     TTreeIndex *index = (TTreeIndex *)tr->GetTreeIndex();
-    if (!index)
-    {
+    if (!index) {
       std::cerr << "Error creating tree index!" << std::endl;
       gROOT->ProcessLine(".q");
       return;
     }
     Long64_t *indices = index->GetIndex();
-    if (!indices)
-    {
+    if (!indices) {
       std::cerr << "Error retrieving index array!" << std::endl;
       gROOT->ProcessLine(".q");
       return;
@@ -331,58 +163,12 @@ namespace digiAnalysis
     //////////////////////////////////////////////////////////////////////////////
     /// READING
     //////////////////////////////////////////////////////////////////////////////
-    ULong64_t nev = 0;
-    Long64_t first = -1;
-    Long64_t last = -1;
-    const Long64_t *values = index->GetIndexValues();
-    for (Long64_t i = 0; i < index->GetN(); ++i)
-    {
-      if (values[i] == channel)
-      {
-        first = i;
-        break;
+    for (ULong64_t iev = start; iev < start + numOfEvents; iev++) {
+      if ((iev - start) % 100000 == 0) {
+        std::cout << "Reading: " << indices[iev] << std::endl;
       }
-    }
-    for (Long64_t i = first; i < index->GetN(); ++i)
-    {
-      if (values[i] != channel)
-      {
-        last = i;
-        break;
-      }
-    }
-
-    if (first < 0)
-    {
-      std::cout << "Channel " << channel << " not found\n";
-      return;
-    }
-    ULong64_t iev = first;
-    if (first <= start and last >= start)
-    {
-      iev = start;
-      std::cout << "Reading " << numOfEvents << " from " << start << std::endl;
-    }
-    else
-    {
-      std::cout << "WARNING: start event is not in range of channel events: "
-                << first << " - " << last << std::endl;
-      std::cout << "Reading " << numOfEvents << " from start" << std::endl;
-    }
-    while (nev < numOfEvents && iev < nentries)
-    {
       nbytes += tr->GetEntry(indices[iev]);
-      if (iev % 100000 == 0)
-      {
-        std::cout << "Reading: " << iev << std::endl;
-      }
-      if (Channel < channel)
-      {
-        iev += 1;
-        continue;
-      }
-      else if (Energy >= EThreshold and Channel == channel)
-      {
+      if (Energy >= EThreshold) {
 #ifndef WAVES
         std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
             iev, Channel, Board, Timestamp, Energy, EnergyShort);
@@ -391,439 +177,529 @@ namespace digiAnalysis
             iev, Channel, Board, Timestamp, Energy, EnergyShort, Samples);
 #endif
         vecOfHits.push_back(std::move(hit));
-        nev += 1;
-      }
-      else if (Channel > channel)
-      {
-        break;
-      }
-      iev += 1;
-    }
-  }
-
-  void Analysis::SetSingleHit(ULong64_t hitIndx,
-                              std::unique_ptr<singleHits> hit)
-  {
-    if (hitIndx < vecOfHits.size())
-    {
-      if (vecOfHits[hitIndx] == nullptr)
-      {
-        vecOfHits[hitIndx] = std::move(hit);
-      }
-      else
-      {
-        std::cout << "Warning in Analysis::SetSingleHit. hitIndx not Empty"
-                  << std::endl;
-        vecOfHits[hitIndx] = std::move(hit);
       }
     }
-    else if (hitIndx == vecOfHits.size())
-    {
-      vecOfHits.push_back(std::move(hit));
-    }
-    else
-    {
-      std::cout << "Error in Analysis::SetSingleHit. hitIndx "
-                << hitIndx - vecOfHits.size() << " out of bounds" << std::endl;
-      std::cout << "hit added at end of vector";
-      vecOfHits.push_back(std::move(hit));
-    }
-  }
-
-  void Analysis::DeleteHit(ULong64_t hitNum)
-  {
-    if (hitNum < vecOfHits.size())
-    {
-      vecOfHits.push_back(nullptr);
-      std::swap(vecOfHits[hitNum], vecOfHits.back());
-      vecOfHits.pop_back();
-    }
-  }
-
-  void Analysis::ResizeHitsVector()
-  {
-    vecOfHits.erase(std::remove_if(vecOfHits.begin(), vecOfHits.end(),
-                                   [](const std::unique_ptr<singleHits> &ptr)
-                                   {
-                                     return ptr == nullptr;
-                                   }),
-                    vecOfHits.end());
-  }
-
-  std::vector<std::unique_ptr<singleHits>> &Analysis::GetSingleHitsVec()
-  {
-    /*
-      This returns a reference to vecOfHits in this class.
-      Thus vecOfHits and the variable created by using this func are
-      "NOT" independent
-    */
-    return vecOfHits;
-  }
-
-  std::vector<singleHits *> Analysis::GetSingleHitsVec(ushort channel)
-  {
-    std::vector<singleHits *> vecOfHitsChannel;
-    vecOfHitsChannel.reserve(vecOfHits.size());
-
-    for (const auto &hit : vecOfHits)
-    {
-      if (hit && hit->GetChNum() == channel)
-      {
-        vecOfHitsChannel.push_back(hit.get()); // Get the raw pointer
+  } else {
+    // Code to load pairs
+    Pair *detPair = new Pair();
+    tr->SetBranchAddress("pair", &detPair);
+    for (ULong64_t iev = start; iev < start + numOfEvents; iev++) {
+      if ((iev - start) % 100000 == 0) {
+        std::cout << "Reading: " << iev << std::endl;
       }
+      nbytes += tr->GetEntry(iev);
+      // detPair->Print();
+      vecOfPairs.push_back(std::make_unique<Pair>(*detPair));
     }
-    return vecOfHitsChannel; // Return by value
+  }
+}
+
+void Analysis::LoadData(UShort_t channel, ULong64_t start,
+                        ULong64_t numOfEvents, double EThreshold) {
+
+  TFile *fp = new TFile(fDatafileName.c_str(), "READ");
+
+  if (!fp || fp->IsZombie()) {
+    std::cerr << "Error: Unable to open file " << fDatafileName << std::endl;
+    return; // Exit or handle the error appropriately
   }
 
-  std::unique_ptr<singleHits> Analysis::GetSingleHit(ULong64_t hitIndx)
-  {
-    /*Here the ownership of singleHit transferred*/
-    if (hitIndx < vecOfHits.size())
-    {
-      return std::move(vecOfHits[hitIndx]);
-    }
-    else
-    {
-      std::cout << "err: Analysis::GetSingleHit(ULong64_t hitIndx): hitIndx out "
-                   "of range"
+  TTree *tr = (TTree *)fp->Get("Data_F");
+
+  // Check if the TTree was retrieved successfully
+  if (!tr) {
+    std::cerr << "Error: Unable to retrieve TTree 'Data_F' from file."
+              << std::endl;
+    // fp->Close();
+    // return; // Exit or handle the error appropriately
+    tr = (TTree *)fp->Get("Data_R");
+    if (!tr) {
+      std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
                 << std::endl;
-      return nullptr;
+      fp->Close();
+      return; // Exit or handle the error appropriately
+    }
+  }
+  // Declaration of leaves types
+  UShort_t Channel;
+  ULong64_t Timestamp;
+  UShort_t Board;
+  UShort_t Energy;
+  UShort_t EnergyShort;
+  // #ifdef WAVES
+  TArrayS *Samples = nullptr;
+  // #endif
+
+  std::cout << "Loading data from: " << fDatafileName << " (" << numOfEvents
+            << " events) for Channel: " << channel << std::endl;
+  // TTree *tr = GetTreeFromFile(fDatafileName);
+
+  // Set branch addresses.
+  tr->SetBranchAddress("Channel", &Channel);
+  tr->SetBranchAddress("Timestamp", &Timestamp);
+  tr->SetBranchAddress("Board", &Board);
+  tr->SetBranchAddress("Energy", &Energy);
+  tr->SetBranchAddress("EnergyShort", &EnergyShort);
+#ifdef WAVES
+  tr->SetBranchAddress("Samples", &Samples);
+  std::cout << "Branch waves set" << std::endl;
+#endif
+
+  Long64_t nentries = tr->GetEntries();
+  Long64_t nbytes = 0;
+
+  if (numOfEvents + start > nentries) {
+    std::cout << "Warning in LoadData: Cannot fetch till" << start + numOfEvents
+              << " entries from file containing " << nentries << " entries"
+              << std::endl;
+    numOfEvents = nentries - start;
+  }
+
+  if (start > nentries) {
+    std::cout << "Warning in LoadData: Cannot fetch " << start
+              << " th entry from file containing " << nentries << " entries"
+              << std::endl;
+    start = 0;
+    numOfEvents = nentries;
+  }
+
+  if (numOfEvents == 0) {
+    std::cout << "Warning in LoadData: 0 numOfEvents passed to LoadData, "
+                 "fetching all entries after "
+              << start << std::endl;
+    numOfEvents = nentries - start;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  /// SORTING
+  //////////////////////////////////////////////////////////////////////////////
+
+  std::cout << "Now sorting: " << nentries
+            << " entries in order of Channel Number and Timestamp" << std::endl;
+
+  tr->BuildIndex("Channel", "Timestamp");
+  TTreeIndex *index = (TTreeIndex *)tr->GetTreeIndex();
+  if (!index) {
+    std::cerr << "Error creating tree index!" << std::endl;
+    gROOT->ProcessLine(".q");
+    return;
+  }
+  Long64_t *indices = index->GetIndex();
+  if (!indices) {
+    std::cerr << "Error retrieving index array!" << std::endl;
+    gROOT->ProcessLine(".q");
+    return;
+  }
+
+  std::cout << "sorting done" << std::endl;
+  //////////////////////////////////////////////////////////////////////////////
+  /// READING
+  //////////////////////////////////////////////////////////////////////////////
+  ULong64_t nev = 0;
+  Long64_t first = -1;
+  Long64_t last = -1;
+  const Long64_t *values = index->GetIndexValues();
+  for (Long64_t i = 0; i < index->GetN(); ++i) {
+    if (values[i] == channel) {
+      first = i;
+      break;
+    }
+  }
+  for (Long64_t i = first; i < index->GetN(); ++i) {
+    if (values[i] != channel) {
+      last = i;
+      break;
     }
   }
 
-  void Analysis::SortHits(const std::string &major, const std::string &minor)
-  {
-    std::sort(vecOfHits.begin(), vecOfHits.end(),
-              [major, minor](const std::unique_ptr<singleHits> &a,
-                             const std::unique_ptr<singleHits> &b)
-              {
-                // Major sorting
-                if (major == "Energy")
-                {
-                  if (a->GetEnergy() != b->GetEnergy())
-                    return a->GetEnergy() < b->GetEnergy();
-                }
-                else if (major == "Time")
-                {
-                  if (a->GetTimestamp() != b->GetTimestamp())
-                    return a->GetTimestamp() < b->GetTimestamp();
-                }
-                else if (major == "Channel")
-                {
-                  if (a->GetChNum() != b->GetChNum())
-                    return a->GetChNum() < b->GetChNum();
-                }
-                else if (major == "Board")
-                {
-                  if (a->GetBoard() != b->GetBoard())
-                    return a->GetBoard() < b->GetBoard();
-                }
-                else if (major == "PSD")
-                {
+  if (first < 0) {
+    std::cout << "Channel " << channel << " not found\n";
+    return;
+  }
+  ULong64_t iev = first;
+  if (first <= start and last >= start) {
+    iev = start;
+    std::cout << "Reading " << numOfEvents << " from " << start << std::endl;
+  } else {
+    std::cout << "WARNING: start event is not in range of channel events: "
+              << first << " - " << last << std::endl;
+    std::cout << "Reading " << numOfEvents << " from start" << std::endl;
+  }
+  while (nev < numOfEvents && iev < nentries) {
+    nbytes += tr->GetEntry(indices[iev]);
+    if (iev % 100000 == 0) {
+      std::cout << "Reading: " << iev << std::endl;
+    }
+    if (Channel < channel) {
+      iev += 1;
+      continue;
+    } else if (Energy >= EThreshold and Channel == channel) {
+#ifndef WAVES
+      std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
+          iev, Channel, Board, Timestamp, Energy, EnergyShort);
+#else
+      std::unique_ptr<singleHits> hit = std::make_unique<singleHits>(
+          iev, Channel, Board, Timestamp, Energy, EnergyShort, Samples);
+#endif
+      vecOfHits.push_back(std::move(hit));
+      nev += 1;
+    } else if (Channel > channel) {
+      break;
+    }
+    iev += 1;
+  }
+}
+
+void Analysis::SetSingleHit(ULong64_t hitIndx,
+                            std::unique_ptr<singleHits> hit) {
+  if (hitIndx < vecOfHits.size()) {
+    if (vecOfHits[hitIndx] == nullptr) {
+      vecOfHits[hitIndx] = std::move(hit);
+    } else {
+      std::cout << "Warning in Analysis::SetSingleHit. hitIndx not Empty"
+                << std::endl;
+      vecOfHits[hitIndx] = std::move(hit);
+    }
+  } else if (hitIndx == vecOfHits.size()) {
+    vecOfHits.push_back(std::move(hit));
+  } else {
+    std::cout << "Error in Analysis::SetSingleHit. hitIndx "
+              << hitIndx - vecOfHits.size() << " out of bounds" << std::endl;
+    std::cout << "hit added at end of vector";
+    vecOfHits.push_back(std::move(hit));
+  }
+}
+
+void Analysis::DeleteHit(ULong64_t hitNum) {
+  if (hitNum < vecOfHits.size()) {
+    vecOfHits.push_back(nullptr);
+    std::swap(vecOfHits[hitNum], vecOfHits.back());
+    vecOfHits.pop_back();
+  }
+}
+
+void Analysis::ResizeHitsVector() {
+  vecOfHits.erase(std::remove_if(vecOfHits.begin(), vecOfHits.end(),
+                                 [](const std::unique_ptr<singleHits> &ptr) {
+                                   return ptr == nullptr;
+                                 }),
+                  vecOfHits.end());
+}
+
+std::vector<std::unique_ptr<singleHits>> &Analysis::GetSingleHitsVec() {
+  /*
+    This returns a reference to vecOfHits in this class.
+    Thus vecOfHits and the variable created by using this func are
+    "NOT" independent
+  */
+  return vecOfHits;
+}
+
+std::vector<singleHits *> Analysis::GetSingleHitsVec(ushort channel) {
+  std::vector<singleHits *> vecOfHitsChannel;
+  vecOfHitsChannel.reserve(vecOfHits.size());
+
+  for (const auto &hit : vecOfHits) {
+    if (hit && hit->GetChNum() == channel) {
+      vecOfHitsChannel.push_back(hit.get()); // Get the raw pointer
+    }
+  }
+  return vecOfHitsChannel; // Return by value
+}
+
+std::unique_ptr<singleHits> Analysis::GetSingleHit(ULong64_t hitIndx) {
+  /*Here the ownership of singleHit transferred*/
+  if (hitIndx < vecOfHits.size()) {
+    return std::move(vecOfHits[hitIndx]);
+  } else {
+    std::cout << "err: Analysis::GetSingleHit(ULong64_t hitIndx): hitIndx out "
+                 "of range"
+              << std::endl;
+    return nullptr;
+  }
+}
+
+void Analysis::SortHits(const std::string &major, const std::string &minor) {
+  std::sort(vecOfHits.begin(), vecOfHits.end(),
+            [major, minor](const std::unique_ptr<singleHits> &a,
+                           const std::unique_ptr<singleHits> &b) {
+              // Major sorting
+              if (major == "Energy") {
+                if (a->GetEnergy() != b->GetEnergy())
+                  return a->GetEnergy() < b->GetEnergy();
+              } else if (major == "Time") {
+                if (a->GetTimestamp() != b->GetTimestamp())
+                  return a->GetTimestamp() < b->GetTimestamp();
+              } else if (major == "Channel") {
+                if (a->GetChNum() != b->GetChNum())
+                  return a->GetChNum() < b->GetChNum();
+              } else if (major == "Board") {
+                if (a->GetBoard() != b->GetBoard())
+                  return a->GetBoard() < b->GetBoard();
+              } else if (major == "PSD") {
+                if (a->GetPSD() != b->GetPSD())
+                  return a->GetPSD() < b->GetPSD();
+              }
+#ifdef WAVES
+              else if (major == "EvalEnergy") {
+                if (a->GetEvalEnergy() != b->GetEvalEnergy())
+                  return a->GetEvalEnergy() < b->GetEvalEnergy();
+              }
+#endif
+
+              // Minor sorting if specified
+              if (!minor.empty()) {
+                if (minor == "Energy") {
+                  return a->GetEnergy() < b->GetEnergy();
+                } else if (minor == "Time") {
+                  return a->GetTimestamp() < b->GetTimestamp();
+                } else if (minor == "Channel") {
+                  return a->GetChNum() < b->GetChNum();
+                } else if (minor == "Board") {
+                  return a->GetBoard() < b->GetBoard();
+                } else if (minor == "PSD") {
                   if (a->GetPSD() != b->GetPSD())
                     return a->GetPSD() < b->GetPSD();
                 }
+
 #ifdef WAVES
-                else if (major == "EvalEnergy")
-                {
+                else if (major == "EvalEnergy") {
                   if (a->GetEvalEnergy() != b->GetEvalEnergy())
                     return a->GetEvalEnergy() < b->GetEvalEnergy();
                 }
-#endif
-
-                // Minor sorting if specified
-                if (!minor.empty())
-                {
-                  if (minor == "Energy")
-                  {
-                    return a->GetEnergy() < b->GetEnergy();
-                  }
-                  else if (minor == "Time")
-                  {
-                    return a->GetTimestamp() < b->GetTimestamp();
-                  }
-                  else if (minor == "Channel")
-                  {
-                    return a->GetChNum() < b->GetChNum();
-                  }
-                  else if (minor == "Board")
-                  {
-                    return a->GetBoard() < b->GetBoard();
-                  }
-                  else if (minor == "PSD")
-                  {
-                    if (a->GetPSD() != b->GetPSD())
-                      return a->GetPSD() < b->GetPSD();
-                  }
-
-#ifdef WAVES
-                  else if (major == "EvalEnergy")
-                  {
-                    if (a->GetEvalEnergy() != b->GetEvalEnergy())
-                      return a->GetEvalEnergy() < b->GetEvalEnergy();
-                  }
 
 #endif
-                }
-                return false; // In case both major and minor criteria are equal
-              });
+              }
+              return false; // In case both major and minor criteria are equal
+            });
+}
+
+void Analysis::CreatePairs() {
+  /*
+  ** Make pairs between any number of channels
+  ** Steps:
+  ** 1. Segregate the events in increasing order of channel + time
+  ** 2. Save the start and stop points of every channel
+  ** 3. Start with the event that is first in time.
+  ** 4. Find the nearest event among all channels including self
+  ** 5. Save into pair if events fall in different channels
+  ** 6. Change the start event to the nearest event and redo from Step 3
+  */
+  int nentries = vecOfHits.size();
+  SortHits("Channel", "Time");
+  // locate and segregate the channels
+  UShort_t numChannels = 0;
+  UShort_t currChannel = -1;
+  std::vector<UShort_t> channels; // stores the value of channel number
+  std::vector<int> chStart; // stores the index of first entry from the channel
+  for (int i = 0; i < nentries; i++) {
+    if (vecOfHits[i]->GetChNum() != currChannel) {
+      currChannel = vecOfHits[i]->GetChNum();
+      numChannels += 1;
+      channels.push_back(currChannel);
+      chStart.push_back(i);
+    }
+  }
+  // Print the results of segregation
+  std::cout << "There are " << numChannels << " channels (";
+  for (int iter = 0; iter < numChannels; iter++) {
+    std::cout << channels[iter] << ", ";
+  }
+  std::cout << ") in the data." << std::endl;
+
+  for (int iter = 0; iter < numChannels; iter++) {
+    std::cout << "Channel " << channels[iter] << " starts at: " << chStart[iter]
+              << std::endl;
   }
 
-  void Analysis::CreatePairs()
-  {
-    /*
-    ** Make pairs between any number of channels
-    ** Steps:
-    ** 1. Segregate the events in increasing order of channel + time
-    ** 2. Save the start and stop points of every channel
-    ** 3. Start with the event that is first in time.
-    ** 4. Find the nearest event among all channels including self
-    ** 5. Save into pair if events fall in different channels
-    ** 6. Change the start event to the nearest event and redo from Step 3
-    */
-    int nentries = vecOfHits.size();
-    SortHits("Channel", "Time");
-    // locate and segregate the channels
-    UShort_t numChannels = 0;
-    UShort_t currChannel = -1;
-    std::vector<UShort_t> channels; // stores the value of channel number
-    std::vector<int> chStart;       // stores the index of first entry from the channel
-    for (int i = 0; i < nentries; i++)
-    {
-      if (vecOfHits[i]->GetChNum() != currChannel)
-      {
-        currChannel = vecOfHits[i]->GetChNum();
-        numChannels += 1;
-        channels.push_back(currChannel);
-        chStart.push_back(i);
+  bool singleChannel = false;
+  if (numChannels == 1)
+    singleChannel = true;
+
+  digiAnalysis::Pair coincPair;
+
+  if (singleChannel) {
+    for (int iter = 0; iter < nentries - 1; iter++) {
+      if (vecOfHits[iter + 1]->GetTimestamp() -
+              vecOfHits[iter]->GetTimestamp() <
+          PairCoincWindow * 1000) {
+        coincPair.ClearPair();
+        coincPair.SetPair(*vecOfHits[iter].get(), *vecOfHits[iter + 1].get());
+        vecOfPairs.push_back(std::make_unique<Pair>(coincPair));
       }
     }
-    // Print the results of segregation
-    std::cout << "There are " << numChannels << " channels (";
-    for (int iter = 0; iter < numChannels; iter++)
-    {
-      std::cout << channels[iter] << ", ";
-    }
-    std::cout << ") in the data." << std::endl;
+  } else {
+    int startIndex = -1;
+    std::vector<int> currIndex(numChannels, 0);
+    int startChannel = -1, stopChannel = -1;
+    std::vector<ULong64_t> currTime;
+    ULong64_t minTime = std::numeric_limits<ULong64_t>::max();
 
-    for (int iter = 0; iter < numChannels; iter++)
-    {
-      std::cout << "Channel " << channels[iter] << " starts at: " << chStart[iter]
-                << std::endl;
-    }
-
-    bool singleChannel = false;
-    if (numChannels == 1)
-      singleChannel = true;
-
-    digiAnalysis::Pair coincPair;
-
-    if (singleChannel)
-    {
-      for (int iter = 0; iter < nentries - 1; iter++)
-      {
-        if (vecOfHits[iter + 1]->GetTimestamp() -
-                vecOfHits[iter]->GetTimestamp() <
-            PairCoincWindow * 1000)
-        {
-          coincPair.ClearPair();
-          coincPair.SetPair(*vecOfHits[iter].get(), *vecOfHits[iter + 1].get());
-          vecOfPairs.push_back(std::make_unique<Pair>(coincPair));
-        }
+    // initialize with the smallest start time
+    for (int iter = 0; iter < numChannels; iter++) {
+      currIndex[iter] = currIndex[iter] + chStart[iter];
+      currTime.push_back(vecOfHits[currIndex[iter]]->GetTimestamp());
+      if (currTime[iter] < minTime) {
+        minTime = vecOfHits[currIndex[iter]]->GetTimestamp();
+        startIndex = currIndex[iter];
+        startChannel = iter;
       }
     }
-    else
-    {
-      int startIndex = -1;
-      std::vector<int> currIndex(numChannels, 0);
-      int startChannel = -1, stopChannel = -1;
-      std::vector<ULong64_t> currTime;
-      ULong64_t minTime = std::numeric_limits<ULong64_t>::max();
+    ULong64_t startTime = vecOfHits[startIndex]->GetTimestamp();
+    currIndex[startChannel] += 1;
+    currTime[startChannel] = vecOfHits[currIndex[startChannel]]->GetTimestamp();
 
-      // initialize with the smallest start time
-      for (int iter = 0; iter < numChannels; iter++)
-      {
-        currIndex[iter] = currIndex[iter] + chStart[iter];
-        currTime.push_back(vecOfHits[currIndex[iter]]->GetTimestamp());
-        if (currTime[iter] < minTime)
-        {
-          minTime = vecOfHits[currIndex[iter]]->GetTimestamp();
-          startIndex = currIndex[iter];
-          startChannel = iter;
-        }
+    // now iterativley find the closest event
+    bool isEnd = false;
+    ULong64_t chTime = 0;
+    std::vector<bool> isChEnd(numChannels, false);
+    std::vector<ULong64_t> chDelT(numChannels, 0);
+
+    while (!isEnd) {
+      chDelT.clear();
+      // evaluate the time difference between current event and the next event
+      // in each channel
+      for (int iterCh = 0; iterCh < numChannels; iterCh++) {
+        !isChEnd[iterCh]
+            ? chDelT.push_back(currTime[iterCh] - startTime)
+            : chDelT.push_back(std::numeric_limits<ULong64_t>::max());
       }
-      ULong64_t startTime = vecOfHits[startIndex]->GetTimestamp();
+      // find the nearest event
+      auto it = std::min_element(chDelT.begin(), chDelT.end());
+      minTime = *it;
+      stopChannel = std::distance(chDelT.begin(), it);
+
+      // create pair if within the timeframe
+      if ((minTime < PairCoincWindow * 1000) and
+          (startChannel != stopChannel)) {
+        coincPair.ClearPair();
+        coincPair.SetPair(*vecOfHits[startIndex].get(),
+                          *vecOfHits[currIndex[stopChannel]].get());
+        vecOfPairs.push_back(std::make_unique<Pair>(coincPair));
+      }
+
+      // update the entries for next run
+      startChannel = stopChannel;
+      startIndex = currIndex[stopChannel];
+      stopChannel = -1;
       currIndex[startChannel] += 1;
-      currTime[startChannel] = vecOfHits[currIndex[startChannel]]->GetTimestamp();
+      currIndex[startChannel] < nentries
+          ? currTime[startChannel] =
+                vecOfHits[currIndex[startChannel]]->GetTimestamp()
+          : currTime[startChannel] = std::numeric_limits<ULong64_t>::max();
+      startTime = vecOfHits[startIndex]->GetTimestamp();
 
-      // now iterativley find the closest event
-      bool isEnd = false;
-      ULong64_t chTime = 0;
-      std::vector<bool> isChEnd(numChannels, false);
-      std::vector<ULong64_t> chDelT(numChannels, 0);
-
-      while (!isEnd)
-      {
-        chDelT.clear();
-        // evaluate the time difference between current event and the next event
-        // in each channel
-        for (int iterCh = 0; iterCh < numChannels; iterCh++)
-        {
-          !isChEnd[iterCh]
-              ? chDelT.push_back(currTime[iterCh] - startTime)
-              : chDelT.push_back(std::numeric_limits<ULong64_t>::max());
+      // check if channel has finished
+      bool endcheck = true;
+      for (int iterCh = 0; iterCh < numChannels; iterCh++) {
+        if ((iterCh + 1 < numChannels &&
+             currIndex[iterCh] == chStart[iterCh + 1]) ||
+            currIndex[iterCh] == nentries) {
+          isChEnd[iterCh] = true;
         }
-        // find the nearest event
-        auto it = std::min_element(chDelT.begin(), chDelT.end());
-        minTime = *it;
-        stopChannel = std::distance(chDelT.begin(), it);
-
-        // create pair if within the timeframe
-        if ((minTime < PairCoincWindow * 1000) and
-            (startChannel != stopChannel))
-        {
-          coincPair.ClearPair();
-          coincPair.SetPair(*vecOfHits[startIndex].get(),
-                            *vecOfHits[currIndex[stopChannel]].get());
-          vecOfPairs.push_back(std::make_unique<Pair>(coincPair));
-        }
-
-        // update the entries for next run
-        startChannel = stopChannel;
-        startIndex = currIndex[stopChannel];
-        stopChannel = -1;
-        currIndex[startChannel] += 1;
-        currIndex[startChannel] < nentries
-            ? currTime[startChannel] =
-                  vecOfHits[currIndex[startChannel]]->GetTimestamp()
-            : currTime[startChannel] = std::numeric_limits<ULong64_t>::max();
-        startTime = vecOfHits[startIndex]->GetTimestamp();
-
-        // check if channel has finished
-        bool endcheck = true;
-        for (int iterCh = 0; iterCh < numChannels; iterCh++)
-        {
-          if ((iterCh + 1 < numChannels &&
-               currIndex[iterCh] == chStart[iterCh + 1]) ||
-              currIndex[iterCh] == nentries)
-          {
-            isChEnd[iterCh] = true;
-          }
-          endcheck = endcheck && isChEnd[iterCh];
-        }
-        isEnd = endcheck;
+        endcheck = endcheck && isChEnd[iterCh];
       }
+      isEnd = endcheck;
     }
   }
+}
 
-  void Analysis::CreatePairs(UShort_t Ch1, UShort_t Ch2)
-  {
+void Analysis::CreatePairs(UShort_t Ch1, UShort_t Ch2) {
 
-    /*
-    Make Pairs of singleHits from Ch1 and Ch2 within PairCoincWindow
-    iterate over hits in Ch1 and for each hit find the closest hit in Ch2
-    */
-    if (Ch1 == Ch2)
-    {
-      std::cerr << "Error in Analysis::CreatePairs: Ch1 and Ch2 cannot be same"
-                << std::endl;
-      return;
-    }
+  /*
+  Make Pairs of singleHits from Ch1 and Ch2 within PairCoincWindow
+  iterate over hits in Ch1 and for each hit find the closest hit in Ch2
+  */
+  if (Ch1 == Ch2) {
+    std::cerr << "Error in Analysis::CreatePairs: Ch1 and Ch2 cannot be same"
+              << std::endl;
+    return;
+  }
 
-    std::vector<singleHits *> hitsVectorCh0 = GetSingleHitsVec(Ch1);
-    std::vector<singleHits *> hitsVectorCh1 = GetSingleHitsVec(Ch2);
+  std::vector<singleHits *> hitsVectorCh0 = GetSingleHitsVec(Ch1);
+  std::vector<singleHits *> hitsVectorCh1 = GetSingleHitsVec(Ch2);
 
-    if (hitsVectorCh0.empty() || hitsVectorCh1.empty())
-    {
-      std::cerr << "Error in Analysis::CreatePairs: One or both channels have "
-                   "no hits"
-                << std::endl;
-      return;
-    }
-    else
-    {
-      std::cout << "got the vector of channel " << Ch1
-                << " from an: " << hitsVectorCh0.size() << std::endl;
-      std::cout << "got the vector of channel " << Ch2
-                << " from an: " << hitsVectorCh1.size() << std::endl;
-    }
+  if (hitsVectorCh0.empty() || hitsVectorCh1.empty()) {
+    std::cerr << "Error in Analysis::CreatePairs: One or both channels have "
+                 "no hits"
+              << std::endl;
+    return;
+  } else {
+    std::cout << "got the vector of channel " << Ch1
+              << " from an: " << hitsVectorCh0.size() << std::endl;
+    std::cout << "got the vector of channel " << Ch2
+              << " from an: " << hitsVectorCh1.size() << std::endl;
+  }
 
-    Long64_t i = 0, j = 0;
-    Long64_t Ch0Time = hitsVectorCh0[0]->GetTimestamp();
-    Long64_t Ch1Time = hitsVectorCh1[0]->GetTimestamp();
-    Long64_t TDiffCurr = Ch0Time - Ch1Time;
-    Long64_t TDiffMin = 0;
-    Pair currPair;
+  Long64_t i = 0, j = 0;
+  Long64_t Ch0Time = hitsVectorCh0[0]->GetTimestamp();
+  Long64_t Ch1Time = hitsVectorCh1[0]->GetTimestamp();
+  Long64_t TDiffCurr = Ch0Time - Ch1Time;
+  Long64_t TDiffMin = 0;
+  Pair currPair;
 
-    while (i < hitsVectorCh0.size())
-    {
-      Ch0Time = hitsVectorCh0[i]->GetTimestamp();
-      TDiffMin = 100000000000000;
-      while (j < hitsVectorCh1.size())
-      {
-        Ch1Time = hitsVectorCh1[j]->GetTimestamp();
-        TDiffCurr = Ch1Time - Ch0Time;
-        if (fabs(TDiffCurr) < fabs(TDiffMin))
+  while (i < hitsVectorCh0.size()) {
+    Ch0Time = hitsVectorCh0[i]->GetTimestamp();
+    TDiffMin = 100000000000000;
+    while (j < hitsVectorCh1.size()) {
+      Ch1Time = hitsVectorCh1[j]->GetTimestamp();
+      TDiffCurr = Ch1Time - Ch0Time;
+      if (fabs(TDiffCurr) < fabs(TDiffMin)) {
+        TDiffMin = TDiffCurr;
+        j = j + 1;
+      } else {
+        if (fabs(TDiffMin / 1000) <
+            PairCoincWindow) // since the TimeStamp is in ps
         {
-          TDiffMin = TDiffCurr;
-          j = j + 1;
+          currPair.ClearPair();
+          currPair.SetPair(*hitsVectorCh0[i], *hitsVectorCh1[j - 1]);
+          vecOfPairs.push_back(std::make_unique<Pair>(currPair));
         }
-        else
-        {
-          if (fabs(TDiffMin / 1000) <
-              PairCoincWindow) // since the TimeStamp is in ps
-          {
-            currPair.ClearPair();
-            currPair.SetPair(*hitsVectorCh0[i], *hitsVectorCh1[j - 1]);
-            vecOfPairs.push_back(std::make_unique<Pair>(currPair));
-          }
-          i = i + 1;
-          j = (j >= 2) ? j - 2 : j;
-          break;
-        }
-      }
-      if (i >= hitsVectorCh0.size() - 1 or j >= hitsVectorCh1.size() - 1)
-      {
+        i = i + 1;
+        j = (j >= 2) ? j - 2 : j;
         break;
       }
     }
+    if (i >= hitsVectorCh0.size() - 1 or j >= hitsVectorCh1.size() - 1) {
+      break;
+    }
+  }
+}
+
+std::vector<std::unique_ptr<Pair>> &Analysis::GetPairsVec() {
+  return vecOfPairs;
+}
+
+/*
+TTree *Analysis::GetTreeFromFile(const std::string &filename) {
+  TFile *fp = new TFile(filename.c_str(), "READ");
+  if (!fp || fp->IsZombie()) {
+    std::cerr << "Error opening file: " << filename << std::endl;
+    return nullptr;
   }
 
-  std::vector<std::unique_ptr<Pair>> &Analysis::GetPairsVec()
-  {
-    return vecOfPairs;
+  TTree *tree = nullptr;
+  // Loop over all objects in the file
+  TIter next(fp->GetListOfKeys());
+  TKey *key;
+
+  // Find the first object that is a TTree
+  while ((key = (TKey *)next())) {
+    TObject *obj = key->ReadObj();
+    if (obj->IsA()->InheritsFrom(TTree::Class())) {
+      tree = (TTree *)obj;
+      std::cout << "Found tree: " << obj->GetName() << std::endl;
+      break; // Exit after finding the first tree
+    }
   }
 
-  /*
-  TTree *Analysis::GetTreeFromFile(const std::string &filename) {
-    TFile *fp = new TFile(filename.c_str(), "READ");
-    if (!fp || fp->IsZombie()) {
-      std::cerr << "Error opening file: " << filename << std::endl;
-      return nullptr;
-    }
+  // If no tree was found
+  if (!tree) {
+    std::cerr << "No TTree found in the file: " << filename << std::endl;
+  }
 
-    TTree *tree = nullptr;
-    // Loop over all objects in the file
-    TIter next(fp->GetListOfKeys());
-    TKey *key;
+  return tree;
+}*/
 
-    // Find the first object that is a TTree
-    while ((key = (TKey *)next())) {
-      TObject *obj = key->ReadObj();
-      if (obj->IsA()->InheritsFrom(TTree::Class())) {
-        tree = (TTree *)obj;
-        std::cout << "Found tree: " << obj->GetName() << std::endl;
-        break; // Exit after finding the first tree
-      }
-    }
-
-    // If no tree was found
-    if (!tree) {
-      std::cerr << "No TTree found in the file: " << filename << std::endl;
-    }
-
-    return tree;
-  }*/
-
-  Analysis::~Analysis() {}
+Analysis::~Analysis() {}
 } // namespace digiAnalysis

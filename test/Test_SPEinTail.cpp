@@ -12,27 +12,32 @@
 #include <TMath.h>
 #include <TString.h>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <ratio>
 #include <string>
 #include <vector>
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
-  // std::string fname =
-  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-  //     "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
-  //     "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
-
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-      "CoincidenceStudies/PairFiles/"
-      "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+      "Directionality/"
+      "NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_WAVES/"
+      "FILTERED/"
+      "SDataF_NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_"
+      "WAVES.root";
 
-  digiAnalysis::Analysis an(fname, 0, 10, 0);
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //     "CoincidenceStudies/PairFiles/"
+  //     "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+
+  digiAnalysis::Analysis an(fname, 30000, 1000, 0);
   std::cout << "getting the vector from an" << std::endl;
+
+  an.CreatePairs();
 
   std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
       an.GetPairsVec();
@@ -47,27 +52,27 @@ int main(int argc, char *argv[])
   digiAnalysis::WaveForm *WF = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector;
 #ifdef WAVES
-  TH1 *hSPE = new TH1F("hSPE", "hSPE", 1500, 0, 1500);
+  TH1 *hSPE = new TH1F("hSPE", "hSPE", 1000, 0, 5000);
   TH2 *hESPE = new TH2F("hESPE", "hESPE", 80, 20, 100, 100, 0, 100);
   bool keepGoing = true;
   std::string userInput;
   double intSPE, intWave;
   int wfSz;
-  for (int iter = 0; iter < nPairs && keepGoing; iter++)
-  {
-    if (iter % 1 == 0)
-    {
-      hit = vecOfPairs[iter]->GetHitPtr(0);
-      std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() << std::endl;
-    }
+  for (int iter = 0; iter < nPairs && keepGoing; iter++) {
+
+    hit = vecOfPairs[iter]->GetHitPtr(0);
+
+    // if (iter % 10000 == 0) {
+    //   std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() <<
+    //   std::endl;
+    // }
 
     hit->GetEnergy() > 694
         ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
         : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 -
                     0.4222; // Calibration to get the energy
                             // 1900V
-    if (Energy1 > 90 and Energy1 < 100)
-    {
+    if (Energy1 > 50 and Energy1 < 60) {
       WF = nullptr;
       WF = hit->GetWFPtr();
       WF->SetSmooth(65);
@@ -91,35 +96,37 @@ int main(int argc, char *argv[])
       int iterPeaks = 0;
       int isolationRange = 250;
       int saveRange = isolationRange - 50;
-      while (iterPeaks < results.first.size())
-      {
+      while (iterPeaks < results.first.size() && keepGoing) {
         int peakPos = results.first[iterPeaks];
         if ((peakPos > 2500 and peakPos < 4500) and
-            (peakPos - results.first[iterPeaks - 1] > isolationRange))
-        {
+            (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
           if ((iterPeaks + 1 < results.first.size() and
                (results.first[iterPeaks + 1] - peakPos) > isolationRange) ||
-              (iterPeaks + 1 == results.first.size()))
-          {
+              (iterPeaks + 1 == results.first.size())) {
             digiAnalysis::WaveForm WFSPE;
-            WFSPE.SetWaveForm(*WF, peakPos - saveRange, peakPos + saveRange,
-                              saveRange - 100, 50);
-            // WFSPE.SetBaseLine(50, 50);
-            wfSz = WFSPE.GetSize();
-            waveformVector.push_back(WFSPE);
-            // std::cout << iterPeaks << ":" << peakPos << std::endl;
-            intSPE = WFSPE.IntegrateWaveForm(saveRange - 50, saveRange + 100);
-            intWave = WF->IntegrateWaveForm(digiAnalysis::GateStart,
-                                            digiAnalysis::GateStart +
-                                                digiAnalysis::GateLenLong);
-            // hSPE->Fill(intSPE / 150.0 * digiAnalysis::EvalNormFactor);
-            hESPE->Fill(Energy1, intWave / intSPE / Energy1);
-            // WFSPE.Plot();
-            // std::cout << "Do you want to see the next waveform? (y/n): ";
-            // std::getline(std::cin, userInput);
-            // if (userInput != "y" && userInput != "Y") {
-            //   keepGoing = false;
-            // }
+            double postBL = WF->EvalBaseLine(peakPos + 100, 50);
+            double preBL = WF->EvalBaseLine(peakPos - 100, 50);
+            if (fabs(preBL - postBL) < 2.0) {
+              WFSPE.SetWaveForm(*WF, peakPos - saveRange, peakPos + saveRange,
+                                saveRange - 100, 50);
+              // WFSPE.SetBaseLine(50, 50);
+              wfSz = WFSPE.GetSize();
+              waveformVector.push_back(WFSPE);
+              // std::cout << iterPeaks << ":" << peakPos << std::endl;
+              intSPE = WFSPE.IntegrateWaveForm(saveRange - 50, saveRange + 100);
+              intWave = WF->IntegrateWaveForm(digiAnalysis::GateStart,
+                                              digiAnalysis::GateStart +
+                                                  digiAnalysis::GateLenLong);
+              hSPE->Fill(intSPE);
+              hESPE->Fill(Energy1, intWave / intSPE / Energy1);
+
+              // WFSPE.Plot();
+              // std::cout << "Do you want to see the next waveform? (y/n): ";
+              // std::getline(std::cin, userInput);
+              // if (userInput != "y" && userInput != "Y") {
+              //   keepGoing = false;
+              // }
+            }
           }
         }
 
@@ -159,8 +166,8 @@ int main(int argc, char *argv[])
   // WFAveraged.SetTracesFFT("smooth");
   WFAveraged.Plot();
 
-  // TCanvas *c1 = new TCanvas("c1", "SPECharge", 800, 600);
-  // hSPE->Draw("HIST");
+  TCanvas *c1 = new TCanvas("c1", "SPECharge", 800, 600);
+  hSPE->Draw("HIST");
   TCanvas *c2 = new TCanvas("c2", "EvsNSPE", 800, 600);
   hESPE->Draw("COLZ");
   fApp->Run();

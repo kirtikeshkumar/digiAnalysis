@@ -5,6 +5,7 @@
 #include "TMath.h"
 #include "globals.h"
 #include "includes.hh"
+#include <RtypesCore.h>
 #include <iostream>
 #include <vector>
 
@@ -1299,6 +1300,62 @@ void WaveForm::FitExponential(int start, int stop) {
   // std::cout << "  Tau         = " << tau << " ± " << tauErr << "\n";
 }
 
+void WaveForm::FitExponential(UShort_t numExp, int start, int stop) {
+  // Check valid range
+  if (start < 0 || stop >= GetSize() || start >= stop) {
+    std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
+  }
+
+  int nPoints = stop - start + 1;
+  auto graph = std::make_unique<TGraph>(nPoints);
+
+  for (int i = 0; i < nPoints; ++i) {
+    if (!tracesSmooth.empty()) {
+      graph->SetPoint(
+          i, start + i,
+          tracesSmooth[start + i]); // x = index (or time), y = value
+    } else {
+      graph->SetPoint(i, start + i,
+                      traces[start + i]); // x = index (or time), y = value
+    }
+  }
+
+  std::string formula;
+  for (int i = 0; i < numExp; ++i) {
+    if (i > 0)
+      formula += " + ";
+    formula +=
+        Form("[%d]/[%d]*exp(-(x-%d)/[%d])", 2 * i, 2 * i + 1, start, 2 * i + 1);
+  }
+  fitFunc = new TF1("expFit", formula.c_str(), start, stop);
+  for (int i = 0; i < numExp; ++i) {
+    fitFunc->SetParameter(2 * i, traces[start + (stop - start) / numExp * i]);
+    fitFunc->SetParLimits(2 * i, 0, 1e12);
+    fitFunc->SetParameter(2 * i + 1, 100.0 * TMath::Power(10, i));
+    fitFunc->SetParLimits(2 * i + 1, 10, 1000.0 * TMath::Power(100, i));
+  }
+  graph->Fit(fitFunc, "QR"); // Q = quiet, R = respect fit range
+
+  // double A = fitFunc->GetParameter(0);
+  // double tau = fitFunc->GetParameter(1);
+  // double Aerr = fitFunc->GetParError(0);
+  // double tauErr = fitFunc->GetParError(1);
+
+  std::cout << "Fit results (" << formula << " on range [" << start << ", "
+            << stop << "]):\n";
+  double A, tau, Aerr, tauErr;
+  for (int i = 0; i < numExp; i++) {
+    A = fitFunc->GetParameter(2 * i);
+    tau = fitFunc->GetParameter(2 * i + 1);
+    Aerr = fitFunc->GetParError(2 * i);
+    tauErr = fitFunc->GetParError(2 * i + 1);
+    std::cout << Form("Amplitude %d", i) << " = " << A * 2 << " ± " << Aerr * 2
+              << "\n";
+    std::cout << Form("Tau       %d", i) << " = " << tau * 2 << " ± "
+              << tauErr * 2 << "\n";
+  }
+}
+
 std::pair<std::vector<int>, std::vector<int>>
 WaveForm::DetectPeakValleys(double threshold) {
   std::vector<int> peak;
@@ -1310,7 +1367,8 @@ WaveForm::DetectPeakValleys(double threshold) {
     double peakVal = tracesSmooth[peakPos], valleyVal = tracesSmooth[valleyPos],
            currVal;
     while (iter < tracesSmooth.size()) {
-      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " : "
+      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :
+      // "
       //           << peakVal << " : " << valleyPos << " : " << valleyVal
       //           << std::endl;
       currVal = tracesSmooth[iter];
@@ -1352,7 +1410,8 @@ WaveForm::DetectPeakValleys(double threshold) {
   } else {
     double peakVal = traces[peakPos], valleyVal = traces[valleyPos], currVal;
     while (iter < traces.size()) {
-      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " : "
+      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :
+      // "
       //           << peakVal << " : " << valleyPos << " : " << valleyVal
       //           << std::endl;
       currVal = traces[iter];
