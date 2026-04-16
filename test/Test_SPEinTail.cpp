@@ -21,23 +21,23 @@
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "Directionality/"
-      "NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_WAVES/"
-      "FILTERED/"
-      "SDataF_NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_"
-      "WAVES.root";
-
   // std::string fname =
-  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //     "CoincidenceStudies/PairFiles/"
-  //     "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //     "Directionality/"
+  //     "NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_WAVES/"
+  //     "FILTERED/"
+  //     "SDataF_NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_"
+  //     "WAVES.root";
 
-  digiAnalysis::Analysis an(fname, 30000, 1000, 0);
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+      "CoincidenceStudies/PairFiles/"
+      "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+
+  digiAnalysis::Analysis an(fname, 0000, 50000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
-  an.CreatePairs();
+  // an.CreatePairs();
 
   std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
       an.GetPairsVec();
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   std::vector<digiAnalysis::WaveForm> waveformVector;
 #ifdef WAVES
   TH1 *hSPE = new TH1F("hSPE", "hSPE", 1000, 0, 5000);
-  TH2 *hESPE = new TH2F("hESPE", "hESPE", 80, 20, 100, 100, 0, 100);
+  TH2 *hESPE = new TH2F("hESPE", "hESPE", 700, 0, 700, 1000, 0, 100);
   bool keepGoing = true;
   std::string userInput;
   double intSPE, intWave;
@@ -62,17 +62,16 @@ int main(int argc, char *argv[]) {
 
     hit = vecOfPairs[iter]->GetHitPtr(0);
 
-    // if (iter % 10000 == 0) {
-    //   std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() <<
-    //   std::endl;
-    // }
+    if (iter % 10000 == 0) {
+      std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() << std::endl;
+    }
 
     hit->GetEnergy() > 694
         ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
         : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 -
                     0.4222; // Calibration to get the energy
                             // 1900V
-    if (Energy1 > 50 and Energy1 < 60) {
+    if (Energy1 > 50 and Energy1 < 52) {
       WF = nullptr;
       WF = hit->GetWFPtr();
       WF->SetSmooth(65);
@@ -94,7 +93,7 @@ int main(int argc, char *argv[]) {
 
       // Select isolated SPE peaks and integrate to get charge
       int iterPeaks = 0;
-      int isolationRange = 250;
+      int isolationRange = 300;
       int saveRange = isolationRange - 50;
       while (iterPeaks < results.first.size() && keepGoing) {
         int peakPos = results.first[iterPeaks];
@@ -111,6 +110,7 @@ int main(int argc, char *argv[]) {
                                 saveRange - 100, 50);
               // WFSPE.SetBaseLine(50, 50);
               wfSz = WFSPE.GetSize();
+              WFSPE.SetSmooth(25);
               waveformVector.push_back(WFSPE);
               // std::cout << iterPeaks << ":" << peakPos << std::endl;
               intSPE = WFSPE.IntegrateWaveForm(saveRange - 50, saveRange + 100);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 
   digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
   // WFAveraged.SetSmooth(150);
-  // WFAveraged.SetTracesFFT("smooth");
+  WFAveraged.SetTracesFFT("orig");
   WFAveraged.Plot();
 
   TCanvas *c1 = new TCanvas("c1", "SPECharge", 800, 600);

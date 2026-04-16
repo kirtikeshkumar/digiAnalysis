@@ -7,6 +7,7 @@
 #include "includes.hh"
 #include <RtypesCore.h>
 #include <iostream>
+#include <numeric>
 #include <vector>
 
 using namespace digiAnalysis;
@@ -1137,9 +1138,13 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
   double sum = 0;
   baseline = 0;
 
+  // std::cout << "using smooth traces for fit" << std::endl;
   for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
     for (unsigned int j = 0; j < numWaveForm; j++) {
-      sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
+      if (!vecOfWaveForm[0].tracesSmooth.empty())
+        sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
+      else
+        sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
     }
   }
   baseline = sum / nSampleBL;
@@ -1147,7 +1152,10 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
   for (unsigned int i = 0; i < sizeOfWaveForms; i++) {
     sum = 0;
     for (unsigned int j = 0; j < numWaveForm; j++) {
-      sum = sum + vecOfWaveForm[j].traces[i];
+      if (!vecOfWaveForm[0].tracesSmooth.empty())
+        sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
+      else
+        sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
     }
     if (baseline > 10) {
       sum = baseline - sum / numWaveForm;
@@ -1156,7 +1164,6 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
     }
     traces.push_back(sum);
   }
-  // SetMeanTime();
 }
 
 void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
@@ -1307,54 +1314,80 @@ void WaveForm::FitExponential(UShort_t numExp, int start, int stop) {
   }
 
   int nPoints = stop - start + 1;
-  auto graph = std::make_unique<TGraph>(nPoints);
 
-  for (int i = 0; i < nPoints; ++i) {
-    if (!tracesSmooth.empty()) {
-      graph->SetPoint(
-          i, start + i,
-          tracesSmooth[start + i]); // x = index (or time), y = value
-    } else {
-      graph->SetPoint(i, start + i,
-                      traces[start + i]); // x = index (or time), y = value
-    }
-  }
+  const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
+  std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
+  std::vector<double> x(nPoints);
+  std::iota(x.begin(), x.end(), (0));
+  auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
+
+  // auto graph = std::make_unique<TGraph>(nPoints);
+  // for (int i = 0; i < nPoints; ++i) {
+  //   if (!tracesSmooth.empty()) {
+  //     graph->SetPoint(
+  //         i, start + i,
+  //         tracesSmooth[start + i]); // x = index (or time), y = value
+  //   } else {
+  //     graph->SetPoint(i, start + i,
+  //                     traces[start + i]); // x = index (or time), y = value
+  //   }
+  // }
 
   std::string formula;
   for (int i = 0; i < numExp; ++i) {
     if (i > 0)
       formula += " + ";
-    formula +=
-        Form("[%d]/[%d]*exp(-(x-%d)/[%d])", 2 * i, 2 * i + 1, start, 2 * i + 1);
+    formula += Form("[%d]/[%d]*exp(-(x)/[%d])", 2 * i, 2 * i + 1, 2 * i + 1);
+    // formula +=
+    //     Form("[%d]/[%d]*exp(-(x-%d)/[%d])", 2 * i, 2 * i + 1, start, 2 * i +
+    //     1);
   }
-  fitFunc = new TF1("expFit", formula.c_str(), start, stop);
+
+  // fitFunc = new TF1("expFit", formula.c_str(), start, stop);
+  fitFunc = new TF1("expFit", formula.c_str(), 0, nPoints);
   for (int i = 0; i < numExp; ++i) {
-    fitFunc->SetParameter(2 * i, traces[start + (stop - start) / numExp * i]);
-    fitFunc->SetParLimits(2 * i, 0, 1e12);
+    fitFunc->SetParameter(2 * i, src[start + (stop - start) / numExp * i]);
+    fitFunc->SetParLimits(2 * i, 0,
+                          src[start + (stop - start) / numExp * i] * 10000);
     fitFunc->SetParameter(2 * i + 1, 100.0 * TMath::Power(10, i));
     fitFunc->SetParLimits(2 * i + 1, 10, 1000.0 * TMath::Power(100, i));
   }
-  graph->Fit(fitFunc, "QR"); // Q = quiet, R = respect fit range
+  graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
 
-  // double A = fitFunc->GetParameter(0);
-  // double tau = fitFunc->GetParameter(1);
-  // double Aerr = fitFunc->GetParError(0);
-  // double tauErr = fitFunc->GetParError(1);
-
-  std::cout << "Fit results (" << formula << " on range [" << start << ", "
-            << stop << "]):\n";
-  double A, tau, Aerr, tauErr;
-  for (int i = 0; i < numExp; i++) {
-    A = fitFunc->GetParameter(2 * i);
-    tau = fitFunc->GetParameter(2 * i + 1);
-    Aerr = fitFunc->GetParError(2 * i);
-    tauErr = fitFunc->GetParError(2 * i + 1);
-    std::cout << Form("Amplitude %d", i) << " = " << A * 2 << " ± " << Aerr * 2
-              << "\n";
-    std::cout << Form("Tau       %d", i) << " = " << tau * 2 << " ± "
-              << tauErr * 2 << "\n";
+  double llim, ulim, val;
+  for (int iarg = 0; fitFunc && iarg < fitFunc->GetNpar(); ++iarg) {
+    val = fitFunc->GetParameter(iarg);
+    fitFunc->GetParLimits(iarg, llim, ulim);
+    // std::cout << ulim << " : " << llim << " : " << val << std::endl;
+    if (fabs(val - (ulim + llim) / 2.0) < 1e-6 || std::abs(val - llim) < 1e-6 ||
+        std::abs(val - ulim) < 1e-6) {
+      // std::cout << "value is: " << val << " : is being deleted" << std::endl;
+      delete fitFunc;
+      fitFunc = nullptr;
+    }
   }
+  // std::cout << "fitting done" << std::endl;
 }
+
+// void WaveForm::FitFunction(std::string function, int start,
+//                            int stop) {
+//   // Check valid range
+//   if (start < 0 || stop >= GetSize() || start >= stop) {
+//     std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
+//   }
+
+//   int nPoints = stop - start + 1;
+
+//   const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
+//   std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
+//   std::vector<double> x(nPoints);
+//   std::iota(x.begin(), x.end(), (0));
+//   auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
+
+//   fitFunc = new TF1("expFit", function.c_str(), 0, nPoints);
+
+//   graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
+// }
 
 std::pair<std::vector<int>, std::vector<int>>
 WaveForm::DetectPeakValleys(double threshold) {

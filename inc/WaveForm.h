@@ -12,6 +12,7 @@ class WaveForm: parent class contains how to handle waveform including plotting
 #include <RtypesCore.h>
 #include <TPolyLine.h>
 #include <TROOT.h>
+#include <string>
 #include <sys/types.h>
 #include <vector>
 #pragma once
@@ -108,6 +109,7 @@ public:
   double IntegrateSmoothWaveForm(int startTime, int stopTime);
   double IntegrateBLCorrWaveForm(int startTime, int stopTime);
   void FitExponential(int start, int stop);
+  void FitFunction(std::string func, int start, int stop);
   void FitExponential(UShort_t numExp, int start, int stop);
   std::vector<double> GenerateWaveFromFFT();
   std::pair<std::vector<int>, std::vector<int>>
