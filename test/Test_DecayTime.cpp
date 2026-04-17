@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
       "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
       "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  digiAnalysis::Analysis an(0, fname, 0, 10000, 20);
+  digiAnalysis::Analysis an(0, fname, 0, 00000, 20);
   std::cout << "getting the vector from an" << std::endl;
 
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
   TH2 *hDecTime = new TH2F("hDecTime", "DecayTime vs Energy", 16384, 0, 16384,
                            100, 100, 300);
 
-  TProfile *havDecTime =
-      new TProfile("havDecTime", "Average decay time", 4096, 0, 16384);
+  TProfile *havDecTime = new TProfile("havDecTime", "Average decay time", 356,
+                                      0, 16376); // for 4 keV bins
 
   TH2 *hEMT = new TH2F("hEMT", "hEMT", 4096, 0, 16384, 1000, 0, 4);
 
@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
       std::cout << iter << " : " << hitsVector[iter]->GetEnergy() << std::endl;
     meanTime = hitsVector[iter]->GetMeanTime();
     // std::cout << std::endl << iter << std::endl;
+    hEMT->Fill(hitsVector[iter]->GetEnergy(), hitsVector[iter]->GetMeanTime());
     if (fabs(meanTime - 3.05) < 0.05) {
       wfPtr = hitsVector[iter]->GetWFPtr();
       wfPtr->SetSmooth(100);
@@ -64,20 +65,19 @@ int main(int argc, char *argv[]) {
                          wfPtr->GetFitPar(1) * 2);
         // std::cout << iter << std::endl;
       }
-      hEMT->Fill(hitsVector[iter]->GetEnergy(),
-                 hitsVector[iter]->GetMeanTime());
+
       // std::cout << iter << std::endl;
-      if (abs(hitsVector[iter]->GetEnergy() - 3514) < 3) {
-        wfPtr->Plot();
-        std::cout << "par val: " << wfPtr->GetFitPar(1) * 2
-                  << " meanTime: " << hitsVector[iter]->GetMeanTime()
-                  << std::endl;
-        std::cout << "Do you want to see the next waveform? (y/n): ";
-        std::getline(std::cin, userInput);
-        if (userInput != "y" && userInput != "Y") {
-          keepGoing = false;
-        }
-      }
+      // if (abs(hitsVector[iter]->GetEnergy() - 3514) < 3) {
+      //   wfPtr->Plot();
+      //   std::cout << "par val: " << wfPtr->GetFitPar(1) * 2
+      //             << " meanTime: " << hitsVector[iter]->GetMeanTime()
+      //             << std::endl;
+      //   std::cout << "Do you want to see the next waveform? (y/n): ";
+      //   std::getline(std::cin, userInput);
+      //   if (userInput != "y" && userInput != "Y") {
+      //     keepGoing = false;
+      //   }
+      // }
     }
   }
 

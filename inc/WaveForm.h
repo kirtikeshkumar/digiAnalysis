@@ -87,6 +87,7 @@ public:
    */
   void SetSmooth(UShort_t sBoxSz, std::string kernel = "Gauss");
   void SetSmooth();
+  void SetSmooth(const std::vector<double> tr);
   void SetCFD();
   void SetMeanTime();
   void SetMeanTime(const std::vector<double> tr);
@@ -97,8 +98,12 @@ public:
   void SetTracesFFT();
   void SetTracesFFT(std::string whichTrace);
   void SetTracesFFT(std::vector<double> trace);
+  void ReSetTracesFFT(const std::vector<double> Amp,
+                      const std::vector<double> Phase);
   std::vector<double> EvalTracesFFT(std::vector<double> trFFT);
   double EvalBaseLine(int start, int numSamples) const;
+  std::vector<double> EvalIFFT(const std::vector<double> Amp,
+                               const std::vector<double> Phase);
 
   void Plot();
   void Plot(std::vector<double> tr);

@@ -6,6 +6,7 @@
 #include "globals.h"
 #include "includes.hh"
 #include <RtypesCore.h>
+#include <TComplex.h>
 #include <iostream>
 #include <numeric>
 #include <vector>
@@ -775,6 +776,21 @@ void WaveForm::SetSmooth() {
   }
 }
 
+void WaveForm::SetSmooth(std::vector<double> tr) {
+  if (!tr.empty()) {
+    if (!tracesSmooth.empty()) {
+      // std::cout << " WARNING: Replacing already filled traces" << std::endl;
+      tracesSmooth.clear();
+    }
+    unsigned int size = tr.size();
+    for (unsigned int j = 0; j < size; j++) {
+      tracesSmooth.push_back(baseline - tr[j]);
+    }
+  } else {
+    std::cout << "err SetWaveForm: input vector is empty" << std::endl;
+  }
+}
+
 void WaveForm::SetCFD() {}
 
 void WaveForm::SetMeanTime() {
@@ -974,6 +990,23 @@ void WaveForm::SetTracesFFT(std::vector<double> trace) {
   }
 }
 
+void WaveForm::ReSetTracesFFT(const std::vector<double> Amp,
+                              const std::vector<double> Phase) {
+  if (Amp.size() == Phase.size()) {
+    if (!tracesFFT.empty()) {
+      tracesFFT.clear();
+      tracesFFTPhase.clear();
+    }
+    for (int iter = 0; iter < Amp.size(); iter++) {
+      tracesFFT.push_back(Amp[iter]);
+      tracesFFTPhase.push_back(Phase[iter]);
+    }
+  } else {
+    std::cout << "Amplitude (" << Amp.size() << ") and Phase(" << Phase.size()
+              << ") sizes dont match" << std::endl;
+  }
+}
+
 std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT) {
   std::vector<double> res;
   if (!trFFT.empty()) {
@@ -989,6 +1022,46 @@ std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT) {
       double re, im;
       fft->GetPointComplex(i, re, im);
       res.push_back(std::sqrt(re * re + im * im));
+    }
+  } else {
+    std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
+  }
+  return res;
+}
+
+std::vector<double> WaveForm::EvalIFFT(const std::vector<double> Amp,
+                                       const std::vector<double> Phase) {
+  if (Amp.size() != Phase.size()) {
+    std::cout << "Amplitude (" << Amp.size() << ") and Phase(" << Phase.size()
+              << ") sizes dont match" << std::endl;
+    throw std::runtime_error("Amp and Phase must have same size");
+  }
+
+  Int_t n = static_cast<int>(Amp.size());
+  Int_t sz = static_cast<int>(2 * n - 2);
+  std::vector<double> res(sz);
+  if (ifft)
+    delete ifft;
+  ifft = TVirtualFFT::FFT(1, &sz, "C2R");
+
+  // std::cout << "ifft defined" << std::endl;
+
+  double re, im;
+  if (n != 0) {
+    for (int i = 0; i < n; i++) {
+      re = Amp[i] * TMath::Cos(Phase[i]);
+      im = Amp[i] * TMath::Sin(Phase[i]);
+      TComplex c(re, im);
+      ifft->SetPointComplex(i, c);
+    }
+
+    // std::cout << "ifft set" << std::endl;
+
+    ifft->Transform();
+    ifft->GetPoints(&res[0]);
+    // std::cout << "iffttransformed" << std::endl;
+    for (int i = 0; i < sz; i++) {
+      res[i] /= sz;
     }
   } else {
     std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;

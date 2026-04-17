@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
       "CoincidenceStudies/PairFiles/"
       "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  digiAnalysis::Analysis an(fname, 0000, 50000, 0);
+  digiAnalysis::Analysis an(fname, 0000, 00000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
   // an.CreatePairs();
@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   std::string userInput;
   double intSPE, intWave;
   int wfSz;
+
   for (int iter = 0; iter < nPairs && keepGoing; iter++) {
 
     hit = vecOfPairs[iter]->GetHitPtr(0);
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]) {
         : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 -
                     0.4222; // Calibration to get the energy
                             // 1900V
-    if (Energy1 > 50 and Energy1 < 52) {
+    if (Energy1 > 20 and Energy1 < 1000) {
       WF = nullptr;
       WF = hit->GetWFPtr();
       WF->SetSmooth(65);
@@ -92,6 +93,7 @@ int main(int argc, char *argv[]) {
       //   }
 
       // Select isolated SPE peaks and integrate to get charge
+      digiAnalysis::WaveForm WFSPE;
       int iterPeaks = 0;
       int isolationRange = 300;
       int saveRange = isolationRange - 50;
@@ -102,7 +104,6 @@ int main(int argc, char *argv[]) {
           if ((iterPeaks + 1 < results.first.size() and
                (results.first[iterPeaks + 1] - peakPos) > isolationRange) ||
               (iterPeaks + 1 == results.first.size())) {
-            digiAnalysis::WaveForm WFSPE;
             double postBL = WF->EvalBaseLine(peakPos + 100, 50);
             double preBL = WF->EvalBaseLine(peakPos - 100, 50);
             if (fabs(preBL - postBL) < 2.0) {

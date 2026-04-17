@@ -38,12 +38,11 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/NaI_1_Checks/"
-      "NaI_1_Cs_Source_HV1800_Waves_160FC_0pt5Vpp_GroundToLead/FILTERED/"
-      "DataF_NaI_1_Cs_Source_HV1800_Waves_160FC_0pt5Vpp_GroundToLead."
-      "root";
+      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+      "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
+      "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
   UShort_t channel = 0;
-  digiAnalysis::Analysis an(fname, 65730, 0000, 10);
+  digiAnalysis::Analysis an(fname, 0, 50000, 10);
   std::cout << "getting the vector from an" << std::endl;
 
   // test Getting
