@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     }
     WF = nullptr;
     WF = hit->GetWFPtr();
-    WF->SetSmooth(65);
+    // WF->SetSmooth(40);
     auto results = WF->DetectPeakValleys(3);
     // std::cout << iter << ": DetectedNumPeaks: " << results.first.size()
     //           << std::endl;
@@ -77,14 +77,14 @@ int main(int argc, char *argv[]) {
       if ((peakPos > 2500 and peakPos < 4500) and
           (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
         if ((iterPeaks + 1 < results.first.size() and
-             (results.first[iterPeaks + 1] - peakPos) > isolationRange) ||
+             (results.first[iterPeaks + 1] - peakPos) > 2 * isolationRange) ||
             (iterPeaks + 1 == results.first.size())) {
           double postBL = WF->EvalBaseLine(peakPos + 100, 50);
           double preBL = WF->EvalBaseLine(peakPos - 100, 50);
           if (fabs(preBL - postBL) < 2.0) {
             // WFSPE.Clear();
-            WFSPE.SetWaveForm(*WF, peakPos - saveRange, peakPos + saveRange,
-                              saveRange - 100, 50);
+            WFSPE.SetWaveForm(*WF, peakPos - saveRange,
+                              peakPos + 2.0 * saveRange, saveRange - 100, 50);
             // std::cout << iter << "WaveFormSet" << std::endl;
             t->Fill();
           }

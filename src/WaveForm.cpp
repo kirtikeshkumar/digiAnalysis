@@ -8,6 +8,7 @@
 #include <RtypesCore.h>
 #include <TComplex.h>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <vector>
 
@@ -164,16 +165,16 @@ WaveForm::~WaveForm() {
   tracesMovBLCorr.shrink_to_fit();
 
   if (fitFunc) {
-    delete fitFunc;
+    //   delete fitFunc;
     fitFunc = nullptr;
   }
 
   if (WaveForm::fft) {
-    delete WaveForm::fft;
+    // delete WaveForm::fft;
     WaveForm::fft = nullptr;
   }
   if (WaveForm::ifft) {
-    delete WaveForm::ifft;
+    // delete WaveForm::ifft;
     WaveForm::ifft = nullptr;
   }
 }
@@ -444,7 +445,7 @@ void WaveForm::Plot(std::vector<double> tr1, std::vector<double> tr2) {
     line->SetLineWidth(2);
     line->Draw("LSAME");
 
-    std::cout << "Plotted the second Waveform" << std::endl;
+    // std::cout << "Plotted the second Waveform" << std::endl;
   }
 
   // Update the canvas
@@ -1212,23 +1213,23 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
   baseline = 0;
 
   // std::cout << "using smooth traces for fit" << std::endl;
-  for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
-    for (unsigned int j = 0; j < numWaveForm; j++) {
-      if (!vecOfWaveForm[0].tracesSmooth.empty())
-        sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
-      else
-        sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
-    }
-  }
-  baseline = sum / nSampleBL;
+  // for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
+  //   for (unsigned int j = 0; j < numWaveForm; j++) {
+  //     if (!vecOfWaveForm[0].tracesSmooth.empty())
+  //       sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
+  //     else
+  //       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
+  //   }
+  // }
+  // baseline = sum / nSampleBL;
 
   for (unsigned int i = 0; i < sizeOfWaveForms; i++) {
     sum = 0;
     for (unsigned int j = 0; j < numWaveForm; j++) {
-      if (!vecOfWaveForm[0].tracesSmooth.empty())
-        sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
-      else
-        sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
+      // if (!vecOfWaveForm[0].tracesSmooth.empty())
+      //   sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
+      // else
+      sum = sum + vecOfWaveForm[j].traces[i]; // numWaveForm;
     }
     if (baseline > 10) {
       sum = baseline - sum / numWaveForm;
@@ -1236,6 +1237,7 @@ void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
       sum = sum / numWaveForm;
     }
     traces.push_back(sum);
+    // std::cout << "i: " << i << " | Sum: " << sum << std::endl;
   }
 }
 
@@ -1427,6 +1429,8 @@ void WaveForm::FitExponential(UShort_t numExp, int start, int stop) {
   }
   graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
 
+  // delete fit if the fit value is equalt to the midpoint or edge of parameter
+  // range
   double llim, ulim, val;
   for (int iarg = 0; fitFunc && iarg < fitFunc->GetNpar(); ++iarg) {
     val = fitFunc->GetParameter(iarg);
@@ -1442,25 +1446,39 @@ void WaveForm::FitExponential(UShort_t numExp, int start, int stop) {
   // std::cout << "fitting done" << std::endl;
 }
 
-// void WaveForm::FitFunction(std::string function, int start,
-//                            int stop) {
-//   // Check valid range
-//   if (start < 0 || stop >= GetSize() || start >= stop) {
-//     std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
-//   }
+void WaveForm::FitFunction(std::string function, std::vector<double> parLims,
+                           int start, int stop) {
+  // Check valid range
+  if (start < 0 || stop >= GetSize() || start >= stop) {
+    std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
+    return;
+  }
 
-//   int nPoints = stop - start + 1;
+  int nPoints = stop - start + 1;
 
-//   const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
-//   std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
-//   std::vector<double> x(nPoints);
-//   std::iota(x.begin(), x.end(), (0));
-//   auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
+  // const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
+  const auto &src = traces;
+  std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
+  std::vector<double> x(nPoints);
+  std::iota(x.begin(), x.end(), (0));
+  auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
 
-//   fitFunc = new TF1("expFit", function.c_str(), 0, nPoints);
+  fitFunc = new TF1("userFit", function.c_str(), 0, nPoints);
+  if (fitFunc->GetNpar() * 2 != parLims.size()) {
+    std::cerr << "Invalid parameter limit array: [" << parLims.size()
+              << " != 2 * " << fitFunc->GetNpar() << "]\n";
+    return;
+  }
 
-//   graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
-// }
+  int numPar = fitFunc->GetNpar();
+
+  for (int i = 0; i < numPar; ++i) {
+    fitFunc->SetParameter(i, 0.5 * (parLims[2 * i] + parLims[2 * i + 1]));
+    fitFunc->SetParLimits(i, parLims[2 * i], parLims[2 * i + 1]);
+  }
+
+  graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
+}
 
 std::pair<std::vector<int>, std::vector<int>>
 WaveForm::DetectPeakValleys(double threshold) {

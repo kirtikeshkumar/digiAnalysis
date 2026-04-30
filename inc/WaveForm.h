@@ -114,7 +114,8 @@ public:
   double IntegrateSmoothWaveForm(int startTime, int stopTime);
   double IntegrateBLCorrWaveForm(int startTime, int stopTime);
   void FitExponential(int start, int stop);
-  void FitFunction(std::string func, int start, int stop);
+  void FitFunction(std::string func, std::vector<double> parLims, int start,
+                   int stop);
   void FitExponential(UShort_t numExp, int start, int stop);
   std::vector<double> GenerateWaveFromFFT();
   std::pair<std::vector<int>, std::vector<int>>
