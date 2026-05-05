@@ -17,484 +17,67 @@ ClassImp(WaveForm);
 
 using namespace std;
 
-namespace digiAnalysis { // namespace digiAnalysis
-/*// UShort_t WaveForm::nSampleBL = 16;
-const char *env_var_baselinesamples = std::getenv("NUM_SAMPLE_BASELINE");
-UShort_t WaveForm::nSampleBL =
-    static_cast<UShort_t>(std::stoul(env_var_baselinesamples));
+namespace digiAnalysis
+{ // namespace digiAnalysis
+  /*// UShort_t WaveForm::nSampleBL = 16;
+  const char *env_var_baselinesamples = std::getenv("NUM_SAMPLE_BASELINE");
+  UShort_t WaveForm::nSampleBL =
+      static_cast<UShort_t>(std::stoul(env_var_baselinesamples));
 
-#ifdef SMOOTH
-const char *envVar = std::getenv("SMOOTH_BOX_SIZE");
-UShort_t WaveForm::smoothBoxSz = static_cast<UShort_t>(std::stoul(envVar));
-#endif
-*/
+  #ifdef SMOOTH
+  const char *envVar = std::getenv("SMOOTH_BOX_SIZE");
+  UShort_t WaveForm::smoothBoxSz = static_cast<UShort_t>(std::stoul(envVar));
+  #endif
+  */
 
-TVirtualFFT *WaveForm::fft = nullptr;
-TVirtualFFT *WaveForm::ifft = nullptr;
-void WaveForm::InitFFT(int N) {
-  if (!fft) {
-    fft = TVirtualFFT::FFT(1, &N, "R2C M K");
-  }
-  if (!ifft) {
-    ifft = TVirtualFFT::FFT(1, &N, "C2R M K");
-  }
-}
-
-/*Constructors*/
-WaveForm::WaveForm() // Default Constructor initializes empty vectors
-{
-  meantime = 0.0;
-  baseline = 0.0;
-}
-
-WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
-{
-#ifdef SMOOTH
-  double movingSum = 0;
-#endif
-  meantime = 0;
-  baseline = 0;
-  SetBaseLine(arr); // Alwasy Set Base Line First
-  double sampleSum = 0;
-  unsigned int size = arr->GetSize();
-  for (unsigned int j = 0; j < size; j++) {
-    traces.push_back(baseline - arr->At(j));
-    if (j >= GateStart and j <= GateStart + GateLenLong) {
-      meantime = meantime + traces[j] * j;
-      sampleSum = sampleSum + traces[j];
-    }
-#ifdef SMOOTH
-    if (smoothBoxSz == 1) {
-      tracesSmooth.push_back(traces[j]);
-    } else {
-      if (j < smoothBoxSz) {
-        // tracesSmooth.push_back(0);
-        movingSum = movingSum + traces[j];
-        tracesSmooth.push_back(movingSum / j);
-      }
-      movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
-      tracesSmooth.push_back(movingSum / smoothBoxSz);
-    }
-#endif
-  }
-  // meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
-  meantime = meantime / sampleSum;
-  if (meantime > 0.0) {
-    meantime = TMath::Log10(meantime);
-  } else {
-    meantime = -1.0 * TMath::Log10(fabs(meantime));
-  }
-  InitFFT(traces.size());
-}
-
-WaveForm::WaveForm(const std::vector<double> tr) // copy from other vector
-{
-  if (!tr.empty()) {
-    SetBaseLine(tr);
-    if (std::fabs(baseline - tr[0]) >
-        100) // check if the copied traces have baseline subtracted
+  TVirtualFFT *WaveForm::fft = nullptr;
+  TVirtualFFT *WaveForm::ifft = nullptr;
+  void WaveForm::InitFFT(int N)
+  {
+    if (!fft)
     {
-      SetWaveForm(tr);
-    } else {
-      traces = tr;
-      SetMeanTime();
+      fft = TVirtualFFT::FFT(1, &N, "R2C M K");
+    }
+    if (!ifft)
+    {
+      ifft = TVirtualFFT::FFT(1, &N, "C2R M K");
+    }
+  }
+
+  /*Constructors*/
+  WaveForm::WaveForm() // Default Constructor initializes empty vectors
+  {
+    meantime = 0.0;
+    baseline = 0.0;
+  }
+
+  WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
+  {
 #ifdef SMOOTH
-      SetSmooth(smoothBoxSz);
+    double movingSum = 0;
 #endif
-    }
-    InitFFT(traces.size());
-  } else {
-    std::cout << "err WaveForm: input vector is empty" << std::endl;
-  }
-}
-
-WaveForm::WaveForm(const WaveForm &wf) // copy consructor
-{
-  meantime = wf.meantime;
-  baseline = wf.baseline;
-  if (!wf.traces.empty()) // copy traces if not empty
-  {
-    traces = wf.traces;
-  }
-  if (!wf.tracesSmooth.empty()) // copy traces smooth if not empty
-  {
-    tracesSmooth = wf.tracesSmooth;
-  }
-  if (!wf.tracesFFT.empty()) // copy traces CFD if not empty
-  {
-    tracesFFT = wf.tracesFFT;
-  }
-  if (!wf.tracesFFTPhase.empty()) // copy traces CFD if not empty
-  {
-    tracesFFTPhase = wf.tracesFFTPhase;
-  }
-  if (wf.fitFunc) // copy traces CFD if not empty
-  {
-    fitFunc = wf.fitFunc;
-  }
-  InitFFT(traces.size());
-}
-
-WaveForm::WaveForm(const WaveForm &wf1, const WaveForm &wf2) {
-  ConcatenateWaveForms(wf1, wf2);
-}
-
-WaveForm::WaveForm(UShort_t sizeOfWaveForms,
-                   const std::vector<WaveForm> vecOfWaveForm) {
-  AverageWaveForms(sizeOfWaveForms, vecOfWaveForm);
-}
-
-/*Destructor*/
-WaveForm::~WaveForm() {
-  /*clear() Removes elements
-  shrink_to_fit() frees unused memory*/
-
-  traces.clear();
-  traces.shrink_to_fit();
-
-  tracesSmooth.clear();
-  tracesSmooth.shrink_to_fit();
-
-  tracesFFT.clear();
-  tracesFFT.shrink_to_fit();
-
-  tracesFFTPhase.clear();
-  tracesFFTPhase.shrink_to_fit();
-
-  tracesMovBLCorr.clear();
-  tracesMovBLCorr.shrink_to_fit();
-
-  if (fitFunc) {
-    //   delete fitFunc;
-    fitFunc = nullptr;
-  }
-
-  if (WaveForm::fft) {
-    // delete WaveForm::fft;
-    WaveForm::fft = nullptr;
-  }
-  if (WaveForm::ifft) {
-    // delete WaveForm::ifft;
-    WaveForm::ifft = nullptr;
-  }
-}
-
-void WaveForm::Plot() {
-  if (traces.empty() && tracesSmooth.empty()) {
-    std::cout
-        << "Both traces and tracesSmooth are empty. No plot will be created."
-        << std::endl;
-    return;
-  }
-
-  // Create a canvas
-  TObject *obj = gROOT->FindObject("canvas");
-  TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
-  if (canvas) {
-    canvas->cd();    // make it current
-    canvas->Clear(); // optional: clear previous plot
-    std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
-  } else {
-    canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
-    std::cout << "Created new canvas: " << "canvas" << std::endl;
-  }
-  // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
-
-  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
-  int nTraces = traces.size();
-  int nTracesSmooth = tracesSmooth.size();
-  int nTracesMovBLCorr = tracesMovBLCorr.size();
-
-  TGraph *graphTraces = nullptr;
-  TGraph *graphTracesSmooth = nullptr;
-  TGraph *graphTracesMovBLCorr = nullptr;
-
-  if (!tracesFFT.empty()) {
-    canvas->Divide(2, 1);
-    canvas->cd(1);
-  }
-
-  double peakHt = 0;
-
-  // Plot traces if not empty
-  if (!traces.empty()) {
-
-    graphTraces = new TGraph(nTraces);
-    for (int i = 0; i < nTraces; ++i) {
-      graphTraces->SetPoint(i, i, traces[i]);
-      if (traces[i] > peakHt)
-        peakHt = traces[i];
-    }
-    graphTraces->SetLineColor(kBlue);
-    graphTraces->SetLineWidth(2);
-    graphTraces->SetTitle("Traces");
-    graphTraces->Draw("AL");
-    legend->AddEntry(graphTraces, "Traces", "l");
-  }
-
-  // Plot tracesSmooth if not empty
-  if (!tracesSmooth.empty()) {
-    graphTracesSmooth = new TGraph(nTracesSmooth);
-    for (int i = 0; i < nTracesSmooth; ++i) {
-      graphTracesSmooth->SetPoint(i, i, tracesSmooth[i]);
-    }
-    graphTracesSmooth->SetLineColor(kRed);
-    graphTracesSmooth->SetLineWidth(2);
-    graphTracesSmooth->SetTitle("Smoothed Traces");
-
-    if (graphTraces) {
-      graphTracesSmooth->Draw("L SAME");
-    } else {
-      graphTracesSmooth->Draw("AL");
-    }
-    legend->AddEntry(graphTracesSmooth, "Smoothed Traces", "l");
-  }
-
-  // Plot tracesMovBLCorr if not empty
-  if (!tracesMovBLCorr.empty()) {
-    graphTracesMovBLCorr = new TGraph(nTracesMovBLCorr);
-    for (int i = 0; i < nTracesMovBLCorr; ++i) {
-      graphTracesMovBLCorr->SetPoint(i, i, tracesMovBLCorr[i]);
-    }
-    graphTracesMovBLCorr->SetLineColor(kGreen);
-    graphTracesMovBLCorr->SetLineWidth(2);
-    graphTracesMovBLCorr->SetTitle("BL Corrected Traces");
-
-    if (graphTraces) {
-      graphTracesMovBLCorr->Draw("L SAME");
-    } else {
-      graphTracesMovBLCorr->Draw("AL");
-    }
-    legend->AddEntry(graphTracesMovBLCorr, "BL Corrected Traces", "l");
-  }
-
-  // Draw the Baseline
-  TLine *line = new TLine(0.0, 0.0, nTraces, 0.0);
-  line->SetLineColor(kBlack);
-  line->SetLineWidth(2);
-  line->Draw("LSAME");
-
-  // Draw the Gates
-  // LongGate is Red
-  // ShortGate is Green
-  TPolyLine *shortGate =
-      DrawGate(GateStart, GateStart + GateLenShort, peakHt * 1.05);
-  TPolyLine *longGate =
-      DrawGate(GateStart, GateStart + GateLenLong, peakHt * 1.1);
-  shortGate->SetLineColor(kGreen);
-  longGate->SetLineColor(kRed);
-  shortGate->Draw("LSAME");
-  longGate->Draw("LSAME");
-
-  // Draw Fit if present
-  if (fitFunc) {
-    fitFunc->SetLineColor(kGreen);
-    fitFunc->SetLineWidth(2);
-    fitFunc->Draw("LSAME");
-  }
-  // Draw the legend
-  legend->Draw();
-
-  if (!tracesFFT.empty()) {
-    canvas->cd(2);
-    TGraph *graphTracesFFT = new TGraph(tracesFFT.size());
-    for (size_t i = 0; i < tracesFFT.size(); ++i) {
-      graphTracesFFT->SetPoint(i, i, tracesFFT[i]);
-    }
-    graphTracesFFT->SetLineColor(kBlack);
-    graphTracesFFT->SetLineWidth(2);
-    graphTracesFFT->SetTitle("FFT");
-    graphTracesFFT->Draw("AL");
-  }
-
-  // Update the canvas
-  canvas->Update();
-}
-
-TPolyLine *WaveForm::DrawGate(UShort_t start, UShort_t stop, Double_t height) {
-  TPolyLine *rect = new TPolyLine(4);
-
-  rect->SetPoint(0, start, 0);
-  rect->SetPoint(1, start, height);
-  rect->SetPoint(2, stop, height);
-  rect->SetPoint(3, stop, 0);
-
-  rect->SetLineWidth(2);
-
-  return rect;
-}
-
-void WaveForm::Plot(std::vector<double> tr) {
-  if (tr.empty()) {
-    std::cout << "Both traces is empty. No plot will be created." << std::endl;
-    return;
-  }
-
-  // Create a canvas
-  TObject *obj = gROOT->FindObject("canvas");
-  TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
-  if (canvas) {
-    canvas->cd();    // make it current
-    canvas->Clear(); // optional: clear previous plot
-    std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
-  } else {
-    canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
-    std::cout << "Created new canvas: " << "canvas" << std::endl;
-  }
-  // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
-
-  TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
-  int nTraces = tr.size();
-
-  TGraph *graphTraces = nullptr;
-
-  // Plot traces if not empty
-  if (!tr.empty()) {
-
-    graphTraces = new TGraph(nTraces);
-    for (int i = 0; i < nTraces; ++i) {
-      graphTraces->SetPoint(i, i, tr[i]);
-    }
-    graphTraces->SetLineColor(kBlue);
-    graphTraces->SetLineWidth(2);
-    graphTraces->SetTitle("Traces");
-    graphTraces->Draw("AL");
-    legend->AddEntry(graphTraces, "Traces", "l");
-  }
-  // Draw the Baseline
-  TLine *line = new TLine(0.0, 0.0, nTraces, 0.0);
-  line->SetLineColor(kBlack);
-  line->SetLineWidth(2);
-  line->Draw("LSAME");
-  // Draw the legend
-  legend->Draw();
-
-  // Update the canvas
-  canvas->Update();
-}
-
-void WaveForm::Plot(std::vector<double> tr1, std::vector<double> tr2) {
-  if (tr1.empty()) {
-    std::cout << "traces 1 is empty." << std::endl;
-  }
-  if (tr2.empty()) {
-    std::cout << "traces 2 is empty." << std::endl;
-  }
-
-  // Create a canvas
-  TObject *obj = gROOT->FindObject("canvas");
-  TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
-  if (canvas) {
-    canvas->cd();    // make it current
-    canvas->Clear(); // optional: clear previous plot
-    std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
-  } else {
-    canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
-    std::cout << "Created new canvas: " << "canvas" << std::endl;
-  }
-  // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
-
-  // TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
-  int nTraces1 = tr1.size();
-  int nTraces2 = tr2.size();
-
-  TGraph *graphTraces1 = nullptr;
-  TGraph *graphTraces2 = nullptr;
-
-  canvas->Divide(2, 1);
-
-  // std::cout << "Created Split canvas" << std::endl;
-  // double peakHt = 0;
-
-  // Plot traces if not empty
-  if (!tr1.empty()) {
-    canvas->cd(1);
-    graphTraces1 = new TGraph(nTraces1);
-    for (int i = 0; i < nTraces1; ++i) {
-      graphTraces1->SetPoint(i, i, tr1[i]);
-    }
-    graphTraces1->SetLineColor(kBlue);
-    graphTraces1->SetLineWidth(2);
-    graphTraces1->SetTitle("Traces 1");
-    graphTraces1->Draw("AL");
-    // legend->AddEntry(graphTraces1, "Traces 1", "l");
-
-    // Draw the Baseline
-    TLine *line = new TLine(0.0, 0.0, nTraces1, 0.0);
-    line->SetLineColor(kBlack);
-    line->SetLineWidth(2);
-    line->Draw("LSAME");
-    // std::cout << "Plotted the first Waveform" << std::endl;
-  }
-
-  if (!tr2.empty()) {
-    canvas->cd(2);
-    graphTraces2 = new TGraph(nTraces2);
-    for (size_t i = 0; i < tr2.size(); ++i) {
-      graphTraces2->SetPoint(i, i, tr2[i]);
-    }
-    graphTraces2->SetLineColor(kBlack);
-    graphTraces2->SetLineWidth(2);
-    graphTraces2->SetTitle("Traces 2");
-    graphTraces2->Draw("AL");
-    // legend->AddEntry(graphTraces1, "Traces 2", "l");
-
-    // Draw the Baseline
-    TLine *line = new TLine(0.0, 0.0, nTraces1, 0.0);
-    line->SetLineColor(kBlack);
-    line->SetLineWidth(2);
-    line->Draw("LSAME");
-
-    // std::cout << "Plotted the second Waveform" << std::endl;
-  }
-
-  // Update the canvas
-  canvas->Update();
-}
-
-/*Getters*/
-std::vector<double> WaveForm::GetTraces() { return traces; }
-std::vector<double> WaveForm::GetTracesSmooth() { return tracesSmooth; }
-std::vector<double> WaveForm::GetTracesFFT() { return tracesFFT; }
-std::vector<double> WaveForm::GetTracesFFTPhase() { return tracesFFTPhase; }
-double WaveForm::GetMeanTime() { return meantime; }
-double WaveForm::GetBaseLine() { return baseline; }
-UShort_t WaveForm::GetSize() { return traces.size(); }
-bool WaveForm::IsFit() {
-  if (fitFunc) {
-    return true;
-  } else {
-    return false;
-  }
-}
-double WaveForm::GetFitPar(int val) { return fitFunc->GetParameter(val); }
-double WaveForm::GetFitParError(int val) { return fitFunc->GetParError(val); }
-
-/*Setters*/
-void WaveForm::SetWaveForm(std::vector<double> tr) {
-#ifdef SMOOTH
-  double movingSum = 0;
-#endif
-  if (!tr.empty()) {
-    if (!traces.empty()) {
-      // std::cout << " WARNING: Replacing already filled traces" << std::endl;
-      traces.clear();
-    }
-    SetBaseLine(tr);
     meantime = 0;
+    baseline = 0;
+    SetBaseLine(arr); // Alwasy Set Base Line First
     double sampleSum = 0;
-    unsigned int size = tr.size();
-    for (unsigned int j = 0; j < size; j++) {
-      traces.push_back(baseline - tr[j]);
-      if (j >= GateStart and j <= GateStart + GateLenShort) {
+    unsigned int size = arr->GetSize();
+    for (unsigned int j = 0; j < size; j++)
+    {
+      traces.push_back(baseline - arr->At(j));
+      if (j >= GateStart and j <= GateStart + GateLenLong)
+      {
         meantime = meantime + traces[j] * j;
         sampleSum = sampleSum + traces[j];
       }
 #ifdef SMOOTH
-      if (smoothBoxSz == 1) {
+      if (smoothBoxSz == 1)
+      {
         tracesSmooth.push_back(traces[j]);
-      } else {
-        if (j < smoothBoxSz) {
+      }
+      else
+      {
+        if (j < smoothBoxSz)
+        {
           // tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
           tracesSmooth.push_back(movingSum / j);
@@ -504,1077 +87,1912 @@ void WaveForm::SetWaveForm(std::vector<double> tr) {
       }
 #endif
     }
-    meantime = (meantime / sampleSum);
-    if (meantime > 0.0) {
+    // meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
+    meantime = meantime / sampleSum;
+    if (meantime > 0.0)
+    {
       meantime = TMath::Log10(meantime);
-    } else {
+    }
+    else
+    {
       meantime = -1.0 * TMath::Log10(fabs(meantime));
     }
-  } else {
-    std::cout << "err SetWaveForm: input vector is empty" << std::endl;
-  }
-}
-
-void WaveForm::SetWaveForm(const WaveForm &wf) {
-  traces.clear();
-  tracesSmooth.clear();
-  tracesFFT.clear();
-  tracesFFTPhase.clear();
-  tracesMovBLCorr.clear();
-
-  traces = wf.traces;
-  tracesSmooth = wf.tracesSmooth;
-  tracesFFT = wf.tracesFFT;
-  tracesFFTPhase = wf.tracesFFTPhase;
-  tracesMovBLCorr = wf.tracesMovBLCorr;
-
-  // Copying the scalar values
-  meantime = wf.meantime;
-  baseline = wf.baseline;
-}
-
-void WaveForm::SetWaveForm(const WaveForm &source, UShort_t startIdx,
-                           UShort_t endIdx, UShort_t blstart,
-                           UShort_t nsample) {
-  // Validate range
-  if (startIdx < 0 || endIdx > static_cast<int>(source.traces.size()) ||
-      startIdx >= endIdx) {
-    return; // Silent fail or throw exception as needed
+    InitFFT(traces.size());
   }
 
-  int rangeSize = endIdx - startIdx;
-  // std::cout << "rangeSize = " << rangeSize << std::endl;
-
-  // Resize all vectors to range size, initialize to 0.0
-  traces.resize(rangeSize, 0.0);
-  tracesSmooth.resize(rangeSize, 0.0);
-  // tracesFFT.resize(rangeSize, 0.0);
-  // tracesFFTPhase.resize(rangeSize, 0.0);
-  // tracesMovBLCorr.resize(rangeSize, 0.0);
-
-  // std::cout << "traces resized" << std::endl;
-
-  // Copy only the specified range
-  if (nsample != 0) {
-    baseline = source.EvalBaseLine(startIdx + blstart, nsample);
-  } else {
-    baseline = source.baseline;
+  WaveForm::WaveForm(const std::vector<double> tr) // copy from other vector
+  {
+    if (!tr.empty())
+    {
+      SetBaseLine(tr);
+      if (std::fabs(baseline - tr[0]) >
+          100) // check if the copied traces have baseline subtracted
+      {
+        SetWaveForm(tr);
+      }
+      else
+      {
+        traces = tr;
+        SetMeanTime();
+#ifdef SMOOTH
+        SetSmooth(smoothBoxSz);
+#endif
+      }
+      InitFFT(traces.size());
+    }
+    else
+    {
+      std::cout << "err WaveForm: input vector is empty" << std::endl;
+    }
   }
 
-  for (int i = 0; i < rangeSize; ++i) {
-    int srcIdx = startIdx + i;
-    // std::cout << i << " : " << srcIdx << std::endl;
-    if (i < source.traces.size()) {
-      if (nsample != 0) {
-        traces[i] = source.traces[srcIdx] - baseline;
-      } else {
-        traces[i] = source.traces[srcIdx];
-      }
+  WaveForm::WaveForm(const WaveForm &wf) // copy consructor
+  {
+    meantime = wf.meantime;
+    baseline = wf.baseline;
+    if (!wf.traces.empty()) // copy traces if not empty
+    {
+      traces = wf.traces;
     }
-
-    if (i < source.tracesSmooth.size()) {
-      if (nsample != 0) {
-        tracesSmooth[i] = source.tracesSmooth[srcIdx] - baseline;
-      } else {
-        tracesSmooth[i] = source.tracesSmooth[srcIdx];
-      }
+    if (!wf.tracesSmooth.empty()) // copy traces smooth if not empty
+    {
+      tracesSmooth = wf.tracesSmooth;
     }
-
-    // if (i < source.tracesFFT.size()) {
-    //   tracesFFT[i] = source.tracesFFT[srcIdx];
-    // }
-
-    // if (i < source.tracesFFTPhase.size()) {
-    //   tracesFFTPhase[i] = source.tracesFFTPhase[srcIdx];
-    // }
-
-    // if (i < source.tracesMovBLCorr.size()) {
-    //   tracesMovBLCorr[i] = source.tracesMovBLCorr[srcIdx];
-    // }
+    if (!wf.tracesFFT.empty()) // copy traces CFD if not empty
+    {
+      tracesFFT = wf.tracesFFT;
+    }
+    if (!wf.tracesFFTPhase.empty()) // copy traces CFD if not empty
+    {
+      tracesFFTPhase = wf.tracesFFTPhase;
+    }
+    if (wf.fitFunc) // copy traces CFD if not empty
+    {
+      fitFunc = wf.fitFunc;
+    }
+    InitFFT(traces.size());
   }
 
-  // std::cout << "traces copied" << std::endl;
-
-  // reset other members
-  meantime = 0.0;
-  if (fitFunc) {
-    delete fitFunc;
-    fitFunc = nullptr;
-  }
-}
-
-void WaveForm::SetTracesMovBLCorr() {
-  if (!traces.empty()) {
-    if (!IsTracesSmoothSet()) {
-      SetSmooth(smoothBoxSz);
-    }
-    if (!tracesMovBLCorr.empty())
-      tracesMovBLCorr.clear();
-    int N = traces.size();
-    int start = smoothBoxSz / 2;
-    // Evaluate a baseline from the first few entries
-    // It is known that there is no signal here.
-    double sum = 0;
-    double baselineVal = 0;
-    std::vector<double> tracesBL(N, 0.0);
-    tracesMovBLCorr.assign(N, 0.0);
-
-    int end = std::min(N, nSampleMovBL + start);
-    for (int i = start; i < end; i++) {
-      sum = sum + traces[i];
-    }
-    baselineVal = sum / nSampleMovBL;
-
-    // now evaluate the baseline at each point
-    int prevcount = 0;
-    double blprev = 0, bltemp = 0;
-    for (int i = start + nSampleMovBL; i < N; i++) {
-      tracesBL[i - nSampleMovBL / 2] = baselineVal;
-      sum = sum - traces[i - nSampleMovBL];
-      sum = sum + traces[i];
-
-      blprev = bltemp;
-      bltemp = sum / nSampleMovBL;
-
-      if (prevcount > 0) {
-        prevcount -= 1;
-      }
-
-      if (fabs(bltemp - blprev) > BLError) {
-        prevcount = nSampleMovBL;
-      } else if (prevcount == 0) {
-        baselineVal = bltemp;
-      }
-    }
-
-    // TVirtualFFT *fft = TVirtualFFT::FFT(1, &N, "R2C");
-    fft->SetPoints(tracesBL.data());
-    fft->Transform();
-    std::vector<double> re(N / 2 + 1), im(N / 2 + 1);
-    for (int i = 0; i <= N / 2; i++) {
-      fft->GetPointComplex(i, re[i], im[i]);
-    }
-
-    // TVirtualFFT *ifft = TVirtualFFT::FFT(1, &N, "C2R");
-    int cutoff = 10;
-    for (int i = 0; i <= N / 2; i++) {
-      if (i < cutoff) {
-        TComplex c(re[i], im[i]);
-        // std::cout << "re: " << re[i] << " im: " << im[i] << " c: " << c <<
-        // std::endl;
-        ifft->SetPointComplex(i, c);
-      } else {
-        TComplex c(0., 0.);
-        ifft->SetPointComplex(i, c);
-      }
-    }
-    ifft->Transform();
-    // std::vector<double> tracesBL(N);
-    ifft->GetPoints(&tracesBL[0]);
-    // std::this_thread::sleep_for(std::chrono::seconds(1));
-
-    for (int i = 0; i < N; i++) {
-      tracesBL[i] /= N;
-    }
-
-    meantime = 0;
-    double sampleSum = 0;
-    for (int i = 0; i < N; i++) {
-      // tracesMovBLCorr[i] = tracesSmooth[i] - tracesBL[i];
-      tracesMovBLCorr[i] = traces[i] - tracesBL[i];
-      if (i >= GateStart and i <= GateStart + GateLenShort) {
-        meantime = meantime + tracesMovBLCorr[i] * i;
-        sampleSum = sampleSum + tracesMovBLCorr[i];
-      }
-    }
-    meantime = (meantime / sampleSum);
-    if (meantime > 0.0) {
-      meantime = TMath::Log10(meantime);
-    } else {
-      meantime = -1.0 * TMath::Log10(fabs(meantime));
-    }
-  } else {
-    std::cout << "err SetTracesMovBLCorr: Fill traces first" << std::endl;
+  WaveForm::WaveForm(const WaveForm &wf1, const WaveForm &wf2)
+  {
+    ConcatenateWaveForms(wf1, wf2);
   }
 
-  // delete fft;
-  // delete ifft;
-}
+  WaveForm::WaveForm(UShort_t sizeOfWaveForms,
+                     const std::vector<WaveForm> vecOfWaveForm)
+  {
+    AverageWaveForms(sizeOfWaveForms, vecOfWaveForm);
+  }
 
-void WaveForm::SetSmooth(UShort_t sBoxSz, std::string kernel) {
-  // std::cout << "Smoothing with boxSz: " << sBoxSz << std::endl;
-  if (!traces.empty()) {
+  /*Destructor*/
+  WaveForm::~WaveForm()
+  {
+    /*clear() Removes elements
+    shrink_to_fit() frees unused memory*/
+
+    traces.clear();
+    traces.shrink_to_fit();
+
+    tracesSmooth.clear();
+    tracesSmooth.shrink_to_fit();
+
+    tracesFFT.clear();
+    tracesFFT.shrink_to_fit();
+
+    tracesFFTPhase.clear();
+    tracesFFTPhase.shrink_to_fit();
+
+    tracesMovBLCorr.clear();
+    tracesMovBLCorr.shrink_to_fit();
+
+    if (fitFunc)
+    {
+      //   delete fitFunc;
+      fitFunc = nullptr;
+    }
+
+    if (WaveForm::fft)
+    {
+      // delete WaveForm::fft;
+      WaveForm::fft = nullptr;
+    }
+    if (WaveForm::ifft)
+    {
+      // delete WaveForm::ifft;
+      WaveForm::ifft = nullptr;
+    }
+  }
+
+  void WaveForm::Plot()
+  {
+    if (traces.empty() && tracesSmooth.empty())
+    {
+      std::cout
+          << "Both traces and tracesSmooth are empty. No plot will be created."
+          << std::endl;
+      return;
+    }
+
+    // Create a canvas
+    TObject *obj = gROOT->FindObject("canvas");
+    TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
+    if (canvas)
+    {
+      canvas->cd();    // make it current
+      canvas->Clear(); // optional: clear previous plot
+      std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
+    }
+    else
+    {
+      canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+      std::cout << "Created new canvas: " << "canvas" << std::endl;
+    }
+    // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+
+    TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
+    int nTraces = traces.size();
+    int nTracesSmooth = tracesSmooth.size();
+    int nTracesMovBLCorr = tracesMovBLCorr.size();
+
+    TGraph *graphTraces = nullptr;
+    TGraph *graphTracesSmooth = nullptr;
+    TGraph *graphTracesMovBLCorr = nullptr;
+
+    if (!tracesFFT.empty())
+    {
+      canvas->Divide(2, 1);
+      canvas->cd(1);
+    }
+
+    double peakHt = 0;
+
+    // Plot traces if not empty
+    if (!traces.empty())
+    {
+
+      graphTraces = new TGraph(nTraces);
+      for (int i = 0; i < nTraces; ++i)
+      {
+        graphTraces->SetPoint(i, i, traces[i]);
+        if (traces[i] > peakHt)
+          peakHt = traces[i];
+      }
+      graphTraces->SetLineColor(kBlue);
+      graphTraces->SetLineWidth(2);
+      graphTraces->SetTitle("Traces");
+      graphTraces->Draw("AL");
+      legend->AddEntry(graphTraces, "Traces", "l");
+    }
+
+    // Plot tracesSmooth if not empty
     if (!tracesSmooth.empty())
-      tracesSmooth.clear();
-    if (kernel == "MovA") {
+    {
+      graphTracesSmooth = new TGraph(nTracesSmooth);
+      for (int i = 0; i < nTracesSmooth; ++i)
+      {
+        graphTracesSmooth->SetPoint(i, i, tracesSmooth[i]);
+      }
+      graphTracesSmooth->SetLineColor(kRed);
+      graphTracesSmooth->SetLineWidth(2);
+      graphTracesSmooth->SetTitle("Smoothed Traces");
+
+      if (graphTraces)
+      {
+        graphTracesSmooth->Draw("L SAME");
+      }
+      else
+      {
+        graphTracesSmooth->Draw("AL");
+      }
+      legend->AddEntry(graphTracesSmooth, "Smoothed Traces", "l");
+    }
+
+    // Plot tracesMovBLCorr if not empty
+    if (!tracesMovBLCorr.empty())
+    {
+      graphTracesMovBLCorr = new TGraph(nTracesMovBLCorr);
+      for (int i = 0; i < nTracesMovBLCorr; ++i)
+      {
+        graphTracesMovBLCorr->SetPoint(i, i, tracesMovBLCorr[i]);
+      }
+      graphTracesMovBLCorr->SetLineColor(kGreen);
+      graphTracesMovBLCorr->SetLineWidth(2);
+      graphTracesMovBLCorr->SetTitle("BL Corrected Traces");
+
+      if (graphTraces)
+      {
+        graphTracesMovBLCorr->Draw("L SAME");
+      }
+      else
+      {
+        graphTracesMovBLCorr->Draw("AL");
+      }
+      legend->AddEntry(graphTracesMovBLCorr, "BL Corrected Traces", "l");
+    }
+
+    // Draw the Baseline
+    TLine *line = new TLine(0.0, 0.0, nTraces, 0.0);
+    line->SetLineColor(kBlack);
+    line->SetLineWidth(2);
+    line->Draw("LSAME");
+
+    // Draw the Gates
+    // LongGate is Red
+    // ShortGate is Green
+    TPolyLine *shortGate =
+        DrawGate(GateStart, GateStart + GateLenShort, peakHt * 1.05);
+    TPolyLine *longGate =
+        DrawGate(GateStart, GateStart + GateLenLong, peakHt * 1.1);
+    shortGate->SetLineColor(kGreen);
+    longGate->SetLineColor(kRed);
+    shortGate->Draw("LSAME");
+    longGate->Draw("LSAME");
+
+    // Draw Fit if present
+    if (fitFunc)
+    {
+      fitFunc->SetLineColor(kGreen);
+      fitFunc->SetLineWidth(2);
+      fitFunc->Draw("LSAME");
+    }
+    // Draw the legend
+    legend->Draw();
+
+    if (!tracesFFT.empty())
+    {
+      canvas->cd(2);
+      TGraph *graphTracesFFT = new TGraph(tracesFFT.size());
+      for (size_t i = 0; i < tracesFFT.size(); ++i)
+      {
+        graphTracesFFT->SetPoint(i, i, tracesFFT[i]);
+      }
+      graphTracesFFT->SetLineColor(kBlack);
+      graphTracesFFT->SetLineWidth(2);
+      graphTracesFFT->SetTitle("FFT");
+      graphTracesFFT->Draw("AL");
+    }
+
+    // Update the canvas
+    canvas->Update();
+  }
+
+  TPolyLine *WaveForm::DrawGate(UShort_t start, UShort_t stop, Double_t height)
+  {
+    TPolyLine *rect = new TPolyLine(4);
+
+    rect->SetPoint(0, start, 0);
+    rect->SetPoint(1, start, height);
+    rect->SetPoint(2, stop, height);
+    rect->SetPoint(3, stop, 0);
+
+    rect->SetLineWidth(2);
+
+    return rect;
+  }
+
+  void WaveForm::Plot(std::vector<double> tr, const std::string &option)
+  {
+    if (tr.empty())
+    {
+      std::cout << "Both traces is empty. No plot will be created." << std::endl;
+      return;
+    }
+
+    std::vector<std::string> tokens;
+    std::stringstream ss(option);
+    std::string item;
+
+    while (std::getline(ss, item, '_'))
+    {
+      if (!item.empty())
+        tokens.push_back(item);
+    }
+
+    // Create a canvas
+    TObject *obj = gROOT->FindObject("canvas");
+    TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
+    if (canvas)
+    {
+      canvas->cd(); // make it current
+      if (option.find("CLEAR") != std::string::npos)
+      {
+        canvas->Clear(); // optional: clear previous plot
+      }
+      std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
+    }
+    else
+    {
+      canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+      std::cout << "Created new canvas: " << "canvas" << std::endl;
+    }
+    // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+
+    TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
+    int nTraces = tr.size();
+
+    TGraph *graphTraces = nullptr;
+
+    // Plot traces if not empty
+    if (!tr.empty())
+    {
+
+      graphTraces = new TGraph(nTraces);
+      for (int i = 0; i < nTraces; ++i)
+      {
+        graphTraces->SetPoint(i, i, tr[i]);
+      }
+
+      int color = kBlue; // default
+      if (option.find("_k") != std::string::npos)
+      {
+        size_t start = option.find("_k") + 1; // skip '_'
+        size_t end = option.find("_", start);
+        std::string colorToken = option.substr(start, end - start);
+
+        size_t plusPos = colorToken.find_first_of("+-");
+
+        std::string base = (plusPos == std::string::npos)
+                               ? colorToken
+                               : colorToken.substr(0, plusPos);
+
+        int offset = 0;
+        if (plusPos != std::string::npos)
+        {
+          offset = std::stoi(colorToken.substr(plusPos));
+        }
+
+        if (base == "kBlack")
+          color = kBlack;
+        else if (base == "kRed")
+          color = kRed;
+        else if (base == "kBlue")
+          color = kBlue;
+        else if (base == "kGreen")
+          color = kGreen;
+        else if (base == "kMagenta")
+          color = kMagenta;
+        else if (base == "kCyan")
+          color = kCyan;
+        color += offset;
+      }
+
+      graphTraces->SetLineColor(color);
+
+      // graphTraces->SetLineColor(kBlue);
+      graphTraces->SetLineWidth(2);
+      if (std::isdigit(tokens[tokens.size() - 1][0]))
+      {
+        int width = std::stoi(tokens[tokens.size() - 1]);
+        graphTraces->SetLineWidth(width);
+      }
+      graphTraces->SetTitle("Traces");
+      if (option.find("SAME") != std::string::npos && canvas->GetListOfPrimitives()->FindObject(graphTraces->GetName()))
+      {
+        graphTraces->Draw("L SAME");
+      }
+      else
+      {
+        graphTraces->Draw("AL");
+      }
+      legend->AddEntry(graphTraces, "Traces", "l");
+    }
+    // Draw the Baseline
+    if (option.find("SAME") == std::string::npos)
+    {
+      TLine *line = new TLine(0.0, 0.0, nTraces, 0.0);
+      line->SetLineColor(kBlack);
+      line->SetLineWidth(4);
+      line->Draw("LSAME");
+    }
+    // Draw the legend
+    legend->Draw();
+
+    // Update the canvas
+    canvas->Update();
+  }
+
+  void WaveForm::Plot(std::vector<double> tr1, std::vector<double> tr2)
+  {
+    if (tr1.empty())
+    {
+      std::cout << "traces 1 is empty." << std::endl;
+    }
+    if (tr2.empty())
+    {
+      std::cout << "traces 2 is empty." << std::endl;
+    }
+
+    // Create a canvas
+    TObject *obj = gROOT->FindObject("canvas");
+    TCanvas *canvas = dynamic_cast<TCanvas *>(obj);
+    if (canvas)
+    {
+      canvas->cd();    // make it current
+      canvas->Clear(); // optional: clear previous plot
+      std::cout << "Reusing existing canvas: " << "canvas" << std::endl;
+    }
+    else
+    {
+      canvas = new TCanvas("canvas", "WaveForm Plot", 1600, 1000);
+      std::cout << "Created new canvas: " << "canvas" << std::endl;
+    }
+    // TCanvas *canvas = new TCanvas("canvas", "WaveForm Plot", 800, 600);
+
+    // TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9); // Create a legend
+    int nTraces1 = tr1.size();
+    int nTraces2 = tr2.size();
+
+    TGraph *graphTraces1 = nullptr;
+    TGraph *graphTraces2 = nullptr;
+
+    canvas->Divide(2, 1);
+
+    // std::cout << "Created Split canvas" << std::endl;
+    // double peakHt = 0;
+
+    // Plot traces if not empty
+    if (!tr1.empty())
+    {
+      canvas->cd(1);
+      graphTraces1 = new TGraph(nTraces1);
+      for (int i = 0; i < nTraces1; ++i)
+      {
+        graphTraces1->SetPoint(i, i, tr1[i]);
+      }
+      graphTraces1->SetLineColor(kBlue);
+      graphTraces1->SetLineWidth(2);
+      graphTraces1->SetTitle("Traces 1");
+      graphTraces1->Draw("AL");
+      // legend->AddEntry(graphTraces1, "Traces 1", "l");
+
+      // Draw the Baseline
+      TLine *line = new TLine(0.0, 0.0, nTraces1, 0.0);
+      line->SetLineColor(kBlack);
+      line->SetLineWidth(2);
+      line->Draw("LSAME");
+      // std::cout << "Plotted the first Waveform" << std::endl;
+    }
+
+    if (!tr2.empty())
+    {
+      canvas->cd(2);
+      graphTraces2 = new TGraph(nTraces2);
+      for (size_t i = 0; i < tr2.size(); ++i)
+      {
+        graphTraces2->SetPoint(i, i, tr2[i]);
+      }
+      graphTraces2->SetLineColor(kBlack);
+      graphTraces2->SetLineWidth(2);
+      graphTraces2->SetTitle("Traces 2");
+      graphTraces2->Draw("AL");
+      // legend->AddEntry(graphTraces1, "Traces 2", "l");
+
+      // Draw the Baseline
+      TLine *line = new TLine(0.0, 0.0, nTraces1, 0.0);
+      line->SetLineColor(kBlack);
+      line->SetLineWidth(2);
+      line->Draw("LSAME");
+
+      // std::cout << "Plotted the second Waveform" << std::endl;
+    }
+
+    // Update the canvas
+    canvas->Update();
+  }
+
+  /*Getters*/
+  std::vector<double> WaveForm::GetTraces() { return traces; }
+  std::vector<double> WaveForm::GetTracesSmooth() { return tracesSmooth; }
+  std::vector<double> WaveForm::GetTracesFFT() { return tracesFFT; }
+  std::vector<double> WaveForm::GetTracesFFTPhase() { return tracesFFTPhase; }
+  double WaveForm::GetMeanTime() { return meantime; }
+  double WaveForm::GetBaseLine() { return baseline; }
+  UShort_t WaveForm::GetSize() { return traces.size(); }
+  bool WaveForm::IsFit()
+  {
+    if (fitFunc)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+  double WaveForm::GetFitPar(int val) { return fitFunc->GetParameter(val); }
+  double WaveForm::GetFitParError(int val) { return fitFunc->GetParError(val); }
+
+  /*Setters*/
+  void WaveForm::SetWaveForm(std::vector<double> tr)
+  {
+#ifdef SMOOTH
+    double movingSum = 0;
+#endif
+    if (!tr.empty())
+    {
+      if (!traces.empty())
+      {
+        // std::cout << " WARNING: Replacing already filled traces" << std::endl;
+        traces.clear();
+      }
+      SetBaseLine(tr);
+      meantime = 0;
+      double sampleSum = 0;
+      unsigned int size = tr.size();
+      for (unsigned int j = 0; j < size; j++)
+      {
+        traces.push_back(baseline - tr[j]);
+        if (j >= GateStart and j <= GateStart + GateLenShort)
+        {
+          meantime = meantime + traces[j] * j;
+          sampleSum = sampleSum + traces[j];
+        }
+#ifdef SMOOTH
+        if (smoothBoxSz == 1)
+        {
+          tracesSmooth.push_back(traces[j]);
+        }
+        else
+        {
+          if (j < smoothBoxSz)
+          {
+            // tracesSmooth.push_back(0);
+            movingSum = movingSum + traces[j];
+            tracesSmooth.push_back(movingSum / j);
+          }
+          movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
+          tracesSmooth.push_back(movingSum / smoothBoxSz);
+        }
+#endif
+      }
+      meantime = (meantime / sampleSum);
+      if (meantime > 0.0)
+      {
+        meantime = TMath::Log10(meantime);
+      }
+      else
+      {
+        meantime = -1.0 * TMath::Log10(fabs(meantime));
+      }
+    }
+    else
+    {
+      std::cout << "err SetWaveForm: input vector is empty" << std::endl;
+    }
+  }
+
+  void WaveForm::SetWaveForm(const WaveForm &wf)
+  {
+    traces.clear();
+    tracesSmooth.clear();
+    tracesFFT.clear();
+    tracesFFTPhase.clear();
+    tracesMovBLCorr.clear();
+
+    traces = wf.traces;
+    tracesSmooth = wf.tracesSmooth;
+    tracesFFT = wf.tracesFFT;
+    tracesFFTPhase = wf.tracesFFTPhase;
+    tracesMovBLCorr = wf.tracesMovBLCorr;
+
+    // Copying the scalar values
+    meantime = wf.meantime;
+    baseline = wf.baseline;
+  }
+
+  void WaveForm::SetWaveForm(const WaveForm &source, UShort_t startIdx,
+                             UShort_t endIdx, UShort_t blstart,
+                             UShort_t nsample)
+  {
+    // Validate range
+    if (startIdx < 0 || endIdx > static_cast<int>(source.traces.size()) ||
+        startIdx >= endIdx)
+    {
+      return; // Silent fail or throw exception as needed
+    }
+
+    int rangeSize = endIdx - startIdx;
+    // std::cout << "rangeSize = " << rangeSize << std::endl;
+
+    // Resize all vectors to range size, initialize to 0.0
+    traces.resize(rangeSize, 0.0);
+    tracesSmooth.resize(rangeSize, 0.0);
+    // tracesFFT.resize(rangeSize, 0.0);
+    // tracesFFTPhase.resize(rangeSize, 0.0);
+    // tracesMovBLCorr.resize(rangeSize, 0.0);
+
+    // std::cout << "traces resized" << std::endl;
+
+    // Copy only the specified range
+    if (nsample != 0)
+    {
+      baseline = source.EvalBaseLine(startIdx + blstart, nsample);
+    }
+    else
+    {
+      baseline = source.baseline;
+    }
+
+    for (int i = 0; i < rangeSize; ++i)
+    {
+      int srcIdx = startIdx + i;
+      // std::cout << i << " : " << srcIdx << std::endl;
+      if (i < source.traces.size())
+      {
+        if (nsample != 0)
+        {
+          traces[i] = source.traces[srcIdx] - baseline;
+        }
+        else
+        {
+          traces[i] = source.traces[srcIdx];
+        }
+      }
+
+      if (i < source.tracesSmooth.size())
+      {
+        if (nsample != 0)
+        {
+          tracesSmooth[i] = source.tracesSmooth[srcIdx] - baseline;
+        }
+        else
+        {
+          tracesSmooth[i] = source.tracesSmooth[srcIdx];
+        }
+      }
+
+      // if (i < source.tracesFFT.size()) {
+      //   tracesFFT[i] = source.tracesFFT[srcIdx];
+      // }
+
+      // if (i < source.tracesFFTPhase.size()) {
+      //   tracesFFTPhase[i] = source.tracesFFTPhase[srcIdx];
+      // }
+
+      // if (i < source.tracesMovBLCorr.size()) {
+      //   tracesMovBLCorr[i] = source.tracesMovBLCorr[srcIdx];
+      // }
+    }
+
+    // std::cout << "traces copied" << std::endl;
+
+    // reset other members
+    meantime = 0.0;
+    if (fitFunc)
+    {
+      delete fitFunc;
+      fitFunc = nullptr;
+    }
+  }
+
+  void WaveForm::SetTracesMovBLCorr()
+  {
+    if (!traces.empty())
+    {
+      if (!IsTracesSmoothSet())
+      {
+        SetSmooth(smoothBoxSz);
+      }
+      if (!tracesMovBLCorr.empty())
+        tracesMovBLCorr.clear();
+      int N = traces.size();
+      int start = smoothBoxSz / 2;
+      // Evaluate a baseline from the first few entries
+      // It is known that there is no signal here.
+      double sum = 0;
+      double baselineVal = 0;
+      std::vector<double> tracesBL(N, 0.0);
+      tracesMovBLCorr.assign(N, 0.0);
+
+      int end = std::min(N, nSampleMovBL + start);
+      for (int i = start; i < end; i++)
+      {
+        sum = sum + traces[i];
+      }
+      baselineVal = sum / nSampleMovBL;
+
+      // now evaluate the baseline at each point
+      int prevcount = 0;
+      double blprev = 0, bltemp = 0;
+      for (int i = start + nSampleMovBL; i < N; i++)
+      {
+        tracesBL[i - nSampleMovBL / 2] = baselineVal;
+        sum = sum - traces[i - nSampleMovBL];
+        sum = sum + traces[i];
+
+        blprev = bltemp;
+        bltemp = sum / nSampleMovBL;
+
+        if (prevcount > 0)
+        {
+          prevcount -= 1;
+        }
+
+        if (fabs(bltemp - blprev) > BLError)
+        {
+          prevcount = nSampleMovBL;
+        }
+        else if (prevcount == 0)
+        {
+          baselineVal = bltemp;
+        }
+      }
+
+      // TVirtualFFT *fft = TVirtualFFT::FFT(1, &N, "R2C");
+      fft->SetPoints(tracesBL.data());
+      fft->Transform();
+      std::vector<double> re(N / 2 + 1), im(N / 2 + 1);
+      for (int i = 0; i <= N / 2; i++)
+      {
+        fft->GetPointComplex(i, re[i], im[i]);
+      }
+
+      // TVirtualFFT *ifft = TVirtualFFT::FFT(1, &N, "C2R");
+      int cutoff = 10;
+      for (int i = 0; i <= N / 2; i++)
+      {
+        if (i < cutoff)
+        {
+          TComplex c(re[i], im[i]);
+          // std::cout << "re: " << re[i] << " im: " << im[i] << " c: " << c <<
+          // std::endl;
+          ifft->SetPointComplex(i, c);
+        }
+        else
+        {
+          TComplex c(0., 0.);
+          ifft->SetPointComplex(i, c);
+        }
+      }
+      ifft->Transform();
+      // std::vector<double> tracesBL(N);
+      ifft->GetPoints(&tracesBL[0]);
+      // std::this_thread::sleep_for(std::chrono::seconds(1));
+
+      for (int i = 0; i < N; i++)
+      {
+        tracesBL[i] /= N;
+      }
+
+      meantime = 0;
+      double sampleSum = 0;
+      for (int i = 0; i < N; i++)
+      {
+        // tracesMovBLCorr[i] = tracesSmooth[i] - tracesBL[i];
+        tracesMovBLCorr[i] = traces[i] - tracesBL[i];
+        if (i >= GateStart and i <= GateStart + GateLenShort)
+        {
+          meantime = meantime + tracesMovBLCorr[i] * i;
+          sampleSum = sampleSum + tracesMovBLCorr[i];
+        }
+      }
+      meantime = (meantime / sampleSum);
+      if (meantime > 0.0)
+      {
+        meantime = TMath::Log10(meantime);
+      }
+      else
+      {
+        meantime = -1.0 * TMath::Log10(fabs(meantime));
+      }
+    }
+    else
+    {
+      std::cout << "err SetTracesMovBLCorr: Fill traces first" << std::endl;
+    }
+
+    // delete fft;
+    // delete ifft;
+  }
+
+  void WaveForm::SetSmooth(UShort_t sBoxSz, std::string kernel)
+  {
+    // std::cout << "Smoothing with boxSz: " << sBoxSz << std::endl;
+    if (!traces.empty())
+    {
+      if (!tracesSmooth.empty())
+        tracesSmooth.clear();
+      if (kernel == "MovA")
+      {
+        double movingSum = 0;
+        SetBaseLine();
+        // std::cout << "Baseline set to: " << baseline << std::endl;
+        unsigned int size = traces.size();
+        // std::cout << "traces size: " << size << std::endl;
+        if (sBoxSz == 1)
+        {
+          tracesSmooth = traces;
+        }
+        else
+        {
+          for (unsigned int j = 0; j < size; j++)
+          {
+            if (j < sBoxSz)
+            {
+              tracesSmooth.push_back(0);
+              movingSum = movingSum + traces[j];
+              // tracesSmooth.push_back(movingSum / j);
+            }
+            else
+            {
+              movingSum = movingSum + traces[j] - traces[j - sBoxSz];
+              tracesSmooth.push_back(movingSum / sBoxSz);
+            }
+          }
+        }
+      }
+      else if (kernel == "Gauss")
+      {
+        // Create the Gaussian kernel
+        std::vector<double> gauss(sBoxSz);
+        double sig = sBoxSz / 10;
+        double sumgauss = 0;
+        for (int i = 0; i < sBoxSz; i++)
+        {
+          gauss[i] = TMath::Exp(-0.5 * TMath::Power((i - (sBoxSz / 2)) / sig, 2));
+          sumgauss += gauss[i];
+        }
+
+        // Smoothing
+        for (int i = 0; i < GetSize(); i++)
+        {
+          double gaussSmooth = 0;
+          if (fabs(i - GetSize() / 2) <= (GetSize() - sBoxSz) / 2)
+          {
+            for (int j = 0; j < sBoxSz; j++)
+            {
+              gaussSmooth += gauss[j] / sumgauss * traces[i - sBoxSz / 2 + j];
+            }
+          }
+          tracesSmooth.push_back(gaussSmooth);
+        }
+      }
+    }
+    else
+    {
+      std::cout << "err SetSmooth: Fill traces first" << std::endl;
+    }
+  }
+
+  void WaveForm::SetSmooth()
+  {
+    if (!traces.empty())
+    {
+      if (!tracesSmooth.empty())
+        tracesSmooth.clear();
       double movingSum = 0;
       SetBaseLine();
-      // std::cout << "Baseline set to: " << baseline << std::endl;
       unsigned int size = traces.size();
-      // std::cout << "traces size: " << size << std::endl;
-      if (sBoxSz == 1) {
+      if (smoothBoxSz == 1)
+      {
         tracesSmooth = traces;
-      } else {
-        for (unsigned int j = 0; j < size; j++) {
-          if (j < sBoxSz) {
+      }
+      else
+      {
+        for (unsigned int j = 0; j < size; j++)
+        {
+          if (j < smoothBoxSz)
+          {
             tracesSmooth.push_back(0);
             movingSum = movingSum + traces[j];
             // tracesSmooth.push_back(movingSum / j);
-          } else {
-            movingSum = movingSum + traces[j] - traces[j - sBoxSz];
-            tracesSmooth.push_back(movingSum / sBoxSz);
           }
+          movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
+          tracesSmooth.push_back(movingSum / smoothBoxSz);
         }
       }
-    } else if (kernel == "Gauss") {
-      // Create the Gaussian kernel
-      std::vector<double> gauss(sBoxSz);
-      double sig = sBoxSz / 10;
-      double sumgauss = 0;
-      for (int i = 0; i < sBoxSz; i++) {
-        gauss[i] = TMath::Exp(-0.5 * TMath::Power((i - (sBoxSz / 2)) / sig, 2));
-        sumgauss += gauss[i];
-      }
-
-      // Smoothing
-      for (int i = 0; i < GetSize(); i++) {
-        double gaussSmooth = 0;
-        if (fabs(i - GetSize() / 2) <= (GetSize() - sBoxSz) / 2) {
-          for (int j = 0; j < sBoxSz; j++) {
-            gaussSmooth += gauss[j] / sumgauss * traces[i - sBoxSz / 2 + j];
-          }
-        }
-        tracesSmooth.push_back(gaussSmooth);
-      }
     }
-  } else {
-    std::cout << "err SetSmooth: Fill traces first" << std::endl;
+    else
+    {
+      std::cout << "err SetSmooth: Fill traces first" << std::endl;
+    }
   }
-}
 
-void WaveForm::SetSmooth() {
-  if (!traces.empty()) {
-    if (!tracesSmooth.empty())
-      tracesSmooth.clear();
-    double movingSum = 0;
-    SetBaseLine();
-    unsigned int size = traces.size();
-    if (smoothBoxSz == 1) {
-      tracesSmooth = traces;
-    } else {
-      for (unsigned int j = 0; j < size; j++) {
-        if (j < smoothBoxSz) {
-          tracesSmooth.push_back(0);
-          movingSum = movingSum + traces[j];
-          // tracesSmooth.push_back(movingSum / j);
-        }
-        movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
-        tracesSmooth.push_back(movingSum / smoothBoxSz);
+  void WaveForm::SetSmooth(std::vector<double> tr)
+  {
+    if (!tr.empty())
+    {
+      if (!tracesSmooth.empty())
+      {
+        // std::cout << " WARNING: Replacing already filled traces" << std::endl;
+        tracesSmooth.clear();
+      }
+      unsigned int size = tr.size();
+      for (unsigned int j = 0; j < size; j++)
+      {
+        tracesSmooth.push_back(baseline - tr[j]);
       }
     }
-  } else {
-    std::cout << "err SetSmooth: Fill traces first" << std::endl;
+    else
+    {
+      std::cout << "err SetWaveForm: input vector is empty" << std::endl;
+    }
   }
-}
 
-void WaveForm::SetSmooth(std::vector<double> tr) {
-  if (!tr.empty()) {
-    if (!tracesSmooth.empty()) {
-      // std::cout << " WARNING: Replacing already filled traces" << std::endl;
-      tracesSmooth.clear();
-    }
-    unsigned int size = tr.size();
-    for (unsigned int j = 0; j < size; j++) {
-      tracesSmooth.push_back(baseline - tr[j]);
-    }
-  } else {
-    std::cout << "err SetWaveForm: input vector is empty" << std::endl;
-  }
-}
+  void WaveForm::SetCFD() {}
 
-void WaveForm::SetCFD() {}
-
-void WaveForm::SetMeanTime() {
-  meantime = 0;
-  double sampleSum = 0;
-  if (!tracesMovBLCorr.empty()) {
-    unsigned int size = tracesMovBLCorr.size();
-    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
-      meantime = meantime + tracesMovBLCorr[j] * j;
-      sampleSum = sampleSum + tracesMovBLCorr[j];
-    }
-    meantime = meantime / sampleSum;
-    if (meantime > 0.0) {
-      meantime = TMath::Log10(meantime);
-    } else {
-      meantime = -1.0 * TMath::Log10(fabs(meantime));
-    }
-  } else if (!tracesSmooth.empty()) {
-    unsigned int size = traces.size();
-    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
-      meantime = meantime + tracesSmooth[j] * j;
-      sampleSum = sampleSum + tracesSmooth[j];
-    }
-    meantime = meantime / sampleSum;
-    if (meantime > 0.0) {
-      meantime = TMath::Log10(meantime);
-    } else {
-      meantime = -1.0 * TMath::Log10(fabs(meantime));
-    }
-  } else if (!traces.empty()) {
-    unsigned int size = traces.size();
-    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
-      meantime = meantime + traces[j] * j;
-      sampleSum = sampleSum + traces[j];
-    }
-    meantime = meantime / sampleSum;
-    if (meantime > 0.0) {
-      meantime = TMath::Log10(meantime);
-    } else {
-      meantime = -1.0 * TMath::Log10(fabs(meantime));
-    }
-  } else {
-    std::cout << "err SetMeanTime: traces is empty" << std::endl;
-  }
-}
-
-void WaveForm::SetMeanTime(const std::vector<double> tr) {
-  if (!tr.empty()) {
-    SetMeanTime(tr, GateStart, GateLenLong + GateStart);
-  } else {
-    std::cout << "err SetMeanTime: input vector is empty" << std::endl;
-  }
-}
-
-void WaveForm::SetMeanTime(const std::vector<double> tr, UShort_t start,
-                           UShort_t stop) {
-  meantime = 0;
-  double sampleSum = 0;
-  if (!tr.empty()) {
-    if (start < stop) {
-      if (tr.size() < stop) {
-        std::cout << "Warning: stop is less than input vector size. Evaluating "
-                     "till end"
-                  << std::endl;
-        stop = tr.size();
-      }
-      for (unsigned int j = start; j < stop; j++) {
-        meantime = meantime + tr[j] * j;
-        sampleSum = sampleSum + tr[j];
+  void WaveForm::SetMeanTime()
+  {
+    meantime = 0;
+    double sampleSum = 0;
+    if (!tracesMovBLCorr.empty())
+    {
+      unsigned int size = tracesMovBLCorr.size();
+      for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++)
+      {
+        meantime = meantime + tracesMovBLCorr[j] * j;
+        sampleSum = sampleSum + tracesMovBLCorr[j];
       }
       meantime = meantime / sampleSum;
-      if (meantime > 0.0) {
+      if (meantime > 0.0)
+      {
         meantime = TMath::Log10(meantime);
-      } else {
+      }
+      else
+      {
         meantime = -1.0 * TMath::Log10(fabs(meantime));
       }
-    } else {
-      std::cout << "error: start > stop, exiting witout meantime setting"
+    }
+    else if (!tracesSmooth.empty())
+    {
+      unsigned int size = traces.size();
+      for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++)
+      {
+        meantime = meantime + tracesSmooth[j] * j;
+        sampleSum = sampleSum + tracesSmooth[j];
+      }
+      meantime = meantime / sampleSum;
+      if (meantime > 0.0)
+      {
+        meantime = TMath::Log10(meantime);
+      }
+      else
+      {
+        meantime = -1.0 * TMath::Log10(fabs(meantime));
+      }
+    }
+    else if (!traces.empty())
+    {
+      unsigned int size = traces.size();
+      for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++)
+      {
+        meantime = meantime + traces[j] * j;
+        sampleSum = sampleSum + traces[j];
+      }
+      meantime = meantime / sampleSum;
+      if (meantime > 0.0)
+      {
+        meantime = TMath::Log10(meantime);
+      }
+      else
+      {
+        meantime = -1.0 * TMath::Log10(fabs(meantime));
+      }
+    }
+    else
+    {
+      std::cout << "err SetMeanTime: traces is empty" << std::endl;
+    }
+  }
+
+  void WaveForm::SetMeanTime(const std::vector<double> tr)
+  {
+    if (!tr.empty())
+    {
+      SetMeanTime(tr, GateStart, GateLenLong + GateStart);
+    }
+    else
+    {
+      std::cout << "err SetMeanTime: input vector is empty" << std::endl;
+    }
+  }
+
+  void WaveForm::SetMeanTime(const std::vector<double> tr, UShort_t start,
+                             UShort_t stop)
+  {
+    meantime = 0;
+    double sampleSum = 0;
+    if (!tr.empty())
+    {
+      if (start < stop)
+      {
+        if (tr.size() < stop)
+        {
+          std::cout << "Warning: stop is less than input vector size. Evaluating "
+                       "till end"
+                    << std::endl;
+          stop = tr.size();
+        }
+        for (unsigned int j = start; j < stop; j++)
+        {
+          meantime = meantime + tr[j] * j;
+          sampleSum = sampleSum + tr[j];
+        }
+        meantime = meantime / sampleSum;
+        if (meantime > 0.0)
+        {
+          meantime = TMath::Log10(meantime);
+        }
+        else
+        {
+          meantime = -1.0 * TMath::Log10(fabs(meantime));
+        }
+      }
+      else
+      {
+        std::cout << "error: start > stop, exiting witout meantime setting"
+                  << std::endl;
+      }
+    }
+    else
+    {
+      std::cout << "err SetMeanTime: input vector is empty" << std::endl;
+    }
+  }
+
+  void WaveForm::SetBaseLine()
+  {
+    baseline = 0;
+    double sum = 0;
+
+    if (!traces.empty())
+    {
+      for (unsigned int j = blStart; j < nSampleBL + blStart; j++)
+      {
+        sum = sum + traces[j];
+      }
+      baseline = sum / nSampleBL;
+    }
+    else
+    {
+      std::cout << "err SetBaseLine: traces is empty" << std::endl;
+    }
+  }
+
+  void WaveForm::SetBaseLine(std::vector<double> tr)
+  {
+    baseline = 0;
+    double sum = 0;
+
+    if (!tr.empty())
+    {
+      for (unsigned int j = blStart; j < nSampleBL + blStart; j++)
+      {
+        sum = sum + tr[j];
+      }
+      baseline = sum / nSampleBL;
+    }
+    else
+    {
+      std::cout << "err SetBaseLine: input vector is empty" << std::endl;
+    }
+  }
+
+  void WaveForm::SetBaseLine(TArrayS *arr)
+  {
+    baseline = 0;
+    double sum = 0;
+
+    if (arr && (arr->GetSize() > nSampleBL))
+    {
+      for (unsigned int j = blStart; j < nSampleBL + blStart; j++)
+      {
+        sum = sum + arr->At(j);
+      }
+      baseline = sum / nSampleBL;
+    }
+    else
+    {
+      std::cout << "err SetBaseLine: input array is empty or smaller than "
+                   "NUM_SAMPLE_BASELINE"
                 << std::endl;
     }
-  } else {
-    std::cout << "err SetMeanTime: input vector is empty" << std::endl;
   }
-}
 
-void WaveForm::SetBaseLine() {
-  baseline = 0;
-  double sum = 0;
-
-  if (!traces.empty()) {
-    for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
-      sum = sum + traces[j];
-    }
-    baseline = sum / nSampleBL;
-  } else {
-    std::cout << "err SetBaseLine: traces is empty" << std::endl;
-  }
-}
-
-void WaveForm::SetBaseLine(std::vector<double> tr) {
-  baseline = 0;
-  double sum = 0;
-
-  if (!tr.empty()) {
-    for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
-      sum = sum + tr[j];
-    }
-    baseline = sum / nSampleBL;
-  } else {
-    std::cout << "err SetBaseLine: input vector is empty" << std::endl;
-  }
-}
-
-void WaveForm::SetBaseLine(TArrayS *arr) {
-  baseline = 0;
-  double sum = 0;
-
-  if (arr && (arr->GetSize() > nSampleBL)) {
-    for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
-      sum = sum + arr->At(j);
-    }
-    baseline = sum / nSampleBL;
-  } else {
-    std::cout << "err SetBaseLine: input array is empty or smaller than "
-                 "NUM_SAMPLE_BASELINE"
-              << std::endl;
-  }
-}
-
-void WaveForm::SetTracesFFT() {
-  if (!traces.empty()) {
-    Int_t n = static_cast<int>(traces.size());
-    fft = TVirtualFFT::FFT(1, &n, "R2C");
-    // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-    fft->SetPoints(traces.data());
-    fft->Transform();
-    int nFreq = traces.size() / 2 + 1; // only positive frequencies
-    for (int i = 0; i < nFreq; i++) {
-      double re, im;
-      fft->GetPointComplex(i, re, im);
-      tracesFFT.push_back(std::sqrt(re * re + im * im));
-      tracesFFTPhase.push_back(TMath::ATan2(im, re));
-    }
-  } else {
-    std::cout << "err SetTracesFFT: traces is empty" << std::endl;
-  }
-}
-
-void WaveForm::SetTracesFFT(std::string whichTrace) {
-  if (whichTrace == "orig") {
-    SetTracesFFT();
-  } else if (whichTrace == "smooth") {
-    if (!tracesSmooth.empty()) {
-      Int_t n = static_cast<int>(tracesSmooth.size());
+  void WaveForm::SetTracesFFT()
+  {
+    if (!traces.empty())
+    {
+      Int_t n = static_cast<int>(traces.size());
       fft = TVirtualFFT::FFT(1, &n, "R2C");
       // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-      fft->SetPoints(tracesSmooth.data());
+      fft->SetPoints(traces.data());
       fft->Transform();
-
-      int nFreq = tracesSmooth.size() / 2 + 1; // only positive frequencies
-
-      for (int i = 0; i < nFreq; i++) {
+      int nFreq = traces.size() / 2 + 1; // only positive frequencies
+      for (int i = 0; i < nFreq; i++)
+      {
         double re, im;
         fft->GetPointComplex(i, re, im);
         tracesFFT.push_back(std::sqrt(re * re + im * im));
         tracesFFTPhase.push_back(TMath::ATan2(im, re));
       }
-    } else {
+    }
+    else
+    {
       std::cout << "err SetTracesFFT: traces is empty" << std::endl;
     }
-  } else {
-    std::cout << "err SetTracesFFT: Pass proper value for whichTrace"
-              << std::endl;
-    std::cout << "Valid options are: orig, smooth" << std::endl;
   }
-}
 
-void WaveForm::SetTracesFFT(std::vector<double> trace) {
-  if (!trace.empty()) {
-    tracesFFT.clear();
-    tracesFFTPhase.clear();
-    Int_t n = static_cast<int>(trace.size());
-    // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-    fft->SetPoints(trace.data());
-    fft->Transform();
-
-    int nFreq = trace.size() / 2 + 1; // only positive frequencies
-
-    for (int i = 0; i < nFreq; i++) {
-      double re, im;
-      fft->GetPointComplex(i, re, im);
-      tracesFFT.push_back(std::sqrt(re * re + im * im));
-      tracesFFTPhase.push_back(TMath::ATan2(im, re));
+  void WaveForm::SetTracesFFT(std::string whichTrace)
+  {
+    if (whichTrace == "orig")
+    {
+      SetTracesFFT();
     }
-  } else {
-    std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
-  }
-}
+    else if (whichTrace == "smooth")
+    {
+      if (!tracesSmooth.empty())
+      {
+        Int_t n = static_cast<int>(tracesSmooth.size());
+        fft = TVirtualFFT::FFT(1, &n, "R2C");
+        // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+        fft->SetPoints(tracesSmooth.data());
+        fft->Transform();
 
-void WaveForm::ReSetTracesFFT(const std::vector<double> Amp,
-                              const std::vector<double> Phase) {
-  if (Amp.size() == Phase.size()) {
-    if (!tracesFFT.empty()) {
+        int nFreq = tracesSmooth.size() / 2 + 1; // only positive frequencies
+
+        for (int i = 0; i < nFreq; i++)
+        {
+          double re, im;
+          fft->GetPointComplex(i, re, im);
+          tracesFFT.push_back(std::sqrt(re * re + im * im));
+          tracesFFTPhase.push_back(TMath::ATan2(im, re));
+        }
+      }
+      else
+      {
+        std::cout << "err SetTracesFFT: traces is empty" << std::endl;
+      }
+    }
+    else
+    {
+      std::cout << "err SetTracesFFT: Pass proper value for whichTrace"
+                << std::endl;
+      std::cout << "Valid options are: orig, smooth" << std::endl;
+    }
+  }
+
+  void WaveForm::SetTracesFFT(std::vector<double> trace)
+  {
+    if (!trace.empty())
+    {
       tracesFFT.clear();
       tracesFFTPhase.clear();
+      Int_t n = static_cast<int>(trace.size());
+      // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+      fft->SetPoints(trace.data());
+      fft->Transform();
+
+      int nFreq = trace.size() / 2 + 1; // only positive frequencies
+
+      for (int i = 0; i < nFreq; i++)
+      {
+        double re, im;
+        fft->GetPointComplex(i, re, im);
+        tracesFFT.push_back(std::sqrt(re * re + im * im));
+        tracesFFTPhase.push_back(TMath::ATan2(im, re));
+      }
     }
-    for (int iter = 0; iter < Amp.size(); iter++) {
-      tracesFFT.push_back(Amp[iter]);
-      tracesFFTPhase.push_back(Phase[iter]);
-    }
-  } else {
-    std::cout << "Amplitude (" << Amp.size() << ") and Phase(" << Phase.size()
-              << ") sizes dont match" << std::endl;
-  }
-}
-
-std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT) {
-  std::vector<double> res;
-  if (!trFFT.empty()) {
-    Int_t n = static_cast<int>(trFFT.size());
-    // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
-    fft = TVirtualFFT::FFT(1, &n, "R2C");
-    fft->SetPoints(trFFT.data());
-    fft->Transform();
-
-    int nFreq = trFFT.size() / 2 + 1; // only positive frequencies
-
-    for (int i = 0; i < nFreq; i++) {
-      double re, im;
-      fft->GetPointComplex(i, re, im);
-      res.push_back(std::sqrt(re * re + im * im));
-    }
-  } else {
-    std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
-  }
-  return res;
-}
-
-std::vector<double> WaveForm::EvalIFFT(const std::vector<double> Amp,
-                                       const std::vector<double> Phase) {
-  if (Amp.size() != Phase.size()) {
-    std::cout << "Amplitude (" << Amp.size() << ") and Phase(" << Phase.size()
-              << ") sizes dont match" << std::endl;
-    throw std::runtime_error("Amp and Phase must have same size");
-  }
-
-  Int_t n = static_cast<int>(Amp.size());
-  Int_t sz = static_cast<int>(2 * n - 2);
-  std::vector<double> res(sz);
-  if (ifft)
-    delete ifft;
-  ifft = TVirtualFFT::FFT(1, &sz, "C2R");
-
-  // std::cout << "ifft defined" << std::endl;
-
-  double re, im;
-  if (n != 0) {
-    for (int i = 0; i < n; i++) {
-      re = Amp[i] * TMath::Cos(Phase[i]);
-      im = Amp[i] * TMath::Sin(Phase[i]);
-      TComplex c(re, im);
-      ifft->SetPointComplex(i, c);
-    }
-
-    // std::cout << "ifft set" << std::endl;
-
-    ifft->Transform();
-    ifft->GetPoints(&res[0]);
-    // std::cout << "iffttransformed" << std::endl;
-    for (int i = 0; i < sz; i++) {
-      res[i] /= sz;
-    }
-  } else {
-    std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
-  }
-  return res;
-}
-
-double WaveForm::EvalBaseLine(int start, int numSample) const {
-  double baselineret = 0;
-  double sum = 0;
-
-  if (!traces.empty() && traces.size() > numSample + start) {
-    for (unsigned int j = start; j < numSample + start; j++) {
-      sum = sum + traces[j];
-    }
-    baselineret = sum / numSample;
-  } else {
-    std::cout << "err SetBaseLine: traces is empty or shorter than numSample"
-              << std::endl;
-  }
-  return baselineret;
-}
-
-// std::vector<double> WaveForm::EvalDecayTime(UShort_t FitStart, UShort_t
-// FitEnd, UShort_t numDecayConst) {}
-
-void WaveForm::ShiftWaveForm(int BL) {
-  if (!traces.empty()) {
-    for (unsigned int j = 0; j < traces.size(); j++) {
-      traces[j] = traces[j] + BL;
+    else
+    {
+      std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
     }
   }
-}
 
-double WaveForm::IntegrateWaveForm() {
-  double sum = 0;
-  if (!traces.empty()) {
-    sum = IntegrateWaveForm(0, traces.size());
-  } else {
-    std::cout << "err IntegrateWaveForm: fill traces first" << std::endl;
+  void WaveForm::ReSetTracesFFT(const std::vector<double> Amp,
+                                const std::vector<double> Phase)
+  {
+    if (Amp.size() == Phase.size())
+    {
+      if (!tracesFFT.empty())
+      {
+        tracesFFT.clear();
+        tracesFFTPhase.clear();
+      }
+      for (int iter = 0; iter < Amp.size(); iter++)
+      {
+        tracesFFT.push_back(Amp[iter]);
+        tracesFFTPhase.push_back(Phase[iter]);
+      }
+    }
+    else
+    {
+      std::cout << "Amplitude (" << Amp.size() << ") and Phase(" << Phase.size()
+                << ") sizes dont match" << std::endl;
+    }
   }
-  return sum;
-}
 
-double WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
-  double sum = 0;
-  if (!traces.empty() && (traces.size() > stopTime)) {
-    if (startTime < stopTime) {
-      for (unsigned int j = startTime; j < stopTime; j++) {
+  std::vector<double> WaveForm::EvalTracesFFT(std::vector<double> trFFT)
+  {
+    std::vector<double> res;
+    if (!trFFT.empty())
+    {
+      Int_t n = static_cast<int>(trFFT.size());
+      // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
+      fft = TVirtualFFT::FFT(1, &n, "R2C");
+      fft->SetPoints(trFFT.data());
+      fft->Transform();
+
+      int nFreq = trFFT.size() / 2 + 1; // only positive frequencies
+
+      for (int i = 0; i < nFreq; i++)
+      {
+        double re, im;
+        fft->GetPointComplex(i, re, im);
+        res.push_back(std::sqrt(re * re + im * im));
+      }
+    }
+    else
+    {
+      std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
+    }
+    return res;
+  }
+
+  std::vector<double> WaveForm::EvalIFFT(const std::vector<double> Amp,
+                                         const std::vector<double> Phase)
+  {
+    if (Amp.size() != Phase.size())
+    {
+      std::cout << "Amplitude (" << Amp.size() << ") and Phase(" << Phase.size()
+                << ") sizes dont match" << std::endl;
+      throw std::runtime_error("Amp and Phase must have same size");
+    }
+
+    Int_t n = static_cast<int>(Amp.size());
+    Int_t sz = static_cast<int>(2 * n - 2);
+    std::vector<double> res(sz);
+    if (ifft)
+      delete ifft;
+    ifft = TVirtualFFT::FFT(1, &sz, "C2R");
+
+    // std::cout << "ifft defined" << std::endl;
+
+    double re, im;
+    if (n != 0)
+    {
+      for (int i = 0; i < n; i++)
+      {
+        re = Amp[i] * TMath::Cos(Phase[i]);
+        im = Amp[i] * TMath::Sin(Phase[i]);
+        TComplex c(re, im);
+        ifft->SetPointComplex(i, c);
+      }
+
+      // std::cout << "ifft set" << std::endl;
+
+      ifft->Transform();
+      ifft->GetPoints(&res[0]);
+      // std::cout << "iffttransformed" << std::endl;
+      for (int i = 0; i < sz; i++)
+      {
+        res[i] /= sz;
+      }
+    }
+    else
+    {
+      std::cout << "err SetTracesFFT: pass non empty vector" << std::endl;
+    }
+    return res;
+  }
+
+  double WaveForm::EvalBaseLine(int start, int numSample) const
+  {
+    double baselineret = 0;
+    double sum = 0;
+
+    if (!traces.empty() && traces.size() > numSample + start)
+    {
+      for (unsigned int j = start; j < numSample + start; j++)
+      {
         sum = sum + traces[j];
       }
-    } else {
-      std::cout << "err IntegrateWaveForm: order the times properly "
+      baselineret = sum / numSample;
+    }
+    else
+    {
+      std::cout << "err SetBaseLine: traces is empty or shorter than numSample"
                 << std::endl;
     }
-  } else {
-    std::cout << "err IntegrateWaveForm: fill traces first: " << traces.size()
-              << " : " << stopTime << std::endl;
+    return baselineret;
   }
-  return sum;
-}
 
-double WaveForm::IntegrateSmoothWaveForm(int startTime, int stopTime) {
-  double sum = 0;
-  if (!tracesSmooth.empty() && (tracesSmooth.size() > stopTime)) {
-    if (startTime < stopTime) {
-      for (unsigned int j = startTime; j < stopTime; j++) {
-        sum = sum + tracesSmooth[j];
+  // std::vector<double> WaveForm::EvalDecayTime(UShort_t FitStart, UShort_t
+  // FitEnd, UShort_t numDecayConst) {}
+
+  void WaveForm::ShiftWaveForm(int BL)
+  {
+    if (!traces.empty())
+    {
+      for (unsigned int j = 0; j < traces.size(); j++)
+      {
+        traces[j] = traces[j] + BL;
       }
-    } else {
-      std::cout << "err IntegrateSmoothWaveForm: order the times properly "
-                << std::endl;
     }
-  } else {
-    std::cout << "err IntegrateSmoothWaveForm: fill traces Smooth first"
-              << std::endl;
   }
-  return sum;
-}
 
-double WaveForm::IntegrateBLCorrWaveForm(int startTime, int stopTime) {
-  double sum = 0;
-  if (!tracesMovBLCorr.empty() && (tracesMovBLCorr.size() > stopTime)) {
-    if (startTime < stopTime) {
-      for (unsigned int j = startTime; j < stopTime; j++) {
-        sum = sum + tracesMovBLCorr[j];
+  double WaveForm::IntegrateWaveForm()
+  {
+    double sum = 0;
+    if (!traces.empty())
+    {
+      sum = IntegrateWaveForm(0, traces.size());
+    }
+    else
+    {
+      std::cout << "err IntegrateWaveForm: fill traces first" << std::endl;
+    }
+    return sum;
+  }
+
+  double WaveForm::IntegrateWaveForm(int startTime, int stopTime)
+  {
+    double sum = 0;
+    if (!traces.empty() && (traces.size() > stopTime))
+    {
+      if (startTime < stopTime)
+      {
+        for (unsigned int j = startTime; j < stopTime; j++)
+        {
+          sum = sum + traces[j];
+        }
       }
-    } else {
-      std::cout << "err IntegrateBLCorrWaveForm: order the times properly "
+      else
+      {
+        std::cout << "err IntegrateWaveForm: order the times properly "
+                  << std::endl;
+      }
+    }
+    else
+    {
+      std::cout << "err IntegrateWaveForm: fill traces first: " << traces.size()
+                << " : " << stopTime << std::endl;
+    }
+    return sum;
+  }
+
+  double WaveForm::IntegrateSmoothWaveForm(int startTime, int stopTime)
+  {
+    double sum = 0;
+    if (!tracesSmooth.empty() && (tracesSmooth.size() > stopTime))
+    {
+      if (startTime < stopTime)
+      {
+        for (unsigned int j = startTime; j < stopTime; j++)
+        {
+          sum = sum + tracesSmooth[j];
+        }
+      }
+      else
+      {
+        std::cout << "err IntegrateSmoothWaveForm: order the times properly "
+                  << std::endl;
+      }
+    }
+    else
+    {
+      std::cout << "err IntegrateSmoothWaveForm: fill traces Smooth first"
                 << std::endl;
     }
-  } else {
-    std::cout << "err IntegrateBLCorrWaveForm: fill traces Smooth first"
-              << std::endl;
-  }
-  return sum;
-}
-
-void WaveForm::ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2) {
-  if (!wf1.traces.empty()) // copy traces if not empty
-  {
-    traces = wf1.traces;
-  }
-  if (!wf1.tracesSmooth.empty()) // copy traces smooth if not empty
-  {
-    tracesSmooth = wf1.tracesSmooth;
-  }
-  if (!wf1.tracesFFT.empty()) // copy traces FFT if not empty
-  {
-    tracesFFT = wf1.tracesFFT;
-  }
-  if (!wf1.tracesFFTPhase.empty()) // copy traces FFT if not empty
-  {
-    tracesFFTPhase = wf1.tracesFFTPhase;
+    return sum;
   }
 
-  if (!wf2.traces.empty()) // concatenate traces if not empty
+  double WaveForm::IntegrateBLCorrWaveForm(int startTime, int stopTime)
   {
-    traces.insert(traces.end(), wf2.traces.begin(), wf2.traces.end());
-  }
-  if (!wf2.tracesSmooth.empty()) // concatenate traces smooth if not empty
-  {
-    tracesSmooth.insert(tracesSmooth.end(), wf2.tracesSmooth.begin(),
-                        wf2.tracesSmooth.end());
-  }
-  if (!wf2.tracesFFT.empty()) // concatenate traces FFT if not empty
-  {
-    tracesFFT.insert(tracesFFT.end(), wf2.tracesFFT.begin(),
-                     wf2.tracesFFT.end());
-  }
-  if (!wf2.tracesFFTPhase.empty()) // concatenate traces CFD if not empty
-  {
-    tracesFFTPhase.insert(tracesFFTPhase.end(), wf2.tracesFFTPhase.begin(),
-                          wf2.tracesFFTPhase.end());
-  }
-
-  meantime =
-      traces.size() +
-      1000; // can use this to check if the waveform is single or concatenated
-  baseline = wf1.baseline;
-}
-
-void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
-                                const std::vector<WaveForm> vecOfWaveForm) {
-  // currently only traces is averaged
-  UShort_t numWaveForm = vecOfWaveForm.size();
-  double sum = 0;
-  baseline = 0;
-
-  // std::cout << "using smooth traces for fit" << std::endl;
-  // for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
-  //   for (unsigned int j = 0; j < numWaveForm; j++) {
-  //     if (!vecOfWaveForm[0].tracesSmooth.empty())
-  //       sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
-  //     else
-  //       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
-  //   }
-  // }
-  // baseline = sum / nSampleBL;
-
-  for (unsigned int i = 0; i < sizeOfWaveForms; i++) {
-    sum = 0;
-    for (unsigned int j = 0; j < numWaveForm; j++) {
-      // if (!vecOfWaveForm[0].tracesSmooth.empty())
-      //   sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
-      // else
-      sum = sum + vecOfWaveForm[j].traces[i]; // numWaveForm;
+    double sum = 0;
+    if (!tracesMovBLCorr.empty() && (tracesMovBLCorr.size() > stopTime))
+    {
+      if (startTime < stopTime)
+      {
+        for (unsigned int j = startTime; j < stopTime; j++)
+        {
+          sum = sum + tracesMovBLCorr[j];
+        }
+      }
+      else
+      {
+        std::cout << "err IntegrateBLCorrWaveForm: order the times properly "
+                  << std::endl;
+      }
     }
-    if (baseline > 10) {
-      sum = baseline - sum / numWaveForm;
-    } else {
-      sum = sum / numWaveForm;
+    else
+    {
+      std::cout << "err IntegrateBLCorrWaveForm: fill traces Smooth first"
+                << std::endl;
     }
-    traces.push_back(sum);
-    // std::cout << "i: " << i << " | Sum: " << sum << std::endl;
+    return sum;
   }
-}
 
-void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
-                                UShort_t sizeOfWaveForms,
-                                const std::vector<WaveForm> vecOfWaveForm) {
-  // currently only traces is averaged
-  double sum = 0;
-  baseline = 0;
+  void WaveForm::ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2)
+  {
+    if (!wf1.traces.empty()) // copy traces if not empty
+    {
+      traces = wf1.traces;
+    }
+    if (!wf1.tracesSmooth.empty()) // copy traces smooth if not empty
+    {
+      tracesSmooth = wf1.tracesSmooth;
+    }
+    if (!wf1.tracesFFT.empty()) // copy traces FFT if not empty
+    {
+      tracesFFT = wf1.tracesFFT;
+    }
+    if (!wf1.tracesFFTPhase.empty()) // copy traces FFT if not empty
+    {
+      tracesFFTPhase = wf1.tracesFFTPhase;
+    }
 
-  for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
-    for (unsigned int j = start; j < start + numWaveForm; j++) {
-      sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
+    if (!wf2.traces.empty()) // concatenate traces if not empty
+    {
+      traces.insert(traces.end(), wf2.traces.begin(), wf2.traces.end());
+    }
+    if (!wf2.tracesSmooth.empty()) // concatenate traces smooth if not empty
+    {
+      tracesSmooth.insert(tracesSmooth.end(), wf2.tracesSmooth.begin(),
+                          wf2.tracesSmooth.end());
+    }
+    if (!wf2.tracesFFT.empty()) // concatenate traces FFT if not empty
+    {
+      tracesFFT.insert(tracesFFT.end(), wf2.tracesFFT.begin(),
+                       wf2.tracesFFT.end());
+    }
+    if (!wf2.tracesFFTPhase.empty()) // concatenate traces CFD if not empty
+    {
+      tracesFFTPhase.insert(tracesFFTPhase.end(), wf2.tracesFFTPhase.begin(),
+                            wf2.tracesFFTPhase.end());
+    }
+
+    meantime =
+        traces.size() +
+        1000; // can use this to check if the waveform is single or concatenated
+    baseline = wf1.baseline;
+  }
+
+  void WaveForm::AverageWaveForms(UShort_t sizeOfWaveForms,
+                                  const std::vector<WaveForm> vecOfWaveForm)
+  {
+    // currently only traces is averaged
+    UShort_t numWaveForm = vecOfWaveForm.size();
+    double sum = 0;
+    baseline = 0;
+
+    // std::cout << "using smooth traces for fit" << std::endl;
+    // for (unsigned int i = blStart; i < nSampleBL + blStart; i++) {
+    //   for (unsigned int j = 0; j < numWaveForm; j++) {
+    //     if (!vecOfWaveForm[0].tracesSmooth.empty())
+    //       sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
+    //     else
+    //       sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
+    //   }
+    // }
+    // baseline = sum / nSampleBL;
+
+    for (unsigned int i = 0; i < sizeOfWaveForms; i++)
+    {
+      sum = 0;
+      for (unsigned int j = 0; j < numWaveForm; j++)
+      {
+        // if (!vecOfWaveForm[0].tracesSmooth.empty())
+        //   sum = sum + vecOfWaveForm[j].tracesSmooth[i] / numWaveForm;
+        // else
+        sum = sum + vecOfWaveForm[j].traces[i]; // numWaveForm;
+      }
+      if (baseline > 10)
+      {
+        sum = baseline - sum / numWaveForm;
+      }
+      else
+      {
+        sum = sum / numWaveForm;
+      }
+      traces.push_back(sum);
+      // std::cout << "i: " << i << " | Sum: " << sum << std::endl;
     }
   }
-  baseline = sum / nSampleBL;
 
-  for (unsigned int i = 0; i < sizeOfWaveForms; i++) {
-    sum = 0;
-    for (unsigned int j = start; j < start + numWaveForm; j++) {
-      sum = sum + vecOfWaveForm[j].traces[i];
+  void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
+                                  UShort_t sizeOfWaveForms,
+                                  const std::vector<WaveForm> vecOfWaveForm)
+  {
+    // currently only traces is averaged
+    double sum = 0;
+    baseline = 0;
+
+    for (unsigned int i = blStart; i < nSampleBL + blStart; i++)
+    {
+      for (unsigned int j = start; j < start + numWaveForm; j++)
+      {
+        sum = sum + vecOfWaveForm[j].traces[i] / numWaveForm;
+      }
     }
-    if (baseline > 10) {
-      sum = baseline - sum / numWaveForm;
-    } else {
-      sum = sum / numWaveForm;
+    baseline = sum / nSampleBL;
+
+    for (unsigned int i = 0; i < sizeOfWaveForms; i++)
+    {
+      sum = 0;
+      for (unsigned int j = start; j < start + numWaveForm; j++)
+      {
+        sum = sum + vecOfWaveForm[j].traces[i];
+      }
+      if (baseline > 10)
+      {
+        sum = baseline - sum / numWaveForm;
+      }
+      else
+      {
+        sum = sum / numWaveForm;
+      }
+      traces.push_back(sum);
     }
-    traces.push_back(sum);
+    // SetMeanTime();
   }
-  // SetMeanTime();
-}
 
-void WaveForm::ScaleWaveForm(double Scale) {
-  std::transform(traces.begin(), traces.end(), traces.begin(),
-                 [Scale](double val) { return val * Scale; });
-  if (!tracesSmooth.empty()) {
-    std::transform(tracesSmooth.begin(), tracesSmooth.end(),
-                   tracesSmooth.begin(),
-                   [Scale](double val) { return val * Scale; });
+  void WaveForm::ScaleWaveForm(double Scale)
+  {
+    std::transform(traces.begin(), traces.end(), traces.begin(),
+                   [Scale](double val)
+                   { return val * Scale; });
+    if (!tracesSmooth.empty())
+    {
+      std::transform(tracesSmooth.begin(), tracesSmooth.end(),
+                     tracesSmooth.begin(),
+                     [Scale](double val)
+                     { return val * Scale; });
+    }
   }
-}
 
-void WaveForm::AddWaveForm(const WaveForm &wf1) {
-  if (traces.size() == wf1.traces.size()) {
-    // Add each element from traces and wf1.traces using std::transform
-    std::transform(traces.begin(), traces.end(), wf1.traces.begin(),
-                   traces.begin(), std::plus<double>());
-  } else {
-    std::cout << "traces must be the same size for adding! Nothing done!!!!!!!!"
-              << std::endl;
+  void WaveForm::AddWaveForm(const WaveForm &wf1)
+  {
+    if (traces.size() == wf1.traces.size())
+    {
+      // Add each element from traces and wf1.traces using std::transform
+      std::transform(traces.begin(), traces.end(), wf1.traces.begin(),
+                     traces.begin(), std::plus<double>());
+    }
+    else
+    {
+      std::cout << "traces must be the same size for adding! Nothing done!!!!!!!!"
+                << std::endl;
+    }
+    if (tracesSmooth.size() == wf1.tracesSmooth.size())
+    {
+      std::transform(tracesSmooth.begin(), tracesSmooth.end(),
+                     wf1.tracesSmooth.begin(), tracesSmooth.begin(),
+                     std::plus<double>());
+    }
+    else
+    {
+      std::cout << "tracesSmooth not of same size hence not adding!" << std::endl;
+    }
   }
-  if (tracesSmooth.size() == wf1.tracesSmooth.size()) {
-    std::transform(tracesSmooth.begin(), tracesSmooth.end(),
-                   wf1.tracesSmooth.begin(), tracesSmooth.begin(),
-                   std::plus<double>());
-  } else {
-    std::cout << "tracesSmooth not of same size hence not adding!" << std::endl;
-  }
-}
 
-std::vector<std::unique_ptr<WaveForm>>
-WaveForm::SplitWaveForm(UShort_t numSplits) {
+  std::vector<std::unique_ptr<WaveForm>>
+  WaveForm::SplitWaveForm(UShort_t numSplits)
+  {
 
-  std::vector<std::unique_ptr<WaveForm>> splitWaveForms;
+    std::vector<std::unique_ptr<WaveForm>> splitWaveForms;
 
-  int traceSize = traces.size();
-  int splitSize = traceSize / numSplits;
+    int traceSize = traces.size();
+    int splitSize = traceSize / numSplits;
 
-  // Handle cases where the number of splits is greater than the size
-  if (splitSize == 0) {
-    // If numSplits is too large, return empty vector
+    // Handle cases where the number of splits is greater than the size
+    if (splitSize == 0)
+    {
+      // If numSplits is too large, return empty vector
+      return splitWaveForms;
+    }
+
+    // Loop to create each split waveform
+    for (int i = 0; i < numSplits; ++i)
+    {
+      // Create a new unique_ptr for each new WaveForm object
+      auto newWaveForm = std::make_unique<WaveForm>();
+
+      // Define the range for the current split
+      int start = i * splitSize;
+      int end = (i == numSplits - 1) ? traceSize : (i + 1) * splitSize;
+
+      // Split the traces and assign to the new waveform
+      if (!traces.empty())
+      {
+        newWaveForm->traces.assign(traces.begin() + start, traces.begin() + end);
+      }
+      else
+      {
+        std::cout << "err SplitWaveForm:  Empty traces passed for Splitting"
+                  << std::endl;
+        return splitWaveForms;
+      }
+      if (!tracesSmooth.empty())
+      {
+        newWaveForm->tracesSmooth.assign(tracesSmooth.begin() + start,
+                                         tracesSmooth.begin() + end);
+      }
+      if (!tracesFFT.empty())
+      {
+        newWaveForm->tracesFFT.assign(tracesFFT.begin() + start,
+                                      tracesFFT.begin() + end);
+      }
+      if (!tracesFFTPhase.empty())
+      {
+        newWaveForm->tracesFFTPhase.assign(tracesFFTPhase.begin() + start,
+                                           tracesFFTPhase.begin() + end);
+      }
+
+      newWaveForm->SetBaseLine();
+      newWaveForm->SetMeanTime();
+
+      // Add the new waveform to the vector
+      splitWaveForms.push_back(std::move(newWaveForm));
+    }
+
     return splitWaveForms;
   }
 
-  // Loop to create each split waveform
-  for (int i = 0; i < numSplits; ++i) {
-    // Create a new unique_ptr for each new WaveForm object
-    auto newWaveForm = std::make_unique<WaveForm>();
-
-    // Define the range for the current split
-    int start = i * splitSize;
-    int end = (i == numSplits - 1) ? traceSize : (i + 1) * splitSize;
-
-    // Split the traces and assign to the new waveform
-    if (!traces.empty()) {
-      newWaveForm->traces.assign(traces.begin() + start, traces.begin() + end);
-    } else {
-      std::cout << "err SplitWaveForm:  Empty traces passed for Splitting"
-                << std::endl;
-      return splitWaveForms;
-    }
-    if (!tracesSmooth.empty()) {
-      newWaveForm->tracesSmooth.assign(tracesSmooth.begin() + start,
-                                       tracesSmooth.begin() + end);
-    }
-    if (!tracesFFT.empty()) {
-      newWaveForm->tracesFFT.assign(tracesFFT.begin() + start,
-                                    tracesFFT.begin() + end);
-    }
-    if (!tracesFFTPhase.empty()) {
-      newWaveForm->tracesFFTPhase.assign(tracesFFTPhase.begin() + start,
-                                         tracesFFTPhase.begin() + end);
+  void WaveForm::FitExponential(int start, int stop)
+  {
+    // Check valid range
+    if (start < 0 || stop >= GetSize() || start >= stop)
+    {
+      std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
     }
 
-    newWaveForm->SetBaseLine();
-    newWaveForm->SetMeanTime();
+    int nPoints = stop - start + 1;
+    auto graph = std::make_unique<TGraph>(nPoints);
 
-    // Add the new waveform to the vector
-    splitWaveForms.push_back(std::move(newWaveForm));
-  }
-
-  return splitWaveForms;
-}
-
-void WaveForm::FitExponential(int start, int stop) {
-  // Check valid range
-  if (start < 0 || stop >= GetSize() || start >= stop) {
-    std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
-  }
-
-  int nPoints = stop - start + 1;
-  auto graph = std::make_unique<TGraph>(nPoints);
-
-  for (int i = 0; i < nPoints; ++i) {
-    graph->SetPoint(i, start + i,
-                    traces[start + i]); // x = index (or time), y = value
-  }
-
-  fitFunc = new TF1("expFit", "[0]*exp(-x/[1])", start, stop);
-  fitFunc->SetParameters(traces[start], 100); // Initial guesses
-
-  graph->Fit(fitFunc, "QR"); // Q = quiet, R = respect fit range
-
-  // double A = fitFunc->GetParameter(0);
-  // double tau = fitFunc->GetParameter(1);
-  // double Aerr = fitFunc->GetParError(0);
-  // double tauErr = fitFunc->GetParError(1);
-
-  // std::cout << "Fit results ([0]*exp(-x/[1]) on range [" << start << ", "
-  //           << stop << "]):\n";
-  // std::cout << "  Constant A  = " << A << " ± " << Aerr << "\n";
-  // std::cout << "  Tau         = " << tau << " ± " << tauErr << "\n";
-}
-
-void WaveForm::FitExponential(UShort_t numExp, int start, int stop) {
-  // Check valid range
-  if (start < 0 || stop >= GetSize() || start >= stop) {
-    std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
-  }
-
-  int nPoints = stop - start + 1;
-
-  const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
-  std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
-  std::vector<double> x(nPoints);
-  std::iota(x.begin(), x.end(), (0));
-  auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
-
-  // auto graph = std::make_unique<TGraph>(nPoints);
-  // for (int i = 0; i < nPoints; ++i) {
-  //   if (!tracesSmooth.empty()) {
-  //     graph->SetPoint(
-  //         i, start + i,
-  //         tracesSmooth[start + i]); // x = index (or time), y = value
-  //   } else {
-  //     graph->SetPoint(i, start + i,
-  //                     traces[start + i]); // x = index (or time), y = value
-  //   }
-  // }
-
-  std::string formula;
-  for (int i = 0; i < numExp; ++i) {
-    if (i > 0)
-      formula += " + ";
-    formula += Form("[%d]/[%d]*exp(-(x)/[%d])", 2 * i, 2 * i + 1, 2 * i + 1);
-    // formula +=
-    //     Form("[%d]/[%d]*exp(-(x-%d)/[%d])", 2 * i, 2 * i + 1, start, 2 * i +
-    //     1);
-  }
-
-  // fitFunc = new TF1("expFit", formula.c_str(), start, stop);
-  fitFunc = new TF1("expFit", formula.c_str(), 0, nPoints);
-  for (int i = 0; i < numExp; ++i) {
-    fitFunc->SetParameter(2 * i, src[start + (stop - start) / numExp * i]);
-    fitFunc->SetParLimits(2 * i, 0,
-                          src[start + (stop - start) / numExp * i] * 10000);
-    fitFunc->SetParameter(2 * i + 1, 100.0 * TMath::Power(10, i));
-    fitFunc->SetParLimits(2 * i + 1, 10, 1000.0 * TMath::Power(100, i));
-  }
-  graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
-
-  // delete fit if the fit value is equalt to the midpoint or edge of parameter
-  // range
-  double llim, ulim, val;
-  for (int iarg = 0; fitFunc && iarg < fitFunc->GetNpar(); ++iarg) {
-    val = fitFunc->GetParameter(iarg);
-    fitFunc->GetParLimits(iarg, llim, ulim);
-    // std::cout << ulim << " : " << llim << " : " << val << std::endl;
-    if (fabs(val - (ulim + llim) / 2.0) < 1e-6 || std::abs(val - llim) < 1e-6 ||
-        std::abs(val - ulim) < 1e-6) {
-      // std::cout << "value is: " << val << " : is being deleted" << std::endl;
-      delete fitFunc;
-      fitFunc = nullptr;
+    for (int i = 0; i < nPoints; ++i)
+    {
+      graph->SetPoint(i, start + i,
+                      traces[start + i]); // x = index (or time), y = value
     }
-  }
-  // std::cout << "fitting done" << std::endl;
-}
 
-void WaveForm::FitFunction(std::string function, std::vector<double> parLims,
-                           int start, int stop) {
-  // Check valid range
-  if (start < 0 || stop >= GetSize() || start >= stop) {
-    std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
-    return;
-  }
+    fitFunc = new TF1("expFit", "[0]*exp(-x/[1])", start, stop);
+    fitFunc->SetParameters(traces[start], 100); // Initial guesses
 
-  int nPoints = stop - start + 1;
+    graph->Fit(fitFunc, "QR"); // Q = quiet, R = respect fit range
 
-  // const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
-  const auto &src = traces;
-  std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
-  std::vector<double> x(nPoints);
-  std::iota(x.begin(), x.end(), (0));
-  auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
+    // double A = fitFunc->GetParameter(0);
+    // double tau = fitFunc->GetParameter(1);
+    // double Aerr = fitFunc->GetParError(0);
+    // double tauErr = fitFunc->GetParError(1);
 
-  fitFunc = new TF1("userFit", function.c_str(), 0, nPoints);
-  if (fitFunc->GetNpar() * 2 != parLims.size()) {
-    std::cerr << "Invalid parameter limit array: [" << parLims.size()
-              << " != 2 * " << fitFunc->GetNpar() << "]\n";
-    return;
+    // std::cout << "Fit results ([0]*exp(-x/[1]) on range [" << start << ", "
+    //           << stop << "]):\n";
+    // std::cout << "  Constant A  = " << A << " ± " << Aerr << "\n";
+    // std::cout << "  Tau         = " << tau << " ± " << tauErr << "\n";
   }
 
-  int numPar = fitFunc->GetNpar();
+  void WaveForm::FitExponential(UShort_t numExp, int start, int stop)
+  {
+    // Check valid range
+    if (start < 0 || stop >= GetSize() || start >= stop)
+    {
+      std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
+    }
 
-  for (int i = 0; i < numPar; ++i) {
-    fitFunc->SetParameter(i, 0.5 * (parLims[2 * i] + parLims[2 * i + 1]));
-    fitFunc->SetParLimits(i, parLims[2 * i], parLims[2 * i + 1]);
+    int nPoints = stop - start + 1;
+
+    const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
+    std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
+    std::vector<double> x(nPoints);
+    std::iota(x.begin(), x.end(), (0));
+    auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
+
+    // auto graph = std::make_unique<TGraph>(nPoints);
+    // for (int i = 0; i < nPoints; ++i) {
+    //   if (!tracesSmooth.empty()) {
+    //     graph->SetPoint(
+    //         i, start + i,
+    //         tracesSmooth[start + i]); // x = index (or time), y = value
+    //   } else {
+    //     graph->SetPoint(i, start + i,
+    //                     traces[start + i]); // x = index (or time), y = value
+    //   }
+    // }
+
+    std::string formula;
+    for (int i = 0; i < numExp; ++i)
+    {
+      if (i > 0)
+        formula += " + ";
+      formula += Form("[%d]/[%d]*exp(-(x)/[%d])", 2 * i, 2 * i + 1, 2 * i + 1);
+      // formula +=
+      //     Form("[%d]/[%d]*exp(-(x-%d)/[%d])", 2 * i, 2 * i + 1, start, 2 * i +
+      //     1);
+    }
+
+    // fitFunc = new TF1("expFit", formula.c_str(), start, stop);
+    fitFunc = new TF1("expFit", formula.c_str(), 0, nPoints);
+    for (int i = 0; i < numExp; ++i)
+    {
+      fitFunc->SetParameter(2 * i, src[start + (stop - start) / numExp * i]);
+      fitFunc->SetParLimits(2 * i, 0,
+                            src[start + (stop - start) / numExp * i] * 10000);
+      fitFunc->SetParameter(2 * i + 1, 100.0 * TMath::Power(10, i));
+      fitFunc->SetParLimits(2 * i + 1, 10, 1000.0 * TMath::Power(100, i));
+    }
+    graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
+
+    // delete fit if the fit value is equalt to the midpoint or edge of parameter
+    // range
+    double llim, ulim, val;
+    for (int iarg = 0; fitFunc && iarg < fitFunc->GetNpar(); ++iarg)
+    {
+      val = fitFunc->GetParameter(iarg);
+      fitFunc->GetParLimits(iarg, llim, ulim);
+      // std::cout << ulim << " : " << llim << " : " << val << std::endl;
+      if (fabs(val - (ulim + llim) / 2.0) < 1e-6 || std::abs(val - llim) < 1e-6 ||
+          std::abs(val - ulim) < 1e-6)
+      {
+        // std::cout << "value is: " << val << " : is being deleted" << std::endl;
+        delete fitFunc;
+        fitFunc = nullptr;
+      }
+    }
+    // std::cout << "fitting done" << std::endl;
   }
 
-  graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
-}
+  void WaveForm::FitFunction(std::string function, std::vector<double> parLims,
+                             int start, int stop)
+  {
+    // Check valid range
+    if (start < 0 || stop >= GetSize() || start >= stop)
+    {
+      std::cerr << "Invalid fit range: [" << start << ", " << stop << "]\n";
+      return;
+    }
 
-std::pair<std::vector<int>, std::vector<int>>
-WaveForm::DetectPeakValleys(double threshold) {
-  std::vector<int> peak;
-  std::vector<int> valley;
-  std::vector<int> valleyTemp;
-  int iter = 0, peakPos = 0, valleyPos = 0;
-  bool findPeak = true, findValley = true, peakFound = false;
-  if (IsTracesSmoothSet()) {
-    double peakVal = tracesSmooth[peakPos], valleyVal = tracesSmooth[valleyPos],
-           currVal;
-    while (iter < tracesSmooth.size()) {
-      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :
-      // "
-      //           << peakVal << " : " << valleyPos << " : " << valleyVal
-      //           << std::endl;
-      currVal = tracesSmooth[iter];
-      if (findPeak and currVal < peakVal) {
-        findPeak = false;
-        findValley = true;
-        if (peakVal > threshold) {
-          peak.push_back(peakPos);
-          peakFound = true;
-          if (!valleyTemp.empty()) {
-            valley.push_back(valleyTemp.back());
-          } else {
-            valley.push_back(-1);
+    int nPoints = stop - start + 1;
+
+    // const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
+    const auto &src = traces;
+    std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
+    std::vector<double> x(nPoints);
+    std::iota(x.begin(), x.end(), (0));
+    auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
+
+    fitFunc = new TF1("userFit", function.c_str(), 0, nPoints);
+    if (fitFunc->GetNpar() * 2 != parLims.size())
+    {
+      std::cerr << "Invalid parameter limit array: [" << parLims.size()
+                << " != 2 * " << fitFunc->GetNpar() << "]\n";
+      return;
+    }
+
+    int numPar = fitFunc->GetNpar();
+
+    for (int i = 0; i < numPar; ++i)
+    {
+      fitFunc->SetParameter(i, 0.5 * (parLims[2 * i] + parLims[2 * i + 1]));
+      fitFunc->SetParLimits(i, parLims[2 * i], parLims[2 * i + 1]);
+    }
+
+    graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
+  }
+
+  std::pair<std::vector<int>, std::vector<int>>
+  WaveForm::DetectPeakValleys(double threshold)
+  {
+    std::vector<int> peak;
+    std::vector<int> valley;
+    std::vector<int> valleyTemp;
+    int iter = 0, peakPos = 0, valleyPos = 0;
+    bool findPeak = true, findValley = true, peakFound = false;
+    if (IsTracesSmoothSet())
+    {
+      double peakVal = tracesSmooth[peakPos], valleyVal = tracesSmooth[valleyPos],
+             currVal;
+      while (iter < tracesSmooth.size())
+      {
+        // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :
+        // "
+        //           << peakVal << " : " << valleyPos << " : " << valleyVal
+        //           << std::endl;
+        currVal = tracesSmooth[iter];
+        if (findPeak and currVal < peakVal)
+        {
+          findPeak = false;
+          findValley = true;
+          if (peakVal > threshold)
+          {
+            peak.push_back(peakPos);
+            peakFound = true;
+            if (!valleyTemp.empty())
+            {
+              valley.push_back(valleyTemp.back());
+            }
+            else
+            {
+              valley.push_back(-1);
+            }
           }
         }
-      } else {
-        peakPos = iter;
-        peakVal = currVal;
-      }
-
-      if (findValley and currVal > valleyVal) {
-        findPeak = true;
-        findValley = false;
-        valleyTemp.push_back(valleyPos);
-        if (peakFound == true) {
-          peakFound = false;
-          valley.push_back(valleyTemp.back());
+        else
+        {
+          peakPos = iter;
+          peakVal = currVal;
         }
-      } else {
-        valleyPos = iter;
-        valleyVal = currVal;
-      }
 
-      iter += 1;
-    }
-    if (peakFound == true)
-      valley.push_back(iter);
-    return std::make_pair(peak, valley);
-  } else {
-    double peakVal = traces[peakPos], valleyVal = traces[valleyPos], currVal;
-    while (iter < traces.size()) {
-      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :
-      // "
-      //           << peakVal << " : " << valleyPos << " : " << valleyVal
-      //           << std::endl;
-      currVal = traces[iter];
-      if (findPeak and currVal < peakVal) {
-        findPeak = false;
-        findValley = true;
-        if (peakVal > threshold) {
-          peak.push_back(peakPos);
-          peakFound = true;
-          if (!valleyTemp.empty()) {
+        if (findValley and currVal > valleyVal)
+        {
+          findPeak = true;
+          findValley = false;
+          valleyTemp.push_back(valleyPos);
+          if (peakFound == true)
+          {
+            peakFound = false;
             valley.push_back(valleyTemp.back());
-          } else {
-            valley.push_back(-1);
           }
         }
-      } else {
-        peakPos = iter;
-        peakVal = currVal;
-      }
-
-      if (findValley and currVal > valleyVal) {
-        findPeak = true;
-        findValley = false;
-        valleyTemp.push_back(valleyPos);
-        if (peakFound == true) {
-          peakFound = false;
-          valley.push_back(valleyTemp.back());
+        else
+        {
+          valleyPos = iter;
+          valleyVal = currVal;
         }
-      } else {
-        valleyPos = iter;
-        valleyVal = currVal;
-      }
 
-      iter += 1;
+        iter += 1;
+      }
+      if (peakFound == true)
+        valley.push_back(iter);
+      return std::make_pair(peak, valley);
     }
-    if (peakFound == true)
-      valley.push_back(iter);
-    return std::make_pair(peak, valley);
+    else
+    {
+      double peakVal = traces[peakPos], valleyVal = traces[valleyPos], currVal;
+      while (iter < traces.size())
+      {
+        // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :
+        // "
+        //           << peakVal << " : " << valleyPos << " : " << valleyVal
+        //           << std::endl;
+        currVal = traces[iter];
+        if (findPeak and currVal < peakVal)
+        {
+          findPeak = false;
+          findValley = true;
+          if (peakVal > threshold)
+          {
+            peak.push_back(peakPos);
+            peakFound = true;
+            if (!valleyTemp.empty())
+            {
+              valley.push_back(valleyTemp.back());
+            }
+            else
+            {
+              valley.push_back(-1);
+            }
+          }
+        }
+        else
+        {
+          peakPos = iter;
+          peakVal = currVal;
+        }
+
+        if (findValley and currVal > valleyVal)
+        {
+          findPeak = true;
+          findValley = false;
+          valleyTemp.push_back(valleyPos);
+          if (peakFound == true)
+          {
+            peakFound = false;
+            valley.push_back(valleyTemp.back());
+          }
+        }
+        else
+        {
+          valleyPos = iter;
+          valleyVal = currVal;
+        }
+
+        iter += 1;
+      }
+      if (peakFound == true)
+        valley.push_back(iter);
+      return std::make_pair(peak, valley);
+    }
   }
-}
 
 } // namespace digiAnalysis

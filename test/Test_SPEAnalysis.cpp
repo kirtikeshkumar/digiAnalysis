@@ -19,18 +19,19 @@
 #include <string>
 #include <vector>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "SPEFiles/"
+      "/media/kirtikesh/UbuntuFiles/NaI/LowEnergy/SPE/"
       "SPE_Ch0_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
   TFile *fp = new TFile(fname.c_str(), "READ");
   TTree *tr = (TTree *)fp->Get("SPE_WF");
 
-  if (tr) {
+  if (tr)
+  {
     bool keepGoing = true;
     std::string userInput;
 
@@ -40,7 +41,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Got " << nentries << " entries" << std::endl;
 
     std::vector<std::unique_ptr<digiAnalysis::WaveForm>> WFVec;
-    for (int iter = 10000; iter < 20000; iter++) {
+    for (int iter = 15000; iter < 15500; iter++)
+    {
       tr->GetEntry(iter);
       WFVec.push_back(std::make_unique<digiAnalysis::WaveForm>(*SPEWF));
     }
@@ -56,17 +58,24 @@ int main(int argc, char *argv[]) {
 
     // Defining the filter for smoothing the SPE Waveform
     int filterSz = wfSz / 2 + 1;
-    int filterCutOff = 95; // this corresponds in frequency to filterCutOff *
+    std::cout << "Filter size: " << filterSz << std::endl;
+    int filterCutOff = 90; // this corresponds in frequency to filterCutOff *
                            // (500/NSampleSPE) MHz
-    int filterFlatRange = 0;
+    int filterFlatRange = 60;
     int filterGaussSigma = (filterCutOff - filterFlatRange) / 3;
     std::vector<Double_t> filter(filterSz);
-    for (int iter = 0; iter < filterSz; iter++) {
-      if (iter < filterFlatRange) {
+    for (int iter = 0; iter < filterSz; iter++)
+    {
+      if (iter < filterFlatRange)
+      {
         filter[iter] = 1.0;
-      } else if (iter - filterFlatRange < 3 * filterGaussSigma) {
+      }
+      else if (iter - filterFlatRange < 3 * filterGaussSigma)
+      {
         filter[iter] = TMath::Gaus(iter, filterFlatRange, filterGaussSigma);
-      } else {
+      }
+      else
+      {
         filter[iter] = 0;
       }
       //   std::cout << iter << " : " << filter[iter] << std::endl;
@@ -106,21 +115,23 @@ int main(int argc, char *argv[]) {
     double intVal = 0;
     double amplitude, sigma;
     int count = 0;
-    for (int iter = 0; iter < WFVec.size() && keepGoing; iter++) {
-      if (iter % 1000 == 0) {
+    for (int iter = 0; iter < WFVec.size() && keepGoing && count < 100; iter++)
+    {
+      if (iter % 1000 == 0)
+      {
         std::cout << iter << std::endl;
       }
       WFVec[iter]->FitFunction(function, parLimits, 5, wfSz - 5);
-      intVal = WFVec[iter]->GetFitPar(0) * WFVec[iter]->GetFitPar(2) *
-               TMath::Sqrt(2 * TMath::Pi());
-      amplitude = WFVec[iter]->GetFitPar(0);
+      intVal = WFVec[iter]->IntegrateWaveForm(200, 350); // WFVec[iter]->GetFitPar(0) * WFVec[iter]->GetFitPar(2) *
+                                                         // TMath::Sqrt(2 * TMath::Pi());
+      // amplitude = WFVec[iter]->GetFitPar(0);
       sigma = WFVec[iter]->GetFitPar(2);
 
-      gaussAmp->Fill(WFVec[iter]->IntegrateWaveForm(200, 350));
-      gaussMean->Fill(WFVec[iter]->GetFitPar(1));
-      gaussSig->Fill(sigma);
+      // gaussAmp->Fill(amplitude);
+      // gaussMean->Fill(WFVec[iter]->GetFitPar(1));
+      // gaussSig->Fill(sigma);
       gaussInt->Fill(intVal);
-      polSlope->Fill(WFVec[iter]->GetFitPar(4));
+      // polSlope->Fill(WFVec[iter]->GetFitPar(4));
 
       // if ((amplitude > 3 and amplitude < 4) or (sigma > 8 and sigma < 9)) {
       // std::cout << "Amplitude: " << amplitude << " | sigma: " << sigma
@@ -133,20 +144,29 @@ int main(int argc, char *argv[]) {
       // }
       // }
 
-      if ((sigma > 3 and sigma < 5) and (intVal > 80 and intVal < 400)) {
-        // and count < 100) {
-        // WFVec[iter]->Plot();
+      if ((sigma > 3 and sigma < 5) and (intVal > 80 and intVal < 400)
+          // ){
+          and count < 100)
+      {
+
+        // if (count == 0)
+        //   WFVec[iter]->Plot(WFVec[iter]->GetTraces());
+        // if (count != 0)
+        //   WFVec[iter]->Plot(WFVec[iter]->GetTraces(), "SAME");
+
         // std::cout << "Count: " << count << " | Add this WaveForm? (y/n): ";
         // std::getline(std::cin, userInput);
-        // if (userInput == "y" or userInput == "Y") {
+        // if (userInput == "y" or userInput == "Y")
+        // {
+        // std::cout << "Count: " << count << std::endl;
         selWF.push_back(digiAnalysis::WaveForm(*WFVec[iter]));
-        //   count++;
+        count++;
         // }
       }
     }
 
-    TCanvas *c1 = new TCanvas("c1", "Amplitude", 800, 600);
-    gaussAmp->Draw("Hist");
+    // TCanvas *c1 = new TCanvas("c1", "Amplitude", 800, 600);
+    // gaussAmp->Draw("Hist");
     // TCanvas *c2 = new TCanvas("c2", "Mean", 800, 600);
     // gaussMean->Draw("Hist");
     // TCanvas *c3 = new TCanvas("c3", "Sigma", 800, 600);
@@ -162,18 +182,42 @@ int main(int argc, char *argv[]) {
     WFAveraged->SetTracesFFT();
     std::vector<double> SPEFFT_Amp = WFAveraged->GetTracesFFT();
     std::vector<double> SPEFFT_Phase = WFAveraged->GetTracesFFTPhase();
-    for (int iter = 0; iter < SPEFFT_Amp.size(); iter++) {
-      SPEFFT_Amp[iter] *= filter[iter];
-    }
+    // for (int iter = 0; iter < SPEFFT_Amp.size(); iter++)
+    // {
+    //   SPEFFT_Amp[iter] *= filter[iter];
+    // }
     // WFAveraged->ReSetTracesFFT(SPEFFT_Amp, SPEFFT_Phase);
-    std::vector<double> trace = WFAveraged->EvalIFFT(SPEFFT_Amp, SPEFFT_Phase);
-    WFAveraged->Plot(WFAveraged->GetTraces(), trace);
+    // std::vector<double> trace = WFAveraged->EvalIFFT(SPEFFT_Amp, SPEFFT_Phase);
+    // WFAveraged->Plot(WFAveraged->GetTraces(), trace);
+    // WFAveraged->Plot(WFAveraged->GetTraces(), "SAME_kGreen_4");
 
     // WFAveraged->Plot();
 
+    // Use Average WF to evaluate the NPE of the SPE
+
+    std::vector<double> trace = WFVec[101]->GetTraces();
+    WFVec[101]->SetTracesFFT();
+    std::vector<double> trFFT_Amp = WFAveraged->GetTracesFFT();        // WFVec[101]->GetTracesFFT();
+    std::vector<double> trFFT_Phase = WFAveraged->GetTracesFFTPhase(); // WFVec[101]->GetTracesFFTPhase();
+    for (int iter = 0; iter < wfSz / 2 + 1; iter++)
+    {
+      trFFT_Amp[iter] /= (0.5 * SPEFFT_Amp[iter]);
+      trFFT_Amp[iter] *= filter[iter];
+      // trFFT_Phase[iter] = trFFT_Phase[iter] - SPEFFT_Phase[iter];
+    }
+    std::vector<double> deconvolvedTrace = WFAveraged->EvalIFFT(trFFT_Amp, trFFT_Phase);
+    WFVec[101]->Plot(deconvolvedTrace, trFFT_Amp);
+
+    // for (int iter = 0; iter < WFVec.size(); iter++)
+    // {
+    //   /* code */
+    // }
+
     fApp->Run();
     return 0;
-  } else {
+  }
+  else
+  {
     std::cout << "Could Not Read The Tree" << std::endl;
     return 1;
   }
