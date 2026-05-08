@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
       "CoincidenceStudies/PairFiles/"
       "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  digiAnalysis::Analysis an(fname, 0000, 00, 0);
+  digiAnalysis::Analysis an(fname, 0000, 00, 1);
   std::cout << "getting the vector from an" << std::endl;
 
   std::string outfname =
