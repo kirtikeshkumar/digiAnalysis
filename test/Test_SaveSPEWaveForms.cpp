@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
       "CoincidenceStudies/PairFiles/"
-      "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+      "Pair_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
 
   digiAnalysis::Analysis an(fname, 0000, 00, 1);
   std::cout << "getting the vector from an" << std::endl;
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   std::string outfname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
       "SPEFiles/"
-      "SPE_Ch0_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+      "SPE_Ch0_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("SPE_WF", "SPE_WF");
   digiAnalysis::WaveForm WFSPE;
@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) {
     WF = nullptr;
     WF = hit->GetWFPtr();
     // WF->SetSmooth(40);
-    auto results = WF->DetectPeakValleys(3);
+    auto results = WF->DetectPeakValleys(10);
     // std::cout << iter << ": DetectedNumPeaks: " << results.first.size()
     //           << std::endl;
     int iterPeaks = 0;
-    int isolationRange = 300;
-    int saveRange = isolationRange - 50;
+    int isolationRange = 150;
+    int saveRange = isolationRange;
     while (iterPeaks < results.first.size()) {
       //   std::cout << iter << " : PeakNum: " << iterPeaks << std::endl;
       int peakPos = results.first[iterPeaks];

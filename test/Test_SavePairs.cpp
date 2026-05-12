@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
-      "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+      "NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1/FILTERED/"
+      "SDataF_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
 
   digiAnalysis::Analysis an(fname, 0, 0000, 0);
   std::cout << "getting the vector from an" << std::endl;
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   std::string outfname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
       "PairFiles/"
-      "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+      "Pair_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
 
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("Data_Pair", "Data_Pair");

@@ -36,12 +36,10 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "Directionality/"
-      "NaI_13_NaSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run/"
-      "FILTERED/"
-      "SDataF_NaI_13_NaSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run.root";
+      "NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1/FILTERED/"
+      "SDataF_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
 
-  digiAnalysis::Analysis an(fname, 0, 000, 0);
+  digiAnalysis::Analysis an(fname, 0100, 000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -223,13 +221,15 @@ int main(int argc, char *argv[]) {
     Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
               14.6; //* 1.0973 - 58.91;
     MT = vecOfPairs[iter]->GetHitPtr(0)->GetMeanTime();
-    if (Energy1 < 15 and Energy1 > 10 and // MT > 3.05 and MT < 3.06 and
-        (Energy2 + Energy1 > 580) and (Energy2 + Energy1 < 740)) {
+    if (MT < 2.85 and MT > 2.0 and Energy1 < 390 and
+        Energy1 > 370) { // and // MT > 3.05 and MT < 3.06 and
+      // (Energy2 + Energy1 > 580) and (Energy2 + Energy1 < 740)) {
       vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->SetTracesFFT();
       vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->Plot();
       wfSz = vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->GetSize();
       waveformVector.push_back(*vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr());
-      std::cout << "Energy of D1 is approx: " << Energy1 << " keV" << std::endl;
+      std::cout << iter << " Energy of D1 is approx: " << Energy1 << " keV"
+                << std::endl;
       std::cout << "Energy Total is approx: " << Energy1 + Energy2 << " keV"
                 << std::endl;
       std::cout << "Do you want to see the next waveform? (y/n): ";
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
   }
 
   digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
-  WFAveraged.SetSmooth(150);
+  WFAveraged.SetSmooth(30);
   WFAveraged.SetTracesFFT("smooth");
   WFAveraged.Plot();
 #endif
