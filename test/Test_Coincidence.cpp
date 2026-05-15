@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1/FILTERED/"
-      "SDataF_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
+      "NaI13_15May26_1900_1345_NoSrc_Coinc144ns_WAVES/FILTERED/"
+      "SDataF_NaI13_15May26_1900_1345_NoSrc_Coinc144ns_WAVES.root";
 
   digiAnalysis::Analysis an(fname, 0100, 000, 0);
   std::cout << "getting the vector from an" << std::endl;

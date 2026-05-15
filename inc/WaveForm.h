@@ -67,6 +67,8 @@ public:
   bool IsFit();
   double GetFitPar(int val);
   double GetFitParError(int val);
+  TF1 *GetFitFunction() { return fitFunc; }
+  double GetFitAt(double x) { return fitFunc->Eval(x); }
 
   void SetWaveForm(const std::vector<double> tr);
   void SetWaveForm(const WaveForm &wf);
@@ -119,6 +121,7 @@ public:
   void FitExponential(int start, int stop);
   void FitFunction(std::string func, std::vector<double> parLims, int start,
                    int stop);
+  void PrintFitParameters() const;
   void FitExponential(UShort_t numExp, int start, int stop);
   std::vector<double> GenerateWaveFromFFT();
   std::pair<std::vector<int>, std::vector<int>>

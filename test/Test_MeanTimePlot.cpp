@@ -13,6 +13,7 @@
 #include <TApplication.h>
 #include <iostream>
 #include <string>
+#include <vector>
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
@@ -22,8 +23,8 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
-      "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+      "NaI1_15May26_1900_NoSrc_WAVES/UNFILTERED/"
+      "Data_NaI1_15May26_1900_NoSrc_WAVES.root";
   // Read to singleHits
   digiAnalysis::Analysis an(0, fname, 0, 000, 0);
 
@@ -67,7 +68,11 @@ int main(int argc, char *argv[]) {
   double shortPSD = 0;
   double avQ1 = 0, avQ2 = 0, avT1 = 0, avT2 = 0, netQ = 0;
   double newLam = 0;
+  bool keepGoing = true;
+  std::string userInput;
   digiAnalysis::WaveForm *WF = nullptr;
+  std::vector<double> trFFT;
+  std::vector<double> trFFT_Phase;
   for (int i = 0; i < nentries; i++) {
     if (i % 10000 == 0) {
       std::cout << i << std::endl;
@@ -79,8 +84,8 @@ int main(int argc, char *argv[]) {
           // and hitsVector[i]->GetMeanTime() < 3.8
     ) {   // (hitsVector[i]->GetPSD() > 0.0 and
       // hitsVector[i]->GetChNum() == 0) {
-      energy = hitsVector[i]->GetEnergy();
-      energyShort = hitsVector[i]->GetEnergyShort();
+      energy = hitsVector[i]->GetEnergy();           // * 0.052966 - 4.547;
+      energyShort = hitsVector[i]->GetEnergyShort(); // * 0.052966 - 4.547;
       WF = hitsVector[i]->GetWFPtr();
       // WF->SetTracesMovBLCorr();
       // WF->SetMeanTime();
@@ -124,13 +129,34 @@ int main(int argc, char *argv[]) {
       hEdiffEvalPlot->Fill(evalEnergy, evalEnergyShort / evalEnergy);
       hESpectra->Fill(energy);
       hEEvalSpectra->Fill(evalEnergy);
-      // if (i < 1300 and i > 1285) {
-      //   std::cout << i << std::endl;
-      //   hitsVector[i]->Print();
-      //   std::cout << "Eval Energy     : " << evalEnergy << std::endl;
-      //   std::cout << "Eval EnergyShort: " << evalEnergyShort << std::endl;
-      //   std::cout << "Eval PSD        : " << psd << std::endl;
-      // }
+
+      // ########################################################### //
+      //             This part plots selected waveforms              //
+      // ########################################################### //
+
+      if (keepGoing and newLam > 0.00 and newLam < 0.001) {
+        hitsVector[i]->Print();
+        std::cout << "Energy: " << energy << "\t | Lambda = " << newLam
+                  << std::endl
+                  << std::endl;
+        WF->SetSmooth(16, "MovA");
+        WF->SetTracesFFT("smooth");
+        trFFT.clear();
+        trFFT_Phase.clear();
+        trFFT = WF->GetTracesFFT();
+        trFFT_Phase = WF->GetTracesFFTPhase();
+        // int cutoff = 50;
+        // std::fill(trFFT.begin() + cutoff, trFFT.end(), 0.0);
+        // std::fill(trFFT_Phase.begin() + cutoff, trFFT_Phase.end(), 0.0);
+        WF->Plot(WF->GetTracesSmooth(), WF->EvalIFFT(trFFT,
+                                                     trFFT_Phase)); //
+        std::cout << "Do you want to see the next waveform? (y/n): ";
+        std::getline(std::cin, userInput);
+        if (userInput != "y" && userInput != "Y") {
+          keepGoing = false;
+        }
+      }
+      // ########################################################### //
     }
   }
   TCanvas *c1 = new TCanvas("c1", "Energy vs MeanTime", 800, 600);

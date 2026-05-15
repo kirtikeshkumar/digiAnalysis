@@ -1112,8 +1112,11 @@ std::vector<double> WaveForm::EvalIFFT(const std::vector<double> Amp,
   Int_t n = static_cast<int>(Amp.size());
   Int_t sz = static_cast<int>(2 * n - 2);
   std::vector<double> res(sz);
-  if (ifft)
-    delete ifft;
+  // if (ifft) {
+  //   delete ifft;
+  //   ifft = nullptr;
+  // }
+  // std::cout << "ifft deleted" << std::endl;
   ifft = TVirtualFFT::FFT(1, &sz, "C2R");
 
   // std::cout << "ifft defined" << std::endl;
@@ -1171,7 +1174,7 @@ void WaveForm::ShiftWaveForm(int BL) {
 double WaveForm::IntegrateWaveForm() {
   double sum = 0;
   if (!traces.empty()) {
-    sum = IntegrateWaveForm(0, traces.size());
+    sum = IntegrateWaveForm(GateStart, GateStart + GateLenLong);
   } else {
     std::cout << "err IntegrateWaveForm: fill traces first" << std::endl;
   }
@@ -1543,12 +1546,16 @@ void WaveForm::FitFunction(std::string function, std::vector<double> parLims,
 
   // const auto &src = !tracesSmooth.empty() ? tracesSmooth : traces;
   const auto &src = traces;
-  std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
-  std::vector<double> x(nPoints);
-  std::iota(x.begin(), x.end(), (0));
-  auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
+  // std::vector<double> y(src.begin() + start, src.begin() + stop + 1);
+  // std::vector<double> x(nPoints);
+  // std::iota(x.begin(), x.end(), (0));
+  // auto graph = std::make_unique<TGraph>(nPoints, x.data(), y.data());
 
-  fitFunc = new TF1("userFit", function.c_str(), 0, nPoints);
+  std::vector<double> x(src.size());
+  std::iota(x.begin(), x.end(), 0);
+  auto graph = std::make_unique<TGraph>(src.size(), x.data(), src.data());
+
+  fitFunc = new TF1("userFit", function.c_str(), start, stop);
   if (fitFunc->GetNpar() * 2 != parLims.size()) {
     std::cerr << "Invalid parameter limit array: [" << parLims.size()
               << " != 2 * " << fitFunc->GetNpar() << "]\n";
@@ -1563,6 +1570,34 @@ void WaveForm::FitFunction(std::string function, std::vector<double> parLims,
   }
 
   graph->Fit(fitFunc, "QRO"); // Q = quiet, R = respect fit range
+}
+
+void WaveForm::PrintFitParameters() const {
+  if (!fitFunc) {
+    std::cerr << "fitFunc is null\n";
+    return;
+  }
+
+  int nPar = fitFunc->GetNpar();
+
+  std::cout << "\n===== Fit Parameters =====\n";
+
+  for (int i = 0; i < nPar; ++i) {
+    std::cout << "Par[" << i << "]";
+
+    const char *parName = fitFunc->GetParName(i);
+    if (parName && std::string(parName) != "") {
+      std::cout << " (" << parName << ")";
+    }
+
+    std::cout << " = " << fitFunc->GetParameter(i) << " +/- "
+              << fitFunc->GetParError(i) << '\n';
+  }
+
+  std::cout << "Chi2 / NDF = " << fitFunc->GetChisquare() << " / "
+            << fitFunc->GetNDF() << '\n';
+
+  std::cout << "==========================\n";
 }
 
 std::pair<std::vector<int>, std::vector<int>>

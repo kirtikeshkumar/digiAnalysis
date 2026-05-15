@@ -77,8 +77,13 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
       if (!tr) {
         std::cerr << "Error: Unable to retrieve TTree 'Data_Pair' from file."
                   << std::endl;
-        fp->Close();
-        return; // Exit or handle the error appropriately
+        tr = (TTree *)fp->Get("Data");
+        if (!tr) {
+          std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
+                    << std::endl;
+          fp->Close();
+          return; // Exit or handle the error appropriately
+        }
       } else {
         isPair = true;
       }
@@ -216,8 +221,13 @@ void Analysis::LoadData(UShort_t channel, ULong64_t start,
     if (!tr) {
       std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
                 << std::endl;
-      fp->Close();
-      return; // Exit or handle the error appropriately
+      tr = (TTree *)fp->Get("Data");
+      if (!tr) {
+        std::cerr << "Error: Unable to retrieve TTree 'Data_R' from file."
+                  << std::endl;
+        fp->Close();
+        return; // Exit or handle the error appropriately
+      }
     }
   }
   // Declaration of leaves types

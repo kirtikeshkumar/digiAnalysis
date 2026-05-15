@@ -36,7 +36,9 @@ int main(int argc, char *argv[]) {
   std::string outfname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
       "SPEFiles/"
-      "SPE_Ch0_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
+      "SPE_Ch0_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1_Ecut_"
+      "500."
+      "root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("SPE_WF", "SPE_WF");
   digiAnalysis::WaveForm WFSPE;
@@ -62,35 +64,38 @@ int main(int argc, char *argv[]) {
     if (iter % 10000 == 0) {
       std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() << std::endl;
     }
-    WF = nullptr;
-    WF = hit->GetWFPtr();
-    // WF->SetSmooth(40);
-    auto results = WF->DetectPeakValleys(10);
-    // std::cout << iter << ": DetectedNumPeaks: " << results.first.size()
-    //           << std::endl;
-    int iterPeaks = 0;
-    int isolationRange = 150;
-    int saveRange = isolationRange;
-    while (iterPeaks < results.first.size()) {
-      //   std::cout << iter << " : PeakNum: " << iterPeaks << std::endl;
-      int peakPos = results.first[iterPeaks];
-      if ((peakPos > 2500 and peakPos < 4500) and
-          (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
-        if ((iterPeaks + 1 < results.first.size() and
-             (results.first[iterPeaks + 1] - peakPos) > 2 * isolationRange) ||
-            (iterPeaks + 1 == results.first.size())) {
-          double postBL = WF->EvalBaseLine(peakPos + 100, 50);
-          double preBL = WF->EvalBaseLine(peakPos - 100, 50);
-          if (fabs(preBL - postBL) < 2.0) {
-            // WFSPE.Clear();
-            WFSPE.SetWaveForm(*WF, peakPos - saveRange,
-                              peakPos + 2.0 * saveRange, saveRange - 100, 50);
-            // std::cout << iter << "WaveFormSet" << std::endl;
-            t->Fill();
+    if (hit->GetEnergy() > 500) {
+
+      WF = nullptr;
+      WF = hit->GetWFPtr();
+      // WF->SetSmooth(40);
+      auto results = WF->DetectPeakValleys(10);
+      // std::cout << iter << ": DetectedNumPeaks: " << results.first.size()
+      //           << std::endl;
+      int iterPeaks = 0;
+      int isolationRange = 150;
+      int saveRange = isolationRange;
+      while (iterPeaks < results.first.size()) {
+        //   std::cout << iter << " : PeakNum: " << iterPeaks << std::endl;
+        int peakPos = results.first[iterPeaks];
+        if ((peakPos > 2500 and peakPos < 4500) and
+            (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
+          if ((iterPeaks + 1 < results.first.size() and
+               (results.first[iterPeaks + 1] - peakPos) > 2 * isolationRange) ||
+              (iterPeaks + 1 == results.first.size())) {
+            double postBL = WF->EvalBaseLine(peakPos + 100, 50);
+            double preBL = WF->EvalBaseLine(peakPos - 100, 50);
+            if (fabs(preBL - postBL) < 2.0) {
+              // WFSPE.Clear();
+              WFSPE.SetWaveForm(*WF, peakPos - saveRange,
+                                peakPos + 2.0 * saveRange, saveRange - 100, 50);
+              // std::cout << iter << "WaveFormSet" << std::endl;
+              t->Fill();
+            }
           }
         }
+        iterPeaks += 1;
       }
-      iterPeaks += 1;
     }
   }
   fout->Write();
