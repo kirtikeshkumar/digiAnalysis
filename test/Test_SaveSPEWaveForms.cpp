@@ -25,20 +25,23 @@ int main(int argc, char *argv[]) {
   //     "SDataF_NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_"
   //     "WAVES.root";
 
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-      "CoincidenceStudies/PairFiles/"
-      "Pair_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //     "CoincidenceStudies/PairFiles/"
+  //     "Pair_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
 
-  digiAnalysis::Analysis an(fname, 0000, 00, 1);
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+      "NaI1_21May26_1900_Cs_WAVES_2/FILTERED/"
+      "DataF_NaI1_21May26_1900_Cs_WAVES_2_BLCorrected.root";
+
+  digiAnalysis::Analysis an(fname, 0000, 000, 1);
   std::cout << "getting the vector from an" << std::endl;
 
   std::string outfname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
       "SPEFiles/"
-      "SPE_Ch0_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1_Ecut_"
-      "500."
-      "root";
+      "SPE_Ch0_NaI1_21May26_1900_Cs_WAVES_2_BLCorrected.root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("SPE_WF", "SPE_WF");
   digiAnalysis::WaveForm WFSPE;
@@ -46,37 +49,47 @@ int main(int argc, char *argv[]) {
 
   // an.CreatePairs();
 
-  std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
-      an.GetPairsVec();
-  int nentries = vecOfPairs.size();
+  // std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
+  //     an.GetPairsVec();
+  // int nentries = vecOfPairs.size();
+
+  std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
+      an.GetSingleHitsVec();
+  int nentries = hitsVector.size();
+
   std::cout << "got the vector from an: " << nentries << std::endl;
   int nPairs = nentries;
 
   double Energy1 = 0;
   double Energy2 = 0;
   double PSD = 0, MT = 0;
+  bool set = false, keepGoing = true;
+  std::string userInput;
   digiAnalysis::singleHits *hit;
   digiAnalysis::WaveForm *WF = nullptr;
-  for (int iter = 0; iter < nPairs; iter++) {
+  for (int iter = 0; iter < nentries and keepGoing; iter++) {
 
-    hit = vecOfPairs[iter]->GetHitPtr(0);
+    // hit = vecOfPairs[iter]->GetHitPtr(0);
+    hit = hitsVector[iter].get();
 
     if (iter % 10000 == 0) {
       std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() << std::endl;
     }
-    if (hit->GetEnergy() > 500) {
-
+    if (hit->GetEvalEnergy() > 500 and hit->GetEvalEnergy() < 800) {
+      set = false;
+      // if (hit->GetEnergy() > 500 and hit->GetEnergy() < 800) {
       WF = nullptr;
       WF = hit->GetWFPtr();
-      // WF->SetSmooth(40);
-      auto results = WF->DetectPeakValleys(10);
+      WF->SetSmooth(40);
+      auto results = WF->DetectPeakValleys(5);
       // std::cout << iter << ": DetectedNumPeaks: " << results.first.size()
       //           << std::endl;
       int iterPeaks = 0;
       int isolationRange = 150;
       int saveRange = isolationRange;
       while (iterPeaks < results.first.size()) {
-        //   std::cout << iter << " : PeakNum: " << iterPeaks << std::endl;
+        // std::cout << iter << " : PeakNum: " << iterPeaks << " : "
+        //           << results.first[iterPeaks] << std::endl;
         int peakPos = results.first[iterPeaks];
         if ((peakPos > 2500 and peakPos < 4500) and
             (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
@@ -89,15 +102,35 @@ int main(int argc, char *argv[]) {
               // WFSPE.Clear();
               WFSPE.SetWaveForm(*WF, peakPos - saveRange,
                                 peakPos + 2.0 * saveRange, saveRange - 100, 50);
-              // std::cout << iter << "WaveFormSet" << std::endl;
+              // std::cout << iter
+              //           << "WaveForm Saved from: " << peakPos - saveRange
+              //           << " to " << peakPos + 2.0 * saveRange << std::endl;
               t->Fill();
+              set = true;
+              // if (set) {
+              //   WFSPE.Plot();
+              //   std::cout << "Do you want to see the next waveform? (y/n): ";
+              //   std::getline(std::cin, userInput);
+              //   if (userInput != "y" && userInput != "Y") {
+              //     keepGoing = false;
+              //   }
+              // }
             }
           }
         }
         iterPeaks += 1;
       }
+      // if (set) {
+      //   WF->Plot();
+      //   std::cout << "Do you want to see the next waveform? (y/n): ";
+      //   std::getline(std::cin, userInput);
+      //   if (userInput != "y" && userInput != "Y") {
+      //     keepGoing = false;
+      //   }
+      // }
     }
   }
   fout->Write();
   fout->Close();
+  // fApp->Run();
 }

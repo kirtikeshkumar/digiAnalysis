@@ -78,7 +78,7 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
 #endif
   }
   // meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
-  meantime = meantime / sampleSum;
+  meantime = meantime / sampleSum - GateStart;
   if (meantime > 0.0) {
     meantime = TMath::Log10(meantime);
   } else {
@@ -561,7 +561,7 @@ void WaveForm::SetWaveForm(std::vector<double> tr) {
       }
 #endif
     }
-    meantime = (meantime / sampleSum);
+    meantime = (meantime / sampleSum) - GateStart;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -744,7 +744,7 @@ void WaveForm::SetTracesMovBLCorr() {
         sampleSum = sampleSum + tracesMovBLCorr[i];
       }
     }
-    meantime = (meantime / sampleSum);
+    meantime = (meantime / sampleSum) - GateStart;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -860,7 +860,7 @@ void WaveForm::SetMeanTime() {
       meantime = meantime + tracesMovBLCorr[j] * j;
       sampleSum = sampleSum + tracesMovBLCorr[j];
     }
-    meantime = meantime / sampleSum;
+    meantime = meantime / sampleSum - GateStart;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -872,7 +872,7 @@ void WaveForm::SetMeanTime() {
       meantime = meantime + tracesSmooth[j] * j;
       sampleSum = sampleSum + tracesSmooth[j];
     }
-    meantime = meantime / sampleSum;
+    meantime = meantime / sampleSum - GateStart;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -884,7 +884,7 @@ void WaveForm::SetMeanTime() {
       meantime = meantime + traces[j] * j;
       sampleSum = sampleSum + traces[j];
     }
-    meantime = meantime / sampleSum;
+    meantime = meantime / sampleSum - GateStart;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -919,7 +919,7 @@ void WaveForm::SetMeanTime(const std::vector<double> tr, UShort_t start,
         meantime = meantime + tr[j] * j;
         sampleSum = sampleSum + tr[j];
       }
-      meantime = meantime / sampleSum;
+      meantime = meantime / sampleSum - GateStart;
       if (meantime > 0.0) {
         meantime = TMath::Log10(meantime);
       } else {
@@ -1045,6 +1045,10 @@ void WaveForm::SetTracesFFT(std::vector<double> trace) {
     tracesFFT.clear();
     tracesFFTPhase.clear();
     Int_t n = static_cast<int>(trace.size());
+    if (fft) {
+      fft = nullptr;
+    }
+    fft = TVirtualFFT::FFT(1, &n, "R2C");
     // TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &n, "R2C");
     fft->SetPoints(trace.data());
     fft->Transform();
@@ -1608,6 +1612,7 @@ WaveForm::DetectPeakValleys(double threshold) {
   int iter = 0, peakPos = 0, valleyPos = 0;
   bool findPeak = true, findValley = true, peakFound = false;
   if (IsTracesSmoothSet()) {
+    // std::cout << "using smoothtrace" << std::endl;
     double peakVal = tracesSmooth[peakPos], valleyVal = tracesSmooth[valleyPos],
            currVal;
     while (iter < tracesSmooth.size()) {
@@ -1652,6 +1657,7 @@ WaveForm::DetectPeakValleys(double threshold) {
       valley.push_back(iter);
     return std::make_pair(peak, valley);
   } else {
+    // std::cout << "using trace" << std::endl;
     double peakVal = traces[peakPos], valleyVal = traces[valleyPos], currVal;
     while (iter < traces.size()) {
       // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :

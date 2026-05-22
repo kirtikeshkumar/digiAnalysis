@@ -26,6 +26,6 @@ UShort_t GateLenShort = 250; // NaI 500MSPS has *2 ns
 UShort_t PairCoincWindow = 144; // in ns
 UShort_t nSampleMovBL = 64;
 double EvalNormFactor =
-    5; // 31; // Factor to scale Eval energy with Digitizer energy
+    23.3; // 31; // Factor to scale Eval energy with Digitizer energy
 double BLError = 0.6;
 } // namespace digiAnalysis
