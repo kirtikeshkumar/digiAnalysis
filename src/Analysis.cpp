@@ -150,7 +150,7 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
     std::cout << "Now sorting: " << nentries << " entries in order of timestamp"
               << std::endl;
 
-    tr->BuildIndex("Timestamp", "0");
+    tr->BuildIndex("Timestamp");
     TTreeIndex *index = (TTreeIndex *)tr->GetTreeIndex();
     if (!index) {
       std::cerr << "Error creating tree index!" << std::endl;
@@ -169,7 +169,7 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
     /// READING
     //////////////////////////////////////////////////////////////////////////////
     for (ULong64_t iev = start; iev < start + numOfEvents; iev++) {
-      if ((iev - start) % 100000 == 0) {
+      if ((iev - start) % 10000 == 0) {
         std::cout << "Reading: " << indices[iev] << std::endl;
       }
       nbytes += tr->GetEntry(indices[iev]);

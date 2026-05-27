@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fnameBL =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "Baseline_21May_singlePeriod.root";
+      "Baseline_26May_singlePeriod_2.root";
   TFile *fp = new TFile(fnameBL.c_str(), "READ");
   TTree *tr = (TTree *)fp->Get("baseline");
   std::vector<double> *BL = nullptr;
@@ -60,12 +60,14 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI1_21May26_1900_Cs_WAVES_2/FILTERED/"
-      "DataF_NaI1_21May26_1900_Cs_WAVES_2.root";
+      "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_Coinc_144ns_LeadPit/"
+      "FILTERED/"
+      "SDataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_Coinc_144ns_LeadPit."
+      "root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(0, fname, 0, 000, 0);
-  digiAnalysis::Analysis an2(2, fname, 0, 000, 0);
+  digiAnalysis::Analysis an(2, fname, 0, 00000, 0);
+  digiAnalysis::Analysis an2(0, fname, 0, 00000, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector2 =
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
   for (int hititer = 0; hititer < hitsVector.size();
        hititer++) // hitsVector.size()
   {
-    if (hititer % 1000 == 0)
+    if (hititer % 10000 == 0)
       std::cout << "Processing hit " << hititer << std::endl;
 
     //     if (hitsVector[hititer]->GetEnergy() < 100) {
@@ -186,7 +188,7 @@ int main(int argc, char *argv[]) {
     Samples = nullptr;
 
     // fill the other channel as is
-    if (!hitsVector2.empty()) {
+    if (!hitsVector2.empty() && hititer < hitsVector2.size()) {
       Channel = hitsVector2[hititer]->GetChNum();
       Timestamp = hitsVector2[hititer]->GetTimestamp();
       Board = hitsVector2[hititer]->GetBoard();

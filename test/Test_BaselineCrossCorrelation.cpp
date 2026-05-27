@@ -40,11 +40,12 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI1_21May26_1900_Bkg_WAVES/FILTERED/"
-      "DataF_NaI1_21May26_1900_Bkg_WAVES.root";
+      "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5/FILTERED/"
+      "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5."
+      "root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(0, fname, 0, 000, 0);
+  digiAnalysis::Analysis an(2, fname, 0, 000, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
 
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Processing hit " << hititer << std::endl;
 
     if (hitsVector[hititer]->GetEnergy() > 00 and
-        hitsVector[hititer]->GetEnergy() < 100) {
+        hitsVector[hititer]->GetEnergy() < 50) {
       WF1 = hitsVector[hititer]->GetWFPtr();
       // WF1->SetSmooth(500);
       WF1->SetSmooth(16, "MovA");
@@ -225,7 +226,7 @@ int main(int argc, char *argv[]) {
 
   std::string outfname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "Baseline_21May_singlePeriod.root";
+      "Baseline_26May_singlePeriod_2.root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("baseline", "b1aseline");
   digiAnalysis::WaveForm WFSPE;

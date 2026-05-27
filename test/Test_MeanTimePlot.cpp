@@ -26,13 +26,25 @@ int main(int argc, char *argv[]) {
   //     "NaI13_20May26_1900_1345_Cs_Coinc144_WAVES_2/FILTERED/"
   //     "SDataF_NaI13_20May26_1900_1345_Cs_Coinc144_WAVES_2_BLCorrected.root";
 
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //     "NaI1_21May26_1900_Cs_WAVES_2/FILTERED/"
+  //     "DataF_NaI1_21May26_1900_Cs_WAVES_2_BLCorrected.root";
+  //   std::string fname =
+  //       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //       "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5/FILTERED/"
+  //       "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5_"
+  //       "BLCorrected"
+  //       ".root";
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI1_21May26_1900_Cs_WAVES_2/FILTERED/"
-      "DataF_NaI1_21May26_1900_Cs_WAVES_2_BLCorrected.root";
+      "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_Coinc_144ns_LeadPit/"
+      "FILTERED/"
+      "SDataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_Coinc_144ns_LeadPit_"
+      "BLCorrected.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(0, fname, 0, 000, 0);
+  digiAnalysis::Analysis an(2, fname, 0, 100000, 0);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -44,8 +56,14 @@ int main(int argc, char *argv[]) {
                           spectralsize, 500, -4, 4);
   TH2 *hLamPlot = new TH2F("LamPlot", "Energy vs Lambda", spectralsize, 0,
                            spectralsize, 2000, -10.0, 10.0);
+  TH2 *hPSDLamPlot =
+      new TH2F("PSDLamPlot", "PSD vs Lambda", 100, 0, 1, 2000, -10.0, 10.0);
   TH3 *hLamMTPlot = new TH3F("LamMTPlot", "Energy vs Lambda vs MT", 128, 0,
-                             4096, 80, -10, -2, 50, 2.2, 3.2);
+                             4096, 80, -10, -2, 200, 0, 4);
+  TH3 *hPSDLamMTPlot = new TH3F("PSDLamMTPlot", "PSD vs Lambda vs MT", 100, 0,
+                                1, 80, -10, -2, 200, 0, 4);
+  TH3 *hPSDLamEPlot = new TH3F("PSDLamEPlot", "PSD vs Lambda vs E", 128, 0,
+                               4096, 100, 0, 1, 80, -10, -2);
   TH2 *hMTLam =
       new TH2F("MTLam", "MeanTime vs Lambda", 500, -4, 4, 2000, -10.0, 10.0);
   TH2 *hPSDPlot = new TH2F("PSDPlot", "Energy vs PSD", spectralsize, 0,
@@ -87,7 +105,7 @@ int main(int argc, char *argv[]) {
       std::cout << i << std::endl;
     }
     if (hitsVector[i]->GetChNum() ==
-        0 // and
+        2 // and
           // hitsVector[i]->GetTimestamp() / 1E12 > 1600 and
           // hitsVector[i]->GetTimestamp() / 1E12 < 3200
           // and hitsVector[i]->GetMeanTime() < 3.8
@@ -130,6 +148,9 @@ int main(int argc, char *argv[]) {
       // shortPSD =
       //     WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290, 600);
       psd = 1.0 - evalEnergyShort * 1.0 / evalEnergy;
+      hPSDLamMTPlot->Fill(psd, newLam, hitsVector[i]->GetMeanTime());
+      hPSDLamEPlot->Fill(evalEnergy, psd, newLam);
+      hPSDLamPlot->Fill(psd, newLam);
       hPSDPlot->Fill(energy, psd);
       hEPlot->Fill(energy, evalEnergy);
       hESPlot->Fill(energyShort, evalEnergyShort);
@@ -144,39 +165,39 @@ int main(int argc, char *argv[]) {
       //             This part plots selected waveforms              //
       // ########################################################### //
 
-      if (keepGoing and
-          // newLam > -6.5 and newLam < -6 and
-          energy > 600 and
-          energy < 710 // and
-                       // hitsVector[i]->GetMeanTime() < 2.5 and
-                       // hitsVector[i]->GetMeanTime() > 2.3
-      ) {
-        hitsVector[i]->Print();
-        std::cout << "lam: " << newLam << " : " << avQ1 << " : " << avQ2
-                  << " : " << avT1 << " : " << avT2 << " : " << netQ
-                  << std::endl;
-        std::cout << "Energy: " << energy << "\t | Lambda = " << newLam
-                  << std::endl
-                  << std::endl;
-        WF->SetSmooth(16, "MovA");
-        waveformVector.push_back(*WF);
-        // WF->SetTracesFFT();
-        // trFFT.clear();
-        // trFFT_Phase.clear();
-        // trFFT = WF->GetTracesFFT();
-        // trFFT_Phase = WF->GetTracesFFTPhase();
-        // int cutoff = 50;
-        // std::fill(trFFT.begin() + cutoff, trFFT.end(), 0.0);
-        // std::fill(trFFT_Phase.begin() + cutoff, trFFT_Phase.end(), 0.0);
-        // WF->Plot(WF->GetTracesSmooth(), WF->EvalIFFT(trFFT,
-        //                                              trFFT_Phase)); //
-        WF->Plot(WF->GetTracesSmooth(), WF->GetTraces());
-        std::cout << "Do you want to see the next waveform? (y/n): ";
-        std::getline(std::cin, userInput);
-        if (userInput != "y" && userInput != "Y") {
-          keepGoing = false;
-        }
-      }
+      // if (keepGoing and
+      //     // newLam > -6.5 and newLam < -6 and
+      //     energy > 600 and
+      //     energy < 710 // and
+      //                  // hitsVector[i]->GetMeanTime() < 2.5 and
+      //                  // hitsVector[i]->GetMeanTime() > 2.3
+      // ) {
+      //   hitsVector[i]->Print();
+      //   std::cout << "lam: " << newLam << " : " << avQ1 << " : " << avQ2
+      //             << " : " << avT1 << " : " << avT2 << " : " << netQ
+      //             << std::endl;
+      //   std::cout << "Energy: " << energy << "\t | Lambda = " << newLam
+      //             << std::endl
+      //             << std::endl;
+      //   WF->SetSmooth(16, "MovA");
+      //   waveformVector.push_back(*WF);
+      //   // WF->SetTracesFFT();
+      //   // trFFT.clear();
+      //   // trFFT_Phase.clear();
+      //   // trFFT = WF->GetTracesFFT();
+      //   // trFFT_Phase = WF->GetTracesFFTPhase();
+      //   // int cutoff = 50;
+      //   // std::fill(trFFT.begin() + cutoff, trFFT.end(), 0.0);
+      //   // std::fill(trFFT_Phase.begin() + cutoff, trFFT_Phase.end(), 0.0);
+      //   // WF->Plot(WF->GetTracesSmooth(), WF->EvalIFFT(trFFT,
+      //   //                                              trFFT_Phase)); //
+      //   WF->Plot(WF->GetTracesSmooth(), WF->GetTraces());
+      //   std::cout << "Do you want to see the next waveform? (y/n): ";
+      //   std::getline(std::cin, userInput);
+      //   if (userInput != "y" && userInput != "Y") {
+      //     keepGoing = false;
+      //   }
+      // }
       // ########################################################### //
     }
   }
@@ -184,18 +205,18 @@ int main(int argc, char *argv[]) {
   hMTPlot->Draw("COLZ");
   TCanvas *c2 = new TCanvas("c2", "Energy vs PSD", 800, 600);
   hPSDPlot->Draw("COLZ");
-  TCanvas *c3 = new TCanvas("c3", "Energy vs evalEnergy", 800, 600);
-  hEPlot->Draw("COLZ");
-  // hEEvalRatio->Draw("HIST");
-  TCanvas *c4 = new TCanvas("c4", "EnergyShort vs evalEnergyShort", 800, 600);
-  hESPlot->Draw("COLZ");
-  TCanvas *c5 = new TCanvas("c5", "PSD vs  PSDEval", 800, 600);
-  hPSDEvalPlot->Draw("COLZ");
-  TCanvas *c6 = new TCanvas("c6", "Energy vs EnergyShort/Energy", 800, 600);
-  hEdiffPlot->Draw("COLZ");
-  TCanvas *c7 =
-      new TCanvas("c7", "evalEnergy vs evalEnergyShort/evalEnergy", 800, 600);
-  hEdiffEvalPlot->Draw("COLZ");
+  //   TCanvas *c3 = new TCanvas("c3", "Energy vs evalEnergy", 800, 600);
+  //   hEPlot->Draw("COLZ");
+  //   // hEEvalRatio->Draw("HIST");
+  //   TCanvas *c4 = new TCanvas("c4", "EnergyShort vs evalEnergyShort", 800,
+  //   600); hESPlot->Draw("COLZ"); TCanvas *c5 = new TCanvas("c5", "PSD vs
+  //   PSDEval", 800, 600); hPSDEvalPlot->Draw("COLZ"); TCanvas *c6 = new
+  //   TCanvas("c6", "Energy vs EnergyShort/Energy", 800, 600);
+  //   hEdiffPlot->Draw("COLZ");
+  //   TCanvas *c7 =
+  //       new TCanvas("c7", "evalEnergy vs evalEnergyShort/evalEnergy", 800,
+  //       600);
+  //   hEdiffEvalPlot->Draw("COLZ");
   TCanvas *c8 = new TCanvas("c8", "Energy Spectra", 800, 600);
   hESpectra->SetLineColor(kRed);
   hEEvalSpectra->SetLineColor(kGreen);
@@ -207,11 +228,17 @@ int main(int argc, char *argv[]) {
   hMTLam->Draw("COLZ");
   TCanvas *c11 = new TCanvas("c11", "E vs Lam vs MT", 800, 600);
   hLamMTPlot->Draw("");
+  TCanvas *c12 = new TCanvas("c12", "PSD vs Lam vs MT", 800, 600);
+  hPSDLamMTPlot->Draw("");
+  TCanvas *c13 = new TCanvas("c13", "PSD vs Lam", 800, 600);
+  hPSDLamPlot->Draw("COLZ");
+  TCanvas *c14 = new TCanvas("c14", "Energy vs PSD vs Lam", 800, 600);
+  hPSDLamEPlot->Draw("");
 
-  UShort_t wfSz = WF->GetSize();
-  digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
-  WFAveraged.SetSmooth(40);
-  WFAveraged.Plot();
+  // UShort_t wfSz = WF->GetSize();
+  // digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
+  // WFAveraged.SetSmooth(40);
+  // WFAveraged.Plot();
 
   fApp->Run();
 #endif

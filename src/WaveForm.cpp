@@ -1211,9 +1211,10 @@ double WaveForm::EvalNoisePar2(int startTime, int stopTime) {
     avT2 += traces[iter + sz / 2] * (iter + sz / 2);
     avQ1 += traces[iter];
     avQ2 += traces[iter + sz / 2];
-    netQ += (traces[iter] + traces[iter + sz / 2]);
+    // netQ += (traces[iter] + traces[iter + sz / 2]);
   }
-  double newLam = TMath::Log(avQ2 / avQ1) / (avT2 / netQ - avT1 / netQ);
+  double newLam =
+      TMath::Log(-1.0 * TMath::Log(avQ2 / avQ1) / (avT2 / avQ2 - avT1 / avQ1));
   return newLam;
 }
 
