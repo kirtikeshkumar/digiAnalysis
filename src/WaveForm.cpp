@@ -1203,18 +1203,37 @@ double WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
   return sum;
 }
 
+double WaveForm::IntegrateWaveForm(std::vector<double> tr, int startTime,
+                                   int stopTime) {
+  double sum = 0;
+  if (!tr.empty() && (tr.size() > stopTime)) {
+    if (startTime < stopTime) {
+      for (unsigned int j = startTime; j < stopTime; j++) {
+        sum = sum + tr[j];
+      }
+    } else {
+      std::cout << "err IntegrateWaveForm: order the times properly "
+                << std::endl;
+    }
+  } else {
+    std::cout << "err IntegrateWaveForm: fill traces first: " << tr.size()
+              << " : " << stopTime << std::endl;
+  }
+  return sum;
+}
+
 double WaveForm::EvalNoisePar2(int startTime, int stopTime) {
-  double avQ1 = 0, avQ2 = 0, avT1 = 0, avT2 = 0, netQ = 0;
+  double Q1 = 0, Q2 = 0, avT1 = 0, avT2 = 0, netQ = 0;
   int sz = stopTime - startTime;
   for (int iter = startTime; iter < startTime + sz / 2; iter++) {
-    avT1 += traces[iter] * iter;
-    avT2 += traces[iter + sz / 2] * (iter + sz / 2);
-    avQ1 += traces[iter];
-    avQ2 += traces[iter + sz / 2];
+    avT1 += abs(traces[iter]) * iter;
+    avT2 += abs(traces[iter + sz / 2]) * (iter + sz / 2);
+    Q1 += abs(traces[iter]);
+    Q2 += abs(traces[iter + sz / 2]);
     // netQ += (traces[iter] + traces[iter + sz / 2]);
   }
   double newLam =
-      TMath::Log(-1.0 * TMath::Log(avQ2 / avQ1) / (avT2 / avQ2 - avT1 / avQ1));
+      TMath::Log(-1.0 * TMath::Log(Q2 / Q1) / (avT2 / Q2 - avT1 / Q1));
   return newLam;
 }
 

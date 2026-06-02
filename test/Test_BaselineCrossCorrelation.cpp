@@ -40,9 +40,10 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5/FILTERED/"
-      "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5."
-      "root";
+      "NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_LeadPit/"
+      "FILTERED/"
+      "SDataF_NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
+      "LeadPit.root";
 
   // Read to singleHits
   digiAnalysis::Analysis an(2, fname, 0, 000, 0);
@@ -226,7 +227,7 @@ int main(int argc, char *argv[]) {
 
   std::string outfname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "Baseline_26May_singlePeriod_2.root";
+      "Baseline_01June_singlePeriod_Ch2.root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("baseline", "b1aseline");
   digiAnalysis::WaveForm WFSPE;

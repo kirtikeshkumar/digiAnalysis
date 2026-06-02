@@ -34,12 +34,19 @@ int main(int argc, char *argv[]) {
   //     "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
   //     "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI13_15May26_1900_1345_NoSrc_Coinc144ns_WAVES/FILTERED/"
-      "SDataF_NaI13_15May26_1900_1345_NoSrc_Coinc144ns_WAVES.root";
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //     "NaI31_29May26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_LeadPit/"
+  //     "FILTERED/"
+  //     "SDataF_NaI31_29May26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
+  //     "LeadPit.root";
 
-  digiAnalysis::Analysis an(fname, 0100, 000, 0);
+  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+                      "CoincidenceStudies/01JuneNoSrc/"
+                      "NaI31_01June26_1345_1750_NoSrc_Thresh_300_30_WAVES_"
+                      "Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+
+  digiAnalysis::Analysis an(fname, 000, 000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -84,6 +91,10 @@ int main(int argc, char *argv[]) {
   TH2 *hE1PSD = new TH2I("hE1PSD", "hE1PSD", 4000, 0, 4000, 1000, -1, 1);
   TH2 *hE1MT = new TH2I("hE1MT", "hE1MT", 4000, 0, 4000, 10000, -5, 5);
   TH2 *hPSDMT = new TH2I("hPSDMT", "hPSDMT", 1000, -10, 10, 1000, -5, 5);
+  TH2 *hE1DelT =
+      new TH2F("hE1DelT", "E1 vs DelT", 4096, 0, 4096, 289, -144.5, 144.5);
+  TH2 *hE2DelT =
+      new TH2F("hE2DelT", "E2 vs DelT", 4096, 0, 4096, 289, -144.5, 144.5);
 
   // within same detector
   //
@@ -167,27 +178,33 @@ int main(int argc, char *argv[]) {
   double Energy2 = 0;
   double PSD = 0, MT = 0;
   for (int iter = 0; iter < nPairs; iter++) {
-    Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 1.0174 -
-              38.84; // Gain match case
-    PSD = vecOfPairs[iter]->GetHitPtr(0)->GetPSD();
+    // Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 1.0174 -
+    //           38.84; // Gain match case
+    PSD = vecOfPairs[iter]->GetHitPtr(1)->GetPSD();
 #ifdef WAVES
-    MT = vecOfPairs[iter]->GetHitPtr(0)->GetMeanTime();
+    MT = vecOfPairs[iter]->GetHitPtr(1)->GetMeanTime();
 #endif
-    vecOfPairs[iter]->GetPairHitEnergy(0) > 694
-        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
-        : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 - 0.4222;
+    // vecOfPairs[iter]->GetPairHitEnergy(0) > 694
+    //     ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
+    //     : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 - 0.4222;
     // 1900V
-    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
-              14.6; //* 1.0973 - 58.91;//
+    Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.5095 - 26.563;
+    // Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
+    //           14.6; //* 1.0973 - 58.91;//
+    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.09032 - 3.3849;
+    // std::cout << Energy1 << " : " << Energy2 << " : "
+    //           << vecOfPairs[iter]->GetPairDelTime() / 1E3 << std::endl;
     double ETot = Energy1 + Energy2;
     // if (ETot > 600 and ETot < 800)
     hDelT->Fill(vecOfPairs[iter]->GetPairDelTime() / 1E6);
     hE1E2->Fill(Energy1, Energy2);
     hETot->Fill(ETot);
     hE1ETot->Fill(Energy1, ETot);
-    hE1PSD->Fill(Energy1, PSD);
+    hE1PSD->Fill(Energy2, PSD);
+    hE1DelT->Fill(Energy1, vecOfPairs[iter]->GetPairDelTime() / 1E3);
+    hE2DelT->Fill(Energy2, vecOfPairs[iter]->GetPairDelTime() / 1E3);
 #ifdef WAVES
-    hE1MT->Fill(Energy1, MT);
+    hE1MT->Fill(Energy2, MT);
     hPSDMT->Fill(PSD, MT);
 #endif
   }
@@ -195,10 +212,10 @@ int main(int argc, char *argv[]) {
   hDelT->Draw("HIST");
   TCanvas *c2 = new TCanvas("c2", "E1E2", 800, 600);
   hE1E2->Draw("COLZ");
-  TCanvas *c3 = new TCanvas("c3", "ETotal", 800, 600);
-  hETot->Draw("HIST");
-  TCanvas *c4 = new TCanvas("c4", "E1ETotal", 800, 600);
-  hE1ETot->Draw("COLZ");
+  // TCanvas *c3 = new TCanvas("c3", "ETotal", 800, 600);
+  // hETot->Draw("HIST");
+  // TCanvas *c4 = new TCanvas("c4", "E1ETotal", 800, 600);
+  // hE1ETot->Draw("COLZ");
   TCanvas *c5 = new TCanvas("c5", "E1PSD", 800, 600);
   hE1PSD->Draw("COLZ");
 #ifdef WAVES
@@ -207,44 +224,50 @@ int main(int argc, char *argv[]) {
   TCanvas *c7 = new TCanvas("c7", "PSD MT", 800, 600);
   hPSDMT->Draw("COLZ");
 #endif
+  TCanvas *c8 = new TCanvas("c8", "E1 vs DelT", 800, 600);
+  hE1DelT->Draw("COLZ");
+  TCanvas *c9 = new TCanvas("c9", "E2 vs DelT", 800, 600);
+  hE2DelT->Draw("COLZ");
 
-#ifdef WAVES
-  bool keepGoing = true;
-  std::string userInput;
-  UShort_t wfSz;
-  std::vector<digiAnalysis::WaveForm> waveformVector;
-  for (int iter = 0; iter < nPairs && keepGoing; iter++) {
-    vecOfPairs[iter]->GetPairHitEnergy(0) > 694
-        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
-        : Energy1 =
-              vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 - 0.4222; // 1900V
-    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
-              14.6; //* 1.0973 - 58.91;
-    MT = vecOfPairs[iter]->GetHitPtr(0)->GetMeanTime();
-    if (MT < 2.85 and MT > 2.0 and Energy1 < 390 and
-        Energy1 > 370) { // and // MT > 3.05 and MT < 3.06 and
-      // (Energy2 + Energy1 > 580) and (Energy2 + Energy1 < 740)) {
-      vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->SetTracesFFT();
-      vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->Plot();
-      wfSz = vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->GetSize();
-      waveformVector.push_back(*vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr());
-      std::cout << iter << " Energy of D1 is approx: " << Energy1 << " keV"
-                << std::endl;
-      std::cout << "Energy Total is approx: " << Energy1 + Energy2 << " keV"
-                << std::endl;
-      std::cout << "Do you want to see the next waveform? (y/n): ";
-      std::getline(std::cin, userInput);
-      if (userInput != "y" && userInput != "Y") {
-        keepGoing = false;
-      }
-    }
-  }
+  // #ifdef WAVES
+  //   bool keepGoing = true;
+  //   std::string userInput;
+  //   UShort_t wfSz;
+  //   std::vector<digiAnalysis::WaveForm> waveformVector;
+  //   for (int iter = 0; iter < nPairs && keepGoing; iter++) {
+  //     vecOfPairs[iter]->GetPairHitEnergy(0) > 694
+  //         ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465
+  //         - 5.7613 : Energy1 =
+  //               vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 - 0.4222; //
+  //               1900V
+  //     Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
+  //               14.6; //* 1.0973 - 58.91;
+  //     MT = vecOfPairs[iter]->GetHitPtr(0)->GetMeanTime();
+  //     if (MT < 2.85 and MT > 2.0 and Energy1 < 390 and
+  //         Energy1 > 370) { // and // MT > 3.05 and MT < 3.06 and
+  //       // (Energy2 + Energy1 > 580) and (Energy2 + Energy1 < 740)) {
+  //       vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->SetTracesFFT();
+  //       vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->Plot();
+  //       wfSz = vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr()->GetSize();
+  //       waveformVector.push_back(*vecOfPairs[iter]->GetHitPtr(0)->GetWFPtr());
+  //       std::cout << iter << " Energy of D1 is approx: " << Energy1 << " keV"
+  //                 << std::endl;
+  //       std::cout << "Energy Total is approx: " << Energy1 + Energy2 << "
+  //       keV"
+  //                 << std::endl;
+  //       std::cout << "Do you want to see the next waveform? (y/n): ";
+  //       std::getline(std::cin, userInput);
+  //       if (userInput != "y" && userInput != "Y") {
+  //         keepGoing = false;
+  //       }
+  //     }
+  //   }
 
-  digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
-  WFAveraged.SetSmooth(30);
-  WFAveraged.SetTracesFFT("smooth");
-  WFAveraged.Plot();
-#endif
+  //   digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
+  //   WFAveraged.SetSmooth(30);
+  //   WFAveraged.SetTracesFFT("smooth");
+  //   WFAveraged.Plot();
+  // #endif
   fApp->Run();
   return 0;
 }

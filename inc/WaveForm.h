@@ -27,8 +27,7 @@ protected:
   std::vector<double> tracesMovBLCorr;
   double meantime;
   double baseline;
-  int blStart =
-      GateStart - nSampleBL - 200 > 0 ? GateStart - nSampleBL - 200 : 0;
+  int blStart = GateStart - nSampleBL - 1 > 0 ? GateStart - nSampleBL - 1 : 0;
   TF1 *fitFunc = nullptr;
   static TVirtualFFT *fft;
   static TVirtualFFT *ifft;
@@ -114,6 +113,7 @@ public:
   void ShiftWaveForm(int BL);
   double IntegrateWaveForm();
   double IntegrateWaveForm(int startTime, int stopTime);
+  double IntegrateWaveForm(std::vector<double> tr, int startTime, int stopTime);
   double IntegrateSmoothWaveForm(int startTime, int stopTime);
   double IntegrateBLCorrWaveForm(int startTime, int stopTime);
   double EvalNoisePar2(int startTime = GateStart,

@@ -1,7 +1,7 @@
 #include "globals.h"
 
 namespace digiAnalysis {
-UShort_t nSampleBL = 64;
+UShort_t nSampleBL = 256;
 UShort_t smoothBoxSz = 16;
 // UShort_t GateStart = 265;    // NaI 500MSPS has *2 ns
 // UShort_t GateLenLong = 2500; // NaI 500MSPS has *2 ns
