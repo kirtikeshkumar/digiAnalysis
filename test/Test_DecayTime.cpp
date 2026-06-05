@@ -23,12 +23,24 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
-      "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //     "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
+  //     "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  digiAnalysis::Analysis an(0, fname, 0, 00000, 20);
+  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+                      "CoincidenceStudies/01JuneNoSrc/"
+                      "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_2_30_"
+                      "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_"
+  //                     "300_WAVES_Singles_LeadPit_45/FILTERED/"
+  //                     "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_"
+  //                     "120_300_WAVES_Singles_LeadPit_45_BLCorrected.root";
+
+  digiAnalysis::Analysis an(0, fname, 0, 00000, 00);
   std::cout << "getting the vector from an" << std::endl;
 
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -38,31 +50,32 @@ int main(int argc, char *argv[]) {
 
   bool keepGoing = true;
   std::string userInput;
-  TH2 *hDecTime = new TH2F("hDecTime", "DecayTime vs Energy", 16384, 0, 16384,
-                           100, 100, 300);
+  TH2 *hDecTime =
+      new TH2F("hDecTime", "DecayTime vs Energy", 500, 0, 500, 100, 100, 500);
 
-  TProfile *havDecTime = new TProfile("havDecTime", "Average decay time", 356,
-                                      0, 16376); // for 4 keV bins
+  TProfile *havDecTime =
+      new TProfile("havDecTime", "Average decay time", 125, 0, 500);
 
-  TH2 *hEMT = new TH2F("hEMT", "hEMT", 4096, 0, 16384, 1000, 0, 4);
+  TH2 *hEMT = new TH2F("hEMT", "hEMT", 500, 0, 500, 1000, 0, 4);
 
   digiAnalysis::WaveForm *wfPtr = nullptr;
-  double meanTime;
+  double meanTime, energy;
   for (int iter = 0; iter < nentries && keepGoing; iter++) {
     if (iter % 1000 == 0)
       std::cout << iter << " : " << hitsVector[iter]->GetEnergy() << std::endl;
     meanTime = hitsVector[iter]->GetMeanTime();
     // std::cout << std::endl << iter << std::endl;
-    hEMT->Fill(hitsVector[iter]->GetEnergy(), hitsVector[iter]->GetMeanTime());
-    if (fabs(meanTime - 3.05) < 0.05) {
+
+    energy = hitsVector[iter]->GetEnergy() * 0.09032 - 3.385;
+    hEMT->Fill(energy, hitsVector[iter]->GetMeanTime());
+    if (fabs(meanTime - 2.3) < 0.1) {
       wfPtr = hitsVector[iter]->GetWFPtr();
-      wfPtr->SetSmooth(100);
-      wfPtr->FitExponential(1, 1050, 3400);
+      wfPtr->SetSmooth(40);
+      wfPtr->FitExponential(1, 550, 1500);
       if (wfPtr->IsFit()) {
         // std::cout << iter << std::endl;
-        hDecTime->Fill(hitsVector[iter]->GetEnergy(), wfPtr->GetFitPar(1) * 2);
-        havDecTime->Fill(hitsVector[iter]->GetEnergy(),
-                         wfPtr->GetFitPar(1) * 2);
+        hDecTime->Fill(energy, wfPtr->GetFitPar(1) * 2);
+        havDecTime->Fill(energy, wfPtr->GetFitPar(1) * 2);
         // std::cout << iter << std::endl;
       }
 

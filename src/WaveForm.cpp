@@ -7,8 +7,11 @@
 #include "includes.hh"
 #include <RtypesCore.h>
 #include <TComplex.h>
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <vector>
 
@@ -59,7 +62,7 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
   unsigned int size = arr->GetSize();
   for (unsigned int j = 0; j < size; j++) {
     traces.push_back(baseline - arr->At(j));
-    if (j >= GateStart and j <= GateStart + GateLenLong) {
+    if (j >= GateStart and j <= GateStart + GateMeanTime) {
       meantime = meantime + traces[j] * j;
       sampleSum = sampleSum + traces[j];
     }
@@ -543,7 +546,7 @@ void WaveForm::SetWaveForm(std::vector<double> tr) {
     unsigned int size = tr.size();
     for (unsigned int j = 0; j < size; j++) {
       traces.push_back(baseline - tr[j]);
-      if (j >= GateStart and j <= GateStart + GateLenShort) {
+      if (j >= GateStart and j <= GateStart + GateMeanTime) {
         meantime = meantime + traces[j] * j;
         sampleSum = sampleSum + traces[j];
       }
@@ -567,6 +570,34 @@ void WaveForm::SetWaveForm(std::vector<double> tr) {
     } else {
       meantime = -1.0 * TMath::Log10(fabs(meantime));
     }
+  } else {
+    std::cout << "err SetWaveForm: input vector is empty" << std::endl;
+  }
+}
+
+void WaveForm::SetWaveForm(std::vector<double> tr, Short_t start,
+                           Short_t stop) {
+  if (!tr.empty()) {
+    if (!traces.empty()) {
+      // std::cout << " WARNING: Replacing already filled traces" << std::endl;
+      traces.clear();
+    }
+
+    // SetBaseLine(tr);
+    // meantime = 0;
+    // double sampleSum = 0;
+    unsigned int size = tr.size();
+    // std::cout << "SetWF from: " << start << " : " << stop << std::endl;
+    for (int j = start; j < stop; j++) {
+      // std::cout << j << " : ";
+      if (j < 0 or j >= size) {
+        traces.push_back(0.0001);
+      } else {
+        traces.push_back(tr[j]);
+      }
+    }
+    // std::cout << traces.size() << std::endl;
+    SetMeanTime();
   } else {
     std::cout << "err SetWaveForm: input vector is empty" << std::endl;
   }
@@ -739,7 +770,7 @@ void WaveForm::SetTracesMovBLCorr() {
     for (int i = 0; i < N; i++) {
       // tracesMovBLCorr[i] = tracesSmooth[i] - tracesBL[i];
       tracesMovBLCorr[i] = traces[i] - tracesBL[i];
-      if (i >= GateStart and i <= GateStart + GateLenShort) {
+      if (i >= GateStart and i <= GateStart + GateMeanTime) {
         meantime = meantime + tracesMovBLCorr[i] * i;
         sampleSum = sampleSum + tracesMovBLCorr[i];
       }
@@ -856,7 +887,7 @@ void WaveForm::SetMeanTime() {
   double sampleSum = 0;
   if (!tracesMovBLCorr.empty()) {
     unsigned int size = tracesMovBLCorr.size();
-    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
+    for (unsigned int j = GateStart; j < GateMeanTime + GateStart; j++) {
       meantime = meantime + tracesMovBLCorr[j] * j;
       sampleSum = sampleSum + tracesMovBLCorr[j];
     }
@@ -868,7 +899,7 @@ void WaveForm::SetMeanTime() {
     }
   } else if (!tracesSmooth.empty()) {
     unsigned int size = traces.size();
-    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
+    for (unsigned int j = GateStart; j < GateMeanTime + GateStart; j++) {
       meantime = meantime + tracesSmooth[j] * j;
       sampleSum = sampleSum + tracesSmooth[j];
     }
@@ -880,7 +911,7 @@ void WaveForm::SetMeanTime() {
     }
   } else if (!traces.empty()) {
     unsigned int size = traces.size();
-    for (unsigned int j = GateStart; j < GateLenLong + GateStart; j++) {
+    for (unsigned int j = GateStart; j < GateMeanTime + GateStart; j++) {
       meantime = meantime + traces[j] * j;
       sampleSum = sampleSum + traces[j];
     }
@@ -1187,7 +1218,7 @@ double WaveForm::IntegrateWaveForm() {
 
 double WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
   double sum = 0;
-  if (!traces.empty() && (traces.size() > stopTime)) {
+  if (!traces.empty() && (traces.size() >= stopTime)) {
     if (startTime < stopTime) {
       for (unsigned int j = startTime; j < stopTime; j++) {
         sum = sum + traces[j];
@@ -1206,7 +1237,7 @@ double WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
 double WaveForm::IntegrateWaveForm(std::vector<double> tr, int startTime,
                                    int stopTime) {
   double sum = 0;
-  if (!tr.empty() && (tr.size() > stopTime)) {
+  if (!tr.empty() && (tr.size() >= stopTime)) {
     if (startTime < stopTime) {
       for (unsigned int j = startTime; j < stopTime; j++) {
         sum = sum + tr[j];
@@ -1382,14 +1413,46 @@ void WaveForm::AverageWaveForms(ULong_t start, UShort_t numWaveForm,
   // SetMeanTime();
 }
 
-void WaveForm::ScaleWaveForm(double Scale) {
-  std::transform(traces.begin(), traces.end(), traces.begin(),
-                 [Scale](double val) { return val * Scale; });
-  if (!tracesSmooth.empty()) {
-    std::transform(tracesSmooth.begin(), tracesSmooth.end(),
-                   tracesSmooth.begin(),
-                   [Scale](double val) { return val * Scale; });
+// void WaveForm::SetScaledWaveForm(double Scale) {
+//   std::transform(traces.begin(), traces.end(), traces.begin(),
+//                  [Scale](double val) { return val * Scale; });
+// }
+
+// void WaveForm::SetNormWaveForm() {
+//   if (tracesSmooth.empty()) {
+//     SetSmooth();
+//   }
+//   // std::cout << "smooth set" << std::endl;
+//   auto max_it =
+//       std::max_element(tracesSmooth.begin() + GateStart,
+//                        tracesSmooth.begin() + GateStart + GateLenShort);
+//   // std::cout << "max pos: " << *max_it << std::endl;
+//   int it = std::distance(tracesSmooth.begin(), max_it);
+//   scale = 1.0 / tracesSmooth[it];
+//   // std::cout << "it: " << it << " : scale: " << scale << std::endl;
+//   SetScaledWaveForm(scale);
+// }
+
+std::vector<double> WaveForm::ScaleWaveForm(double Scale) {
+  std::vector<double> trTemp;
+  for (int iter = 0; iter < traces.size(); iter++) {
+    trTemp.push_back(traces[iter] * Scale);
   }
+  return trTemp;
+}
+
+std::pair<double, std::vector<double>> WaveForm::NormWaveForm() {
+  if (tracesSmooth.empty()) {
+    SetSmooth();
+  }
+  auto max_it =
+      std::max_element(tracesSmooth.begin() + GateStart,
+                       tracesSmooth.begin() + GateStart + GateLenShort);
+  int it = std::distance(tracesSmooth.begin(), max_it);
+  // std::map<double, std::vector<double>> map;
+  // double sc = 1.0 / tracesSmooth[it];
+  // map[sc] = ScaleWaveForm(sc);
+  return {1.0 / tracesSmooth[it], ScaleWaveForm(1.0 / tracesSmooth[it])};
 }
 
 void WaveForm::AddWaveForm(const WaveForm &wf1) {

@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
   //     "NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp/FILTERED/"
   //     "SDataF_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5/FILTERED/"
-      "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5_"
-      "BLCorrected.root";
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //     "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5/FILTERED/"
+  //     "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5_"
+  //     "BLCorrected.root";
 
   // std::string fname =
   //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
@@ -55,8 +55,13 @@ int main(int argc, char *argv[]) {
   //     "SDataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_Coinc_144ns_LeadPit_"
   //     "BLCorrected.root";
 
-  UShort_t channel = 2;
-  digiAnalysis::Analysis an(2, fname, 0000, 00000, 1);
+  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+                      "CoincidenceStudies/01JuneNoSrc/"
+                      "NaI1342_02June26_1750_1345_1350_1350_NoSrc_Thresh_30_"
+                      "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+
+  UShort_t channel = 0;
+  digiAnalysis::Analysis an(fname, 0000, 00000, 1);
   std::cout << "getting the vector from an" << std::endl;
 
   // test Getting

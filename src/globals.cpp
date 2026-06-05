@@ -13,6 +13,7 @@ UShort_t smoothBoxSz = 16;
 UShort_t GateStart = 400;    // NaI 500MSPS has *2 ns
 UShort_t GateLenLong = 3000; // NaI 500MSPS has *2 ns
 UShort_t GateLenShort = 250; // NaI 500MSPS has *2 ns
+UShort_t GateMeanTime = 600;
 
 // SPE
 // UShort_t GateStart = 75;    // NaI 500MSPS has *2 ns
@@ -26,6 +27,6 @@ UShort_t GateLenShort = 250; // NaI 500MSPS has *2 ns
 UShort_t PairCoincWindow = 144; // in ns
 UShort_t nSampleMovBL = 64;
 double EvalNormFactor =
-    23.3; // 31; // Factor to scale Eval energy with Digitizer energy
+    8; // 31; // Factor to scale Eval energy with Digitizer energy
 double BLError = 0.6;
 } // namespace digiAnalysis

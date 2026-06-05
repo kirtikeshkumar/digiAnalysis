@@ -38,15 +38,38 @@ int main(int argc, char *argv[]) {
   //   "/media/kirtikesh/UbuntuFiles/NaI/SPE/May2026/NaI1_15May26_1900_NoSrc_WAVES/UNFILTERED/"
   //                       "Data_NaI1_15May26_1900_NoSrc_WAVES.root";
 
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_LeadPit/"
-      "FILTERED/"
-      "SDataF_NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
-      "LeadPit.root";
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //     "NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_LeadPit/"
+  //     "FILTERED/"
+  //     "SDataF_NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
+  //     "LeadPit.root";
+
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_02June26_1750_1345_1350_1350_NoSrc_Thresh_30_"
+  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
+  //     "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5/FILTERED/"
+  //     "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5."
+  //     "root";
+
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_"
+  //                     "300_WAVES_Singles_LeadPit_45/FILTERED/"
+  //                     "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_"
+  //                     "120_300_WAVES_Singles_LeadPit_45.root";
+
+  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+                      "CoincidenceStudies/01JuneNoSrc/CalibrationFiles/"
+                      "DataF_NaI1_05June26_1750_CsSrc_Thresh_120_300_WAVES_"
+                      "Singles_LeadPit_68.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(2, fname, 0, 000, 0);
+  digiAnalysis::Analysis an(0, fname, 0, 200000, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
 
@@ -54,7 +77,15 @@ int main(int argc, char *argv[]) {
                                       0.0);
   int numTraces = 0;
 
-  digiAnalysis::WaveForm *WF = hitsVector[0]->GetWFPtr();
+  int iterStart = 0;
+  while (iterStart < hitsVector.size()) {
+    if (hitsVector[iterStart]->GetMeanTime() < 2.0 and
+        hitsVector[iterStart]->GetMeanTime() > 0.0)
+      break;
+    iterStart++;
+  }
+
+  digiAnalysis::WaveForm *WF = hitsVector[iterStart]->GetWFPtr();
   // WF->SetSmooth(500);
   WF->SetSmooth(16, "MovA");
   std::vector<double> tracePrimary = WF->GetTracesSmooth();
@@ -227,7 +258,7 @@ int main(int argc, char *argv[]) {
 
   std::string outfname =
       "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "Baseline_01June_singlePeriod_Ch2.root";
+      "Baseline_05June_singlePeriod_Ch0.root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("baseline", "b1aseline");
   digiAnalysis::WaveForm WFSPE;

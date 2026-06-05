@@ -9,6 +9,7 @@ extern UShort_t smoothBoxSz;
 extern UShort_t GateStart;
 extern UShort_t GateLenLong;
 extern UShort_t GateLenShort;
+extern UShort_t GateMeanTime;
 extern UShort_t PairCoincWindow; // in ns
 extern double EvalNormFactor;
 extern UShort_t nSampleMovBL;

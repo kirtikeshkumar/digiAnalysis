@@ -22,11 +22,13 @@ class WaveForm : public TObject {
 protected:
   std::vector<double> traces;
   std::vector<double> tracesSmooth;
+  std::vector<double> tracesNorm;
   std::vector<double> tracesFFT;
   std::vector<double> tracesFFTPhase;
   std::vector<double> tracesMovBLCorr;
   double meantime;
   double baseline;
+  double scale = 0.;
   int blStart = GateStart - nSampleBL - 1 > 0 ? GateStart - nSampleBL - 1 : 0;
   TF1 *fitFunc = nullptr;
   static TVirtualFFT *fft;
@@ -68,8 +70,10 @@ public:
   double GetFitParError(int val);
   TF1 *GetFitFunction() { return fitFunc; }
   double GetFitAt(double x) { return fitFunc->Eval(x); }
+  double GetScale() { return scale; }
 
   void SetWaveForm(const std::vector<double> tr);
+  void SetWaveForm(const std::vector<double> tr, Short_t start, Short_t stop);
   void SetWaveForm(const WaveForm &wf);
   void SetWaveForm(const WaveForm &wf, UShort_t start, UShort_t stop,
                    UShort_t blstart = 0, UShort_t nsample = 0);
@@ -132,7 +136,10 @@ public:
   void AverageWaveForms(ULong_t start, UShort_t numWaveForm,
                         UShort_t sizeOfWaveForms,
                         const std::vector<WaveForm> vecOfWaveForm);
-  void ScaleWaveForm(double Scale);
+  // void SetScaledWaveForm(double Scale);
+  std::vector<double> ScaleWaveForm(double Scale);
+  // void SetNormWaveForm();
+  std::pair<double, std::vector<double>> NormWaveForm();
   void AddWaveForm(const WaveForm &wf1);
   void ConcatenateWaveForms(const WaveForm &wf1, const WaveForm &wf2);
   std::vector<std::unique_ptr<WaveForm>> SplitWaveForm(UShort_t numSplits);
