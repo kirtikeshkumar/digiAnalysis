@@ -1,5 +1,6 @@
 #include "Analysis.h"
 #include "WaveForm.h"
+#include "globals.h"
 #include "includes.hh"
 #include "singleHits.h"
 #include <RtypesCore.h>
@@ -48,20 +49,35 @@ int main(int argc, char *argv[]) {
   //     "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5_"
   //     "BLCorrected.root";
 
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
+  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  // digiAnalysis::GateStart = 400;
+
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_02June26_1750_1345_1350_1350_NoSrc_Thresh_30_"
+  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+
   // std::string fname =
-  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-  //     "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_Coinc_144ns_LeadPit/"
-  //     "FILTERED/"
-  //     "SDataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_Coinc_144ns_LeadPit_"
-  //     "BLCorrected.root";
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI1_11Jun26_NoSrc_1900V_ExtTrig_Thresh2_DelayCoincLogic_1600nsCoinc_"
+  //     "2Vpp_Thresh_12lsb_WAVES_4/FILTERED/"
+  //     "DataF_NaI1_11Jun26_NoSrc_1900V_ExtTrig_Thresh2_DelayCoincLogic_"
+  //     "1600nsCoinc_2Vpp_Thresh_12lsb_WAVES_4_BLCorrected.root";
 
-  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-                      "CoincidenceStudies/01JuneNoSrc/"
-                      "NaI1342_02June26_1750_1345_1350_1350_NoSrc_Thresh_30_"
-                      "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/extCoinc/"
+      "NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_21/FILTERED/"
+      "DataF_NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+      "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
+      "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21_BLCorrected.root";
 
-  UShort_t channel = 0;
-  digiAnalysis::Analysis an(fname, 0000, 00000, 1);
+  UShort_t channel = 2;
+  digiAnalysis::Analysis an(fname, 0000, 200000, 1);
   std::cout << "getting the vector from an" << std::endl;
 
   // test Getting
@@ -80,7 +96,7 @@ int main(int argc, char *argv[]) {
   TH2 *hPSDPlot = new TH2F("PSDPlot", "Energy vs PSD", spectralsz, 0,
                            spectralsz, 100, 0, 1);
   TH2 *hMTPlot =
-      new TH2F("MTPlot", "Energy vs MT", spectralsz, 0, spectralsz, 4096, 2, 4);
+      new TH2F("MTPlot", "Energy vs MT", spectralsz, 0, spectralsz, 100, 1, 3);
   TH2 *hLamPlot = new TH2F("LamPlot", "Energy vs Lam", spectralsz, 0,
                            spectralsz, 2000, -10, 10);
   TH2 *hPSDLamPlot =
@@ -95,27 +111,27 @@ int main(int argc, char *argv[]) {
   }
   // TCanvas *c2 = new TCanvas("c2", "Energy vs PSD", 1500, 1000);
   // hPSDPlot->Draw("COLZ");
-  // TCanvas *c2 = new TCanvas("c2", "Energy vs MeanTime", 1500, 1000);
-  // hMTPlot->Draw("COLZ");
+  TCanvas *c2 = new TCanvas("c2", "Energy vs MeanTime", 1500, 1000);
+  hMTPlot->Draw("COLZ");
   // TCanvas *c2 = new TCanvas("c2", "Energy vs LamPar", 1500, 1000);
   // hLamPlot->Draw("COLZ");
   // TCanvas *c2 = new TCanvas("c2", "PSD vs LamPar", 1500, 1000);
   // hPSDLamPlot->Draw("COLZ");
-  // c2->Update();
+  c2->Update();
 
   TH1 *ESpect = new TH1F("ESpect", "Energy Spectra", spectralsz, 0, spectralsz);
 
   double Par1CutMin = 0, Par1CutMax = 16384;
   double Par2CutMin = 0, Par2CutMax = 1.0;
   std::string userInput;
-  // std::cout << "\n Par1CutMin: ";
-  // Par1CutMin = readUserInput(Par1CutMin);
-  // std::cout << "\n Par1CutMax: ";
-  // Par1CutMax = readUserInput(Par1CutMax);
-  // std::cout << "\n Par2CutMin: ";
-  // Par2CutMin = readUserInput(Par2CutMin);
-  // std::cout << "\n Par2CutMax: ";
-  // Par2CutMax = readUserInput(Par2CutMax);
+  std::cout << "\n Par1CutMin: ";
+  Par1CutMin = readUserInput(Par1CutMin);
+  std::cout << "\n Par1CutMax: ";
+  Par1CutMax = readUserInput(Par1CutMax);
+  std::cout << "\n Par2CutMin: ";
+  Par2CutMin = readUserInput(Par2CutMin);
+  std::cout << "\n Par2CutMax: ";
+  Par2CutMax = readUserInput(Par2CutMax);
 
   std::cout << "Parameter 1 cut: " << Par1CutMin << " -> " << Par1CutMax
             << std::endl;
@@ -130,13 +146,14 @@ int main(int argc, char *argv[]) {
     if (hitsVector[i]->GetChNum() == channel &&
         // hitsVector[i]->GetEvalPSD() >= Par1CutMin &&
         // hitsVector[i]->GetEvalPSD() <= Par1CutMax &&
-        // hitsVector[i]->GetMeanTime() >= 2.3 &&
-        // hitsVector[i]->GetMeanTime() <= 2.5 &&
+        hitsVector[i]->GetMeanTime() >= Par2CutMin &&
+        hitsVector[i]->GetMeanTime() <= Par2CutMax &&
         // hitsVector[i]->GetWFPtr()->EvalNoisePar2() >= Par2CutMin &&
         // hitsVector[i]->GetWFPtr()->EvalNoisePar2() <= Par2CutMax &&
-        hitsVector[i]->GetEvalEnergy() >= 00 &&
-        hitsVector[i]->GetEvalEnergy() <= 100) {
-      ESpect->Fill(hitsVector[i]->GetEvalEnergy());
+        hitsVector[i]->GetEvalEnergy() >= Par1CutMin &&
+        hitsVector[i]->GetEvalEnergy() <= Par1CutMax &&
+        hitsVector[i]->GetPSD() > 0 && hitsVector[i]->GetPSD() < 1) {
+      ESpect->Fill(hitsVector[i]->GetEnergy());
       if (count < 500 && keepGoing) {
         count++;
         wfptr = nullptr;
@@ -145,7 +162,7 @@ int main(int argc, char *argv[]) {
           waveformVector.push_back(*wfptr);
         }
         hitsVector[i]->Print();
-        wfptr->SetSmooth(40);
+        wfptr->SetSmooth(16, "MovA");
         wfptr->SetTracesFFT();
         wfptr->Plot();
         std::cout << "Do you want to see the next waveform? (y/n): ";

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <ratio>
 #include <string>
 #include <vector>
@@ -29,19 +30,31 @@ int main(int argc, char *argv[]) {
   //     "SDataF_NaI_13_CsSrc_LinearConf_HV_1900V_1345V_50cm_Coinc_96ns_Run_CFD_"
   //     "WAVES.root";
 
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-      "CoincidenceStudies/PairFiles/"
-      "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //     "CoincidenceStudies/PairFiles/"
+  //     "Pair_NaI_13_CoincidenceStudies_Cs_HV_1900V_1365V_240min_2Vpp.root";
 
-  digiAnalysis::Analysis an(fname, 0000, 00000, 0);
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/extCoinc/"
+      "NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_21/FILTERED/"
+      "DataF_NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+      "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
+      "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21_BLCorrected.root";
+
+  digiAnalysis::Analysis an(fname, 0000, 200000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
   // an.CreatePairs();
 
-  std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
-      an.GetPairsVec();
-  int nentries = vecOfPairs.size();
+  // std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
+  //     an.GetPairsVec();
+  // int nentries = vecOfPairs.size();
+  std::vector<std::unique_ptr<digiAnalysis::singleHits>> &vecOfHits =
+      an.GetSingleHitsVec();
+  int nentries = vecOfHits.size();
   std::cout << "got the vector from an: " << nentries << std::endl;
   int nPairs = nentries;
 
@@ -53,7 +66,10 @@ int main(int argc, char *argv[]) {
   std::vector<digiAnalysis::WaveForm> waveformVector;
 #ifdef WAVES
   TH1 *hSPE = new TH1F("hSPE", "hSPE", 1000, 0, 5000);
-  TH2 *hESPE = new TH2F("hESPE", "hESPE", 700, 0, 700, 1000, 0, 100);
+  TH2 *hESPE = new TH2F("hESPE", "hESPE", 16384, 0, 16384, 1000, 0, 100);
+  TH1 *hpreVal = new TH1F("hpreVal", "distance to pre valley", 2000, 0, 2000);
+  TH1 *hpostVal =
+      new TH1F("hpostVal", "distance to post valley", 2000, 0, 2000);
   bool keepGoing = true;
   std::string userInput;
   double intSPE, intWave;
@@ -61,45 +77,57 @@ int main(int argc, char *argv[]) {
 
   for (int iter = 0; iter < nPairs && keepGoing; iter++) {
 
-    hit = vecOfPairs[iter]->GetHitPtr(0);
+    // hit = vecOfPairs[iter]->GetHitPtr(0);
+    hit = vecOfHits[iter].get();
 
     if (iter % 10000 == 0) {
       std::cout << hit->GetEvNum() << " : " << hit->GetTimestamp() << std::endl;
     }
 
-    hit->GetEnergy() > 694
-        ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
-        : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 -
-                    0.4222; // Calibration to get the energy
-                            // 1900V
-    if (Energy1 > 20 and Energy1 < 1000) {
+    // hit->GetEnergy() > 694
+    //     ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
+    //     : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 -
+    //                 0.4222; // Calibration to get the energy
+    //                         // 1900V
+    Energy1 = hit->GetEnergy() * 0.01911 - 0.3;
+    if (Energy1 > 55 and Energy1 < 64) {
       WF = nullptr;
       WF = hit->GetWFPtr();
       WF->SetSmooth(65);
-      auto results = WF->DetectPeakValleys(3);
+      // WF->Plot();
+      auto results = WF->DetectPeakValleys(6);
       // std::cout << "size of peaks: " << results.first.size() << std::endl;
       // std::cout << "size of valleys: " << results.second.size() << std::endl;
-      //
-      // Print the identified peaks
-      //   int iter1 = 0;
-      //   while (iter1 < results.first.size()) {
-      //     std::cout
-      //         << iter1 << ":"
-      //         << results.first[iter1] //<< ":" << traces[results.first[iter]]
-      //         << std::endl;
-      //     iter1 += 1;
-      //     // if (iter >= results.first.size())
-      //     //     break;
-      //   }
+      // //
+      // // Print the identified peaks
+      // int iter1 = 0;
+      // while (iter1 < results.first.size())
+      // {
+      //   std::cout
+      //       << iter1 << ": Positions: " << results.second[2 * iter1] << ":"
+      //       << results.first[iter1] << ":"
+      //       << results.second[2 * iter1 + 1]
+      //       << std::endl;
+      //   std::cout
+      //       << iter1 << ": Amplitudes: "
+      //       << WF->GetTraces()[results.second[2 * iter1]]
+      //       << ":" << WF->GetTraces()[results.first[iter1]] << ":"
+      //       << WF->GetTraces()[results.second[2 * iter1 + 1]]
+      //       << std::endl;
+
+      //   iter1 += 1;
+      //   // if (iter >= results.first.size())
+      //   //     break;
+      // }
 
       // Select isolated SPE peaks and integrate to get charge
       digiAnalysis::WaveForm WFSPE;
       int iterPeaks = 0;
-      int isolationRange = 300;
-      int saveRange = isolationRange - 50;
+      int isolationRange = 50;
+      int saveRange = 250; // isolationRange - 50;
       while (iterPeaks < results.first.size() && keepGoing) {
         int peakPos = results.first[iterPeaks];
-        if ((peakPos > 2500 and peakPos < 4500) and
+        if ((peakPos > 2000 and peakPos < 4500) and
             (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
           if ((iterPeaks + 1 < results.first.size() and
                (results.first[iterPeaks + 1] - peakPos) > isolationRange) ||
@@ -134,7 +162,25 @@ int main(int argc, char *argv[]) {
         iterPeaks += 1;
       }
 
-      // iterPeaks = 0;
+      // Integrate between valleys to get charge of peaks and plot against
+      // energy to see if we can identify the SPE peak digiAnalysis::WaveForm
+      // WFSPE;
+      iterPeaks = 0;
+      while (iterPeaks < results.first.size()) {
+        int peakPos = results.first[iterPeaks];
+        int valley1Pos = results.second[2 * iterPeaks];
+        int valley2Pos = results.second[2 * iterPeaks + 1];
+        if (peakPos > 2000 and peakPos < 4500) {
+          // intSPE = WF->IntegrateWaveForm(valley1Pos, valley2Pos);
+          // intWave = hit->GetEvalEnergy();
+          // hSPE->Fill(intSPE);
+          // hESPE->Fill(Energy1, intWave / intSPE / Energy1);
+          hpreVal->Fill(peakPos - valley1Pos);
+          hpostVal->Fill(valley2Pos - peakPos);
+        }
+        iterPeaks += 1;
+      }
+      iterPeaks = 0;
 
       // std::cout << std::endl
       //           << "VALLEYS:____________" << std::endl;
@@ -171,6 +217,10 @@ int main(int argc, char *argv[]) {
   hSPE->Draw("HIST");
   TCanvas *c2 = new TCanvas("c2", "EvsNSPE", 800, 600);
   hESPE->Draw("COLZ");
+  TCanvas *c3 = new TCanvas("c3", "preVal dist", 800, 600);
+  hpreVal->Draw("HIST");
+  TCanvas *c4 = new TCanvas("c4", "postVal distance", 800, 600);
+  hpostVal->Draw("HIST");
   fApp->Run();
 #endif
 }

@@ -133,6 +133,8 @@ public:
   void LoadData(UShort_t channel, ULong64_t start, ULong64_t numOfEvents,
                 double EThreshold);
 
+  void SaveData(std::string datafilename, int channel = -1);
+
   /**
    * @brief Sets a single hit at the specified index in the hit vector.
    *
@@ -162,6 +164,13 @@ public:
    * @brief Creates pairs of hits between all channels.
    */
   void CreatePairs();
+
+  /**
+   * @brief Faltten the pair vector to hitsvector
+   *
+   * hitsVector will contain the events in time ordered format
+   */
+  void FlattenPairs();
 
   /**
    * @brief Deletes a hit from the hit vector at the specified index.

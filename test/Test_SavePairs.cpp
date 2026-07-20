@@ -20,11 +20,14 @@
 int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1/FILTERED/"
-      "SDataF_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
+      "/home/kirtikesh/Analysis/DATA/"
+      "extCoinc/"
+      "NaI3124_15-17Jun-13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+      "ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
 
-  digiAnalysis::Analysis an(fname, 0, 0000, 0);
+  digiAnalysis::Analysis an(fname, 1000000, 2000000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -40,9 +43,12 @@ int main(int argc, char *argv[]) {
   std::cout << nPairs << " Pairs were formed in the data." << std::endl;
 
   std::string outfname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "PairFiles/"
-      "Pair_NaI13_12May26_1900_1345_Cs_Coinc144ns_35cm_NoCollimation_1.root";
+      "/home/kirtikesh/Analysis/DATA/extCoinc/PairFiles/"
+      "Pair_NaI3124_15-17Jun-13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_"
+      "NoSplit_"
+      "ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected_1000000_2000000.root";
 
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("Data_Pair", "Data_Pair");

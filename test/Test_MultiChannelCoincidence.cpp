@@ -5,55 +5,362 @@
 #include "includes.hh"
 #include "singleHits.h"
 #include <TApplication.h>
+#include <TH1.h>
+#include <TTree.h>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
-  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-                      "CoincidenceStudies/01JuneNoSrc/"
-                      "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
-                      "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
+  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
 
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/extCoinc/PairFiles/"
+      "Pair_NaI3124_15-17Jun-13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_"
+      "NoSplit_"
+      "ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI1234_19Jun26_NoSrc_2000V_1350V_1350V_1350V_Gain2_NoSplit_Ch5_ExtTrig_"
+  //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
+  //     "2000nsCoincCh0AndAny_2Vpp_Thresh_30lsb_WAVES_Sum_BLCorrected.root";
+
+  std::string wfname = "/home/kirtikesh/Analysis/MLTests/AverageWaveforms.root"; //file for different type of waveforms identified by PCA
+  TFile *wffile = TFile::Open(wfname.c_str());
+  TTree *wfTree = (TTree *)wffile->Get("AverageWaveforms");
+  int clusterID;
+  std::vector<double> *wfPCA = nullptr;
+  wfTree->SetBranchAddress("ClusterID", &clusterID);
+  wfTree->SetBranchAddress("Waveform", &wfPCA);
+
+  std::vector<double> cluster0;
+  std::vector<double> cluster1;
+  digiAnalysis::WaveForm *WFNoise, *WFSig;
+  Long64_t nentries = wfTree->GetEntries();
+
+  for (Long64_t i = 0; i < nentries; i++) {
+
+    wfTree->GetEntry(i);
+
+    if (clusterID == -1) {
+      cluster0 = *wfPCA;
+      WFNoise = new digiAnalysis::WaveForm(cluster0);
+    }
+
+    if (clusterID == 0) {
+      cluster1 = *wfPCA;
+      WFSig = new digiAnalysis::WaveForm(cluster1);
+    }
+  }
   // std::string fname =
   // "/media/kirtikesh/UbuntuFiles/SDataF_NaI1342_02June26_1750_1345_1350_1350_NoSrc_Thresh_30_300_WAVES_Coinc_144ns_LeadPit_1.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 0, 0);
-  an.CreatePairs();
+  digiAnalysis::Analysis an(fname, 0, 100000, 0);
+  // an.CreatePairs();
   std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
       an.GetPairsVec();
   std::cout << "Number of pairs found: " << vecOfPairs.size() << std::endl;
 
   double energy0 = 0., energyOther = 0.;
-  TH2 *hE1E2 = new TH2I("hE1E2", "hE1E2", 500, 0, 500, 2600, 0, 2600);
+  TH2 *hE1E2 = new TH2I("hE1E2", "hE1E2", 800, 0, 80, 2600, 0, 2600);
+  TH1 *hDelT = new TH1F("hDelT", "Delta T (ns)", 1000, -1000, 1000);
+  TH2 *hEMT = new TH2I("hEMT", "hEMT", 800, 0, 80, 500, -4, 4);
+  TH2 *hMTLam =
+      new TH2F("MTLam", "MeanTime vs Lambda", 500, -4, 4, 1000, -10.0, 0);
+  TH2 *hMTLL =
+      new TH2F("MTLL", "MeanTime vs LL", 500, -4, 4, 1000, -10.0, 10.0);
+  TH2 *hMTLL1 =
+      new TH2F("MTLL1", "MeanTime1 vs LL", 500, -4, 4, 1000, -10.0, 10.0);
+  TH2 *hLamLL =
+      new TH2F("LamLL", "Lam vs LL", 1000, -10.0, 0, 1000, -10.0, 10.0);
 
+  bool keepGoing = true;
+  std::string userInput;
+  int badWFCount = 0;
+  double MT, Lam;
+  digiAnalysis::WaveForm *WF = nullptr, *WFNorm = nullptr;
+  std::vector<digiAnalysis::WaveForm> waveformVector, wfVecNoise;
   for (int i = 0; i < vecOfPairs.size(); i++) {
-    if (vecOfPairs[i]->GetPairHitCh(0) == 0) {
-      energy0 = vecOfPairs[i]->GetPairHitEnergy(0) * 0.09032; //- 3.385;
-      switch (vecOfPairs[i]->GetPairHitCh(1)) {
-      case 2:
-        energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.49444 - 14.93;
-        break;
-      case 3:
-        energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.47714 + 6.75;
-        break;
-      case 4:
-        energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.51929 - 9.29;
-        break;
+    switch (vecOfPairs[i]->GetPairHitCh(1)) {
+    case 0:
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.47835 - 11.71;
+      break;
+    case 2:
+      // vecOfPairs[i]->GetHitPtr(1)->SetEvalEnergy();
+      energy0 = vecOfPairs[i]->GetPairHitEvalEnergy(1) * 0.01911 - 0.301;
+      MT = vecOfPairs[i]->GetHitPtr(1)->GetMeanTime();
+      Lam = vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->EvalNoisePar2(950, 1650);
+      break;
+    case 3:
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.54222 - 10.3;
+      break;
+    case 4:
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.48345 + 2.395;
+      break;
 
-      default:
-        break;
-      }
-      if (vecOfPairs[i]->GetHitPtr(0)->GetMeanTime() > 2.08)
+    default:
+      break;
+    }
+    switch (vecOfPairs[i]->GetPairHitCh(0)) {
+    case 0:
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.47835 - 11.71;
+      break;
+    case 2:
+      // vecOfPairs[i]->GetHitPtr(0)->SetEvalEnergy();
+      energy0 = vecOfPairs[i]->GetPairHitEvalEnergy(0) * 0.01911 - 0.301;
+      MT = vecOfPairs[i]->GetHitPtr(0)->GetMeanTime();
+      Lam = vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->EvalNoisePar2(950, 1650);
+      break;
+    case 3:
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.54222 - 10.3;
+      break;
+    case 4:
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.48345 + 2.395;
+      break;
+
+    default:
+      break;
+    }
+
+    // if (vecOfPairs[i]->GetHitPtr(0)->GetMeanTime() > 2.08)
+    if (vecOfPairs[i]->GetPairHitCh(0) == 2 or
+        vecOfPairs[i]->GetPairHitCh(1) == 2) {
+      double preint =
+          vecOfPairs[i]->GetPairHitCh(0) == 2
+              ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->IntegrateWaveForm(
+                    0, digiAnalysis::GateStart)
+              : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->IntegrateWaveForm(
+                    0, digiAnalysis::GateStart);
+      if (preint / digiAnalysis::GateStart < 2.0) {
         hE1E2->Fill(energy0, energyOther);
+        hDelT->Fill(vecOfPairs[i]->GetPairDelTime() / 1E3);
+        hEMT->Fill(energy0, MT);
+        if (energy0 > 15) {
+          hMTLam->Fill(MT, Lam);
+        }
+      } else {
+        badWFCount++;
+      }
+      // std::cout << "E0: " << energy0 << " : EO: " << energyOther <<
+      // std::endl;
+
+      if (keepGoing and energy0 > 5 and energy0 < 20 and MT > 1.8 and
+          MT < 2.1 and preint < 2.1 and Lam > -5.4) {
+
+        // std::cout << "Energy: " << energy0 << " | MeanTime : " << MT
+        //           << std::endl;
+        WF = vecOfPairs[i]->GetPairHitCh(0) == 2
+                 ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()
+                 : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr();
+        WFNorm = new digiAnalysis::WaveForm(WF->ScaleWaveForm(1.0 / energy0));
+        waveformVector.push_back(*WFNorm);
+        // WF->Plot();
+        // std::cout << "Do you want to see the next waveform? (y/n): ";
+        // std::getline(std::cin, userInput);
+        // if (userInput != "y" && userInput != "Y") {
+        //   keepGoing = false;
+        // }
+      }
+      if (keepGoing and energy0 > 0 and energy0 < 100 and MT < 1.5 and
+          preint < 2.1 and Lam > -5.4) {
+
+        // std::cout << "Energy: " << energy0 << " | MeanTime : " << MT
+        //           << std::endl;
+        WF = vecOfPairs[i]->GetPairHitCh(0) == 2
+                 ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()
+                 : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr();
+        WFNorm = new digiAnalysis::WaveForm(WF->ScaleWaveForm(1.0 / energy0));
+        wfVecNoise.push_back(*WFNorm);
+        // WF->Plot();
+        // std::cout << "Do you want to see the next waveform? (y/n): ";
+        // std::getline(std::cin, userInput);
+        // if (userInput != "y" && userInput != "Y") {
+        //   keepGoing = false;
+        // }
+      }
     }
   }
+  std::cout << "Number of improper WF: " << badWFCount << std::endl;
   TCanvas *c1 = new TCanvas("c1", "E1E2", 800, 600);
   c1->SetFrameFillColor(kBlack);
   hE1E2->Draw("COLZ");
   c1->Update();
+  TCanvas *c2 = new TCanvas("c2", "DelT", 800, 600);
+  hDelT->Draw("HIST");
+  c2->Update();
+  TCanvas *c3 = new TCanvas("c3", "MT", 800, 600);
+  hEMT->Draw("COLZ");
+  c3->Update();
+  TCanvas *c4 = new TCanvas("c4", "MT vs Lam", 800, 600);
+  hMTLam->Draw("COLZ");
+  c4->Update();
+
+  UShort_t wfSz = WF->GetSize();
+  std::cout << " Averaging " << waveformVector.size()
+            << " waveforms for plotting" << std::endl;
+  digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
+  WFAveraged.SetSmooth(40);
+  WFAveraged.SetTracesFFT();
+  WFAveraged.Plot();
+  cluster1 = WFAveraged.GetTracesSmooth();
+
+  digiAnalysis::WaveForm WFAvNoise(wfSz, wfVecNoise);
+  WFAvNoise.SetSmooth(40);
+  cluster0 = WFAvNoise.GetTracesSmooth();
+  double intValAv = WFAveraged.IntegrateWaveForm();
+  std::cout << "intValAv: " << intValAv << std::endl;
+
+  TFile f("output.root", "RECREATE");
+  std::vector<double> waveformtrace;
+  waveformtrace = WFAveraged.GetTraces();
+  f.WriteObject(&waveformtrace, "trace");
+  f.Close();
+
+  // Testing the likelihood w.r.t averaged waveform
+  double logLikelihood0, logLikelihood1, netLikelihood;
+  double intValNoise, intValSig, intWF;
+  // intValNoise = WFNoise->IntegrateWaveForm();
+  // intValSig = WFSig->IntegrateWaveForm();
+  intValSig = intValAv;
+  intValNoise = WFAvNoise.IntegrateWaveForm();
+
+  keepGoing = true;
+  std::vector<double> trace = WFNorm->GetTraces();
+  TH2 *hELL = new TH2F("hELL", "hELL", 800, 0, 80, 1000, -10, 10);
+  for (int i = 0; i < vecOfPairs.size(); i++) {
+    if (i % 1000 == 0) {
+      std::cout << i << std::endl;
+    }
+    WF = vecOfPairs[i]->GetPairHitCh(0) == 2
+             ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()
+             : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr();
+    intWF = vecOfPairs[i]->GetPairHitCh(0) == 2
+                ? vecOfPairs[i]->GetPairHitEvalEnergy(0)
+                : vecOfPairs[i]->GetPairHitEvalEnergy(1);
+    MT = vecOfPairs[i]->GetPairHitCh(0) == 2
+             ? vecOfPairs[i]->GetHitPtr(0)->GetMeanTime()
+             : vecOfPairs[i]->GetHitPtr(1)->GetMeanTime();
+    energy0 = intWF * 0.01911 - 0.301;
+    WFNorm = new digiAnalysis::WaveForm(WF->ScaleWaveForm(1.0 / fabs(energy0)));
+    trace = WFNorm->GetTraces();
+    logLikelihood0 = 0;
+    logLikelihood1 = 0;
+    netLikelihood = 0;
+    for (int j = digiAnalysis::GateStart;
+         j < digiAnalysis::GateStart + digiAnalysis::GateLenLong; j++) {
+      // logLikelihood0 += trace[j] * TMath::Log(abs(trace[j] /
+      // waveformtrace[j]));
+      logLikelihood0 += trace[j] * TMath::Log(abs(trace[j] / cluster0[j]));
+      logLikelihood1 += trace[j] * TMath::Log(abs(trace[j] / cluster1[j]));
+    }
+    // logLikelihood = logLikelihood + intValAv -
+    //                 intWF * digiAnalysis::GateLenLong /
+    //                     digiAnalysis::EvalNormFactor / energy0;
+    logLikelihood0 = logLikelihood0 + intValNoise - intWF;
+    logLikelihood1 = logLikelihood1 + intValSig - intWF;
+    netLikelihood =
+        (logLikelihood0 - logLikelihood1) / (logLikelihood0 + logLikelihood1);
+
+    hELL->Fill(energy0, netLikelihood);
+    hMTLL->Fill(MT, netLikelihood);
+    // std::cout << netLikelihood << std::endl;
+    // if (i < 100) {
+    //   std::cout << energy0 << " : " << logLikelihood / 10000.0 << " : "
+    //             << WFNorm->IntegrateWaveForm() << " : "
+    //             << intWF * digiAnalysis::GateLenLong /
+    //                    digiAnalysis::EvalNormFactor / energy0
+    //             << std::endl;
+    // }
+
+    // if (netLikelihood > -1.0 and netLikelihood < 0.0 and keepGoing and
+    //     energy0 < 1) {
+    //   WF->Plot();
+    //   std::cout << "Energy: " << energy0 << " LL: " << netLikelihood
+    //             << std::endl;
+    //   std::cout << "Do you want to see the next waveform? (y/n): ";
+    //   std::getline(std::cin, userInput);
+    //   if (userInput != "y" && userInput != "Y") {
+    //     keepGoing = false;
+    //   }
+    // }
+  }
+
+  // Testing the log likelihood on non-pair files
+
+  TH2 *hELL_1 = new TH2F("hELL1", "hELL1", 800, 0, 80, 1000, -10, 10);
+  std::string fname1 =
+      "/home/kirtikesh/Analysis/DATA/extCoinc/"
+      "NaI3124_13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_50lsb_WAVES_Sum_BLCorrected.root";
+  digiAnalysis::Analysis an1(2, fname1, 0, 200000, 0);
+  std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVec1 =
+      an1.GetSingleHitsVec();
+  for (int i = 0; i < hitsVec1.size(); i++) {
+    if (i % 1000 == 0) {
+      std::cout << i << std::endl;
+    }
+    WF = hitsVec1[i]->GetWFPtr();
+    intWF = hitsVec1[i]->GetEvalEnergy();
+    MT = hitsVec1[i]->GetMeanTime();
+    if (MT > 1.8 and MT < 2.2) {
+      energy0 = intWF * 0.01911 - 0.301;
+      WFNorm =
+          new digiAnalysis::WaveForm(WF->ScaleWaveForm(1.0 / fabs(energy0)));
+      trace = WFNorm->GetTraces();
+      logLikelihood0 = 0;
+      logLikelihood1 = 0;
+      netLikelihood = 0;
+      for (int j = digiAnalysis::GateStart;
+           j < digiAnalysis::GateStart + digiAnalysis::GateLenLong; j++) {
+        logLikelihood0 += trace[j] * TMath::Log(abs(trace[j] / cluster0[j]));
+        logLikelihood1 += trace[j] * TMath::Log(abs(trace[j] / cluster1[j]));
+      }
+      logLikelihood0 = logLikelihood0 + intValNoise - intWF;
+      logLikelihood1 = logLikelihood1 + intValSig - intWF;
+      netLikelihood =
+          (logLikelihood0 - logLikelihood1) / (logLikelihood0 + logLikelihood1);
+
+      hELL_1->Fill(energy0, netLikelihood);
+      hMTLL1->Fill(MT, netLikelihood);
+
+      // if (netLikelihood > -1.0 and netLikelihood < 0.0 and keepGoing and
+      //     energy0 < 1) {
+      //   WF->Plot();
+      //   std::cout << "Energy: " << energy0 << " LL: " << netLikelihood
+      //             << std::endl;
+      //   std::cout << "Do you want to see the next waveform? (y/n): ";
+      //   std::getline(std::cin, userInput);
+      //   if (userInput != "y" && userInput != "Y") {
+      //     keepGoing = false;
+      //   }
+      // }
+    }
+  }
+
+  // WFSig->Plot(cluster0, cluster1);
+
+  TCanvas *c5 = new TCanvas("c5", "E vs LL", 800, 600);
+  hELL->Draw("COLZ");
+  c5->Update();
+  TCanvas *c6 = new TCanvas("c6", "MT vs LL", 800, 600);
+  hMTLL->Draw("COLZ");
+  c6->Update();
+  TCanvas *c7 = new TCanvas("c7", "E vs LL", 800, 600);
+  hELL_1->Draw("COLZ");
+  c7->Update();
+  TCanvas *c8 = new TCanvas("c8", "MT vs LL", 800, 600);
+  hMTLL1->Draw("COLZ");
+  c8->Update();
 
   fApp->Run();
   return 0;

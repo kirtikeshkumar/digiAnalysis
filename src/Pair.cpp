@@ -118,17 +118,17 @@ UShort_t Pair::GetPairHitPSD(Short_t Sel) {
 #ifdef WAVES
 double Pair::GetPairHitEvalEnergy(Short_t Sel) {
   auto h = GetHitPtr(Sel);
-  return h ? h->GetEvalEnergy() : 0.0f;
+  return h ? h->GetEvalEnergy() : 0.0;
 }
 
 double Pair::GetPairHitEvalEnergyShort(Short_t Sel) {
   auto h = GetHitPtr(Sel);
-  return h ? h->GetEvalEnergyShort() : 0.0f;
+  return h ? h->GetEvalEnergyShort() : 0.0;
 }
 
 double Pair::GetPairHitEvalPSD(Short_t Sel) {
   auto h = GetHitPtr(Sel);
-  return h ? h->GetEvalPSD() : 0.0f;
+  return h ? h->GetEvalPSD() : 0.0;
 }
 #endif
 void Pair::Print() {

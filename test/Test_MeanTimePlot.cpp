@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "includes.hh"
 #include "singleHits.h"
+#include <RtypesCore.h>
 #include <TApplication.h>
 #include <iostream>
 #include <string>
@@ -44,37 +45,94 @@ int main(int argc, char *argv[]) {
   //       "SDataF_NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
   //       "LeadPit_BLCorrected.root";
 
-  //   std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //                       "CoincidenceStudies/01JuneNoSrc/"
-  //                       "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_2_30_"
-  //                       "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_2_30_"
+  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
 
-  //   std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //                       "CoincidenceStudies/01JuneNoSrc/"
-  //                       "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_"
-  //                       "300_WAVES_Singles_LeadPit_45/FILTERED/"
-  //                       "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_"
-  //                       "120_300_WAVES_Singles_LeadPit_45_BLCorrected.root";
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_"
+  //                     "300_WAVES_Singles_LeadPit_45/FILTERED/"
+  //                     "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_"
+  //                     "120_300_WAVES_Singles_LeadPit_45_BLCorrected.root";
 
-  //   std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //                       "CoincidenceStudies/01JuneNoSrc/"
-  //                       "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
-  //                       "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/"
+  //                     "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
+  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  // digiAnalysis::GateStart = 400;
+  // digiAnalysis::TriggerTime = 480;
 
-  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-                      "CoincidenceStudies/01JuneNoSrc/CalibrationFiles/"
-                      "DataF_NaI1_05June26_1750_CsSrc_Thresh_120_300_WAVES_"
-                      "Singles_LeadPit_68_0-500k_BLCorrected.root";
+  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //                     "CoincidenceStudies/01JuneNoSrc/CalibrationFiles/"
+  //                     "DataF_NaI1_05June26_1750_CsSrc_Thresh_120_300_WAVES_"
+  //                     "Singles_LeadPit_68_0-500k_BLCorrected.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI1_11Jun26_NoSrc_1900V_ExtTrig_Thresh2_DelayCoincLogic_1600nsCoinc_"
+  //     "2Vpp_Thresh_12lsb_WAVES_4/FILTERED/"
+  //     "DataF_NaI1_11Jun26_NoSrc_1900V_ExtTrig_Thresh2_DelayCoincLogic_"
+  //     "1600nsCoinc_2Vpp_Thresh_12lsb_WAVES_4_BLCorrected.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI1_11Jun26_AmSrc_2000V_ExtTrig_Thresh4_DelayCoincLogic_PGate160ns_"
+  //     "Delay240ns_DGate600ns_1100nsCoinc_2Vpp_Thresh_17lsb_WAVES_1/FILTERED/"
+  //     "DataF_NaI1_11Jun26_AmSrc_2000V_ExtTrig_Thresh4_DelayCoincLogic_"
+  //     "PGate160ns_"
+  //     "Delay240ns_DGate600ns_1100nsCoinc_2Vpp_Thresh_17lsb_WAVES_1_BLCorrected."
+  //     "root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/PairFiles/"
+  //     "Pair_NaI3124_15-17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+  //     "ExtTrig_"
+  //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+  //     "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI3124_15-17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+  //     "ExtTrig_"
+  //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+  //     "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI3124_13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+  //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+  //     "2Vpp_Thresh_50lsb_WAVES_Sum_BLCorrected.root";
+
+  // std::string fname =
+  // "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  // "NaI1234_19Jun26_NoSrc_2000V_1350V_1350V_1350V_Gain2_NoSplit_Ch5_ExtTrig_"
+  // "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
+  // "2000nsCoincCh0AndAny_2Vpp_Thresh_30lsb_WAVES_Sum_BLCorrected.root";
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/PairFiles/"
+  //     "Pair_NaI3124_15-17Jun-13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_"
+  //     "NoSplit_ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_"
+  //     "DGate600ns_1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/extCoinc/"
+      "NaI3124_13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_50lsb_WAVES_Sum_BLCorrected.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 200000, 0);
+  digiAnalysis::Analysis an(fname, 0, 500000, 0);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
+  std::cout << "Got " << hitsVector.size() << " hits from file" << std::endl;
 #ifdef WAVES
-  int spectralsize = 500; // 8192
-  double WFMT = 0;        // MeanTime parameter for flat waveform
+  int spectralsize = 80; // 8192
+  double WFMT = 0;       // MeanTime parameter for flat waveform
   TH2 *hMTPlot = new TH2F("MTPlot", "Energy vs MeanTime", spectralsize, 0,
                           spectralsize, 500, -4, 4);
   TH2 *hLamPlot = new TH2F("LamPlot", "Energy vs Lambda", spectralsize, 0,
@@ -99,6 +157,7 @@ int main(int argc, char *argv[]) {
                           spectralsize, 410, 0, spectralsize);
   TH2 *hPSDEvalPlot =
       new TH2F("PSDEvalPlot", "PSD vs PSDEval", 160, -8, 8, 160, -8, 8);
+  TH2 *hMTPSD = new TH2F("MTPSD", "MT vs PSD", 500, -4, 4, 40, -2, 2);
   TH1F *hEEvalRatio =
       new TH1F("hEEValRatio", "Ratio of EEval vs E", 1000, 0, 200);
   TH2 *hEdiffPlot = new TH2F("EdiffPlot", "Energy vs Energy-EnergyShort", 410,
@@ -110,6 +169,8 @@ int main(int argc, char *argv[]) {
       new TH1F("hESpectra", "Energy Spectra", spectralsize, 0, spectralsize);
   TH1F *hEEvalSpectra = new TH1F("hEEvalSpectra", "Eval Energy Spectra",
                                  spectralsize, 0, spectralsize);
+  TH2 *hELL = new TH2F("hELL", "hELL", 800, 0, 80, 1000, -5, 5);
+  TH2 *hMTLL = new TH2F("hMTLL", "hMTLL", 500, -4, 4, 1000, -5, 5);
   int nentries = hitsVector.size();
   double psd = 0;
   double evalEnergy = 0;
@@ -126,129 +187,183 @@ int main(int argc, char *argv[]) {
   std::vector<double> trFFT_Phase;
   std::vector<digiAnalysis::WaveForm> waveformVector;
   double meanTime;
+  int badwf = 0;
+
+  // for loglikelihood
+  TFile f("output.root", "READ");
+  std::vector<double> *traceAv = nullptr;
+  f.GetObject("trace", traceAv);
+  digiAnalysis::WaveForm WFNormAv(*traceAv);
+  double intValAv = WFNormAv.IntegrateWaveForm();
+
   for (int i = 0; i < nentries; i++) {
     if (i % 10000 == 0) {
       std::cout << i << std::endl;
     }
     if (hitsVector[i]->GetChNum() ==
-        0 // and
+        2 // and
           // hitsVector[i]->GetTimestamp() / 1E12 > 1600 and
           // hitsVector[i]->GetTimestamp() / 1E12 < 3200
           // and hitsVector[i]->GetMeanTime() < 3.8
     ) {   // (hitsVector[i]->GetPSD() > 0.0 and
       // hitsVector[i]->GetChNum() == 0) {
-      energy = hitsVector[i]->GetEnergy();           // * 0.052966 - 4.547;
-      energyShort = hitsVector[i]->GetEnergyShort(); // * 0.052966 - 4.547;
+      energy =
+          hitsVector[i]->GetEnergy() * 0.01911 - 0.301; // * 0.052966 - 4.547;
+      energyShort = hitsVector[i]->GetEnergyShort() * 0.01911 -
+                    0.301; // * 0.052966 - 4.547;
       WF = hitsVector[i]->GetWFPtr();
+      std::vector<double> trace = WF->GetTraces();
       // WF->SetTracesMovBLCorr();
       // WF->SetMeanTime();
-      WFMT = TMath::Log10(WF->GetSize() / 2.0);
-      Q1 = 0;
-      Q2 = 0;
-      avT1 = 0;
-      avT2 = 0;
-      netQ = 0;
-      std::vector<double> trace = WF->GetTraces();
-      int sz = 700;       // digiAnalysis::GateLenLong; // trace.size();
-      int startVal = 450; // digiAnalysis::GateStart
-      for (int iter = startVal; iter < startVal + sz / 2; iter++) {
-        avT1 += abs(trace[iter]) * iter;
-        avT2 += abs(trace[iter + sz / 2]) * (iter + sz / 2);
-        Q1 += abs(trace[iter]);
-        Q2 += abs(trace[iter + sz / 2]);
-        netQ += (trace[iter] + trace[iter + sz / 2]);
-      }
-      newLam =
-          TMath::Log(-1.0 * TMath::Log(Q2 / Q1) /
-                     (avT2 / Q2 - avT1 / Q1)); // /(avT2 / avQ2 - avT1 / avQ1)
 
-      evalEnergy =
-          hitsVector[i]->GetEvalEnergy(); // WF->IntegrateWaveForm(290, 1390);
-      evalEnergyShort =
-          hitsVector[i]->GetEvalEnergyShort(); // WF->IntegrateWaveForm(290,
-                                               // 440);
+      double preInt = WF->IntegrateWaveForm(0, digiAnalysis::GateStart);
+
+      WFMT = TMath::Log10(WF->GetSize() / 2.0);
+      newLam = -1;
+      if (preInt < 2.0) {
+        Q1 = 0;
+        Q2 = 0;
+        avT1 = 0;
+        avT2 = 0;
+        netQ = 0;
+        int sz = 700;       // digiAnalysis::GateLenLong; // trace.size();
+        int startVal = 950; // digiAnalysis::GateStart
+        for (int iter = startVal; iter < startVal + sz / 2; iter++) {
+          avT1 += abs(trace[iter]) * iter;
+          avT2 += abs(trace[iter + sz / 2]) * (iter + sz / 2);
+          Q1 += abs(trace[iter]);
+          Q2 += abs(trace[iter + sz / 2]);
+          netQ += (trace[iter] + trace[iter + sz / 2]);
+        }
+      }
+      newLam = TMath::Log(-1.0 * TMath::Log(Q2 / Q1) / (avT2 / Q2 - avT1 / Q1));
+      evalEnergy = hitsVector[i]->GetEvalEnergy() * 0.01911 -
+                   0.301; // WF->IntegrateWaveForm(290, 1390);
+      evalEnergyShort = hitsVector[i]->GetEvalEnergyShort() * 0.01911 -
+                        0.301; // WF->IntegrateWaveForm(290,
+                               // 440);
       psd = 1.0 - energyShort * 1.0 / energy;
       meanTime = hitsVector[i]->GetMeanTime();
-      energy = energy * 0.09032 - 3.3849;
-      evalEnergy = evalEnergy * 0.09032 - 3.3849;
-      hLamPlot->Fill(evalEnergy, newLam);
-      hLamMTPlot->Fill(evalEnergy, newLam, meanTime);
-      hMTPlot->Fill(energy, meanTime);
-      hMTLam->Fill(meanTime, newLam);
-      // shortPSD =
-      //     WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290, 600);
-      hPSDLamMTPlot->Fill(psd, newLam, meanTime);
-      hPSDLamEPlot->Fill(evalEnergy, psd, newLam);
-      hPSDLamPlot->Fill(psd, newLam);
-      hPSDPlot->Fill(energy, psd);
-      hEPlot->Fill(energy, evalEnergy);
-      hESPlot->Fill(energyShort, evalEnergyShort);
-      hPSDEvalPlot->Fill(hitsVector[i]->GetPSD(), psd);
-      hEEvalRatio->Fill(evalEnergyShort * 1.0 / energyShort);
-      hEdiffPlot->Fill(energy, energyShort / energy);
-      hEdiffEvalPlot->Fill(evalEnergy, evalEnergyShort / evalEnergy);
-      if (meanTime > 2.2) {
+      // energy = energy * 0.09032 - 3.3849;
+      // evalEnergy = evalEnergy * 0.09032 - 3.3849;
+
+      if (psd > 0.01 and psd < 0.5 and preInt < 2.0) {
+
+        hLamPlot->Fill(evalEnergy, newLam);
+        hLamMTPlot->Fill(evalEnergy, newLam, meanTime);
+        hMTPlot->Fill(energy, meanTime);
+        hMTLam->Fill(meanTime, newLam);
+        // shortPSD =
+        //     WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290,
+        //     600);
+        hPSDLamMTPlot->Fill(psd, newLam, meanTime);
+        hPSDLamEPlot->Fill(evalEnergy, psd, newLam);
+        hPSDLamPlot->Fill(psd, newLam);
+        hPSDPlot->Fill(energy, psd);
+        hEPlot->Fill(energy, evalEnergy);
+        hESPlot->Fill(energyShort, evalEnergyShort);
+        hPSDEvalPlot->Fill(hitsVector[i]->GetPSD(), psd);
+        hEEvalRatio->Fill(evalEnergyShort * 1.0 / energyShort);
+        hEdiffPlot->Fill(energy, energyShort / energy);
+        hEdiffEvalPlot->Fill(evalEnergy, evalEnergyShort / evalEnergy);
+        hMTPSD->Fill(meanTime, psd);
         hESpectra->Fill(energy);
+      }
+
+      if (meanTime > 1.8 and meanTime < 2.16 and psd < 0.5 and psd > 0.01 and
+          newLam > -5.4 and newLam < -4.5 and preInt < 2.0) {
         hEEvalSpectra->Fill(evalEnergy);
       }
+      if (preInt >= 2.0) {
+        badwf++;
+      }
+
+      double logLikelihood = 0;
+      // ########################################################### //
+      // This part evaluates the loglikelihood
+      // ########################################################### //
+
+      if (newLam > -5.5 and newLam < -4.5 and psd < 0.5 and psd > 0.01 and
+          meanTime < 2.1 and meanTime > 1.8 and preInt < 2.0) {
+        digiAnalysis::WaveForm WFNorm(WF->ScaleWaveForm(1.0 / fabs(energy)));
+        trace = WFNorm.GetTraces();
+
+        for (int j = digiAnalysis::GateStart;
+             j < digiAnalysis::GateStart + digiAnalysis::GateLenLong; j++) {
+          logLikelihood += WFNorm.GetTraces()[j] *
+                           TMath::Log(abs(trace[j] / traceAv->at(j)));
+        }
+        logLikelihood = logLikelihood + intValAv - WFNorm.IntegrateWaveForm();
+        hELL->Fill(energy, logLikelihood / intValAv);
+        hMTLL->Fill(meanTime, logLikelihood / intValAv);
+      }
+      // ########################################################### //
 
       // ########################################################### //
       //             This part plots selected waveforms              //
       // ########################################################### //
 
-      //   energy = energy * 0.09032 - 3.3849;
-      //   evalEnergy = evalEnergy * 0.09032 - 3.3849;
-      //   if (keepGoing and
-      //       // newLam > -6.5 and newLam < -6 and
-      //       energy > 0 and energy < 2 and newLam > -6 and psd > 0 and
-      //       meanTime < 2. and meanTime > 0.) {
-      //     hitsVector[i]->Print();
-      //     std::cout << "lam: " << newLam << " : " << Q1 << " : " << Q2 << " :
-      //     "
-      //               << avT1 << " : " << avT2 << " : " << netQ << " : "
-      //               << WF->IntegrateWaveForm(1500, 4900) / 3400.0 <<
-      //               std::endl;
-      //     std::cout << "Energy: " << energy << " : " << evalEnergy
-      //               << "\t | PSD = " << psd << std::endl
-      //               << std::endl;
-      //     WF->SetSmooth(16, "MovA");
-      //     waveformVector.push_back(*WF);
-      //     // WF->SetTracesFFT();
-      //     // trFFT.clear();
-      //     // trFFT_Phase.clear();
-      //     // trFFT = WF->GetTracesFFT();
-      //     // trFFT_Phase = WF->GetTracesFFTPhase();
-      //     // int cutoff = 50;
-      //     // std::fill(trFFT.begin() + cutoff, trFFT.end(), 0.0);
-      //     // std::fill(trFFT_Phase.begin() + cutoff, trFFT_Phase.end(), 0.0);
-      //     // WF->Plot(WF->GetTracesSmooth(), WF->EvalIFFT(trFFT,
-      //     //                                              trFFT_Phase)); //
-      //     WF->Plot();
-      //     std::cout << "Do you want to see the next waveform? (y/n): ";
-      //     std::getline(std::cin, userInput);
-      //     if (userInput != "y" && userInput != "Y") {
-      //       keepGoing = false;
-      //     }
-      //   }
+      // energy = energy * 0.09032 - 3.3849;
+      // evalEnergy = evalEnergy * 0.09032 - 3.3849;
+      if (keepGoing and
+          // newLam > -6.5 and newLam < -6 and
+          energy > 5 and energy < 15 and newLam > -5.5 and newLam < -4.5 and
+          psd < 0.5 and psd > 0.01 and meanTime < 3 and meanTime > 2.1 and
+          preInt <
+              2.0) { // and logLikelihood / 10000 < 0.3 and logLikelihood > 0.
+        hitsVector[i]->Print();
+        std::cout << "lam: " << newLam << " : " << Q1 << " : " << Q2 << " : "
+                  << avT1 << " : " << avT2 << " : " << netQ << " : "
+                  << WF->IntegrateWaveForm(1500, 4900) / 3400.0 << std::endl;
+        std::cout << "Energy: " << energy << " : " << evalEnergy
+                  << "\t | PSD = " << psd << " | InitEnergy: "
+                  << WF->IntegrateWaveForm(0, digiAnalysis::GateStart) * 1.0 /
+                         digiAnalysis::GateStart
+                  << std::endl
+                  << std::endl;
+        std::cout << "log likelihood: " << logLikelihood << std::endl;
+        WF->SetSmooth(16, "MovA");
+        waveformVector.push_back(*WF);
+        // WF->SetTracesFFT();
+        // trFFT.clear();
+        // trFFT_Phase.clear();
+        // trFFT = WF->GetTracesFFT();
+        // trFFT_Phase = WF->GetTracesFFTPhase();
+        // int cutoff = 50;
+        // std::fill(trFFT.begin() + cutoff, trFFT.end(), 0.0);
+        // std::fill(trFFT_Phase.begin() + cutoff, trFFT_Phase.end(), 0.0);
+        // WF->Plot(WF->GetTracesSmooth(), WF->EvalIFFT(trFFT,
+        //                                              trFFT_Phase)); //
+        WF->Plot();
+        std::cout << "Energy: " << energy << " LL: " << logLikelihood
+                  << std::endl;
+        std::cout << "Do you want to see the next waveform? (y/n): ";
+        std::getline(std::cin, userInput);
+        if (userInput != "y" && userInput != "Y") {
+          keepGoing = false;
+        }
+      }
       // ########################################################### //
     }
   }
+
+  std::cout << "badWF: " << badwf << std::endl;
   TCanvas *c1 = new TCanvas("c1", "Energy vs MeanTime", 800, 600);
   hMTPlot->Draw("COLZ");
   TCanvas *c2 = new TCanvas("c2", "Energy vs PSD", 800, 600);
   hPSDPlot->Draw("COLZ");
-  TCanvas *c3 = new TCanvas("c3", "Energy vs evalEnergy", 800, 600);
-  hEPlot->Draw("COLZ");
+  // TCanvas *c3 = new TCanvas("c3", "Energy vs evalEnergy", 800, 600);
+  // hEPlot->Draw("COLZ");
   // hEEvalRatio->Draw("HIST");
-  TCanvas *c4 = new TCanvas("c4", "EnergyShort vs evalEnergyShort", 800, 600);
-  hESPlot->Draw("COLZ");
-  TCanvas *c5 = new TCanvas("c5", "PSD vs PSDEval ", 800, 600);
-  hPSDEvalPlot->Draw("COLZ");
-  TCanvas *c6 = new TCanvas("c6", "Energy vs EnergyShort/Energy", 800, 600);
-  hEdiffPlot->Draw("COLZ");
-  TCanvas *c7 =
-      new TCanvas("c7", "evalEnergy vs evalEnergyShort/evalEnergy", 800, 600);
-  hEdiffEvalPlot->Draw("COLZ");
+  // TCanvas *c4 = new TCanvas("c4", "EnergyShort vs evalEnergyShort", 800,
+  // 600); hESPlot->Draw("COLZ"); TCanvas *c5 = new TCanvas("c5", "PSD vs
+  // PSDEval ", 800, 600); hPSDEvalPlot->Draw("COLZ"); TCanvas *c6 = new
+  // TCanvas("c6", "Energy vs EnergyShort/Energy", 800, 600);
+  // hEdiffPlot->Draw("COLZ");
+  // TCanvas *c7 =
+  //     new TCanvas("c7", "evalEnergy vs evalEnergyShort/evalEnergy", 800,
+  //     600);
+  // hEdiffEvalPlot->Draw("COLZ");
   TCanvas *c8 = new TCanvas("c8", "Energy Spectra", 800, 600);
   hESpectra->SetLineColor(kRed);
   hEEvalSpectra->SetLineColor(kGreen);
@@ -264,14 +379,21 @@ int main(int argc, char *argv[]) {
   hPSDLamMTPlot->Draw("");
   TCanvas *c13 = new TCanvas("c13", "PSD vs Lam", 800, 600);
   hPSDLamPlot->Draw("COLZ");
-  TCanvas *c14 = new TCanvas("c14", "Energy vs PSD vs Lam", 800, 600);
-  hPSDLamEPlot->Draw("");
+  // TCanvas *c14 = new TCanvas("c14", "Energy vs PSD vs Lam", 800, 600);
+  // hPSDLamEPlot->Draw("");
+  TCanvas *c15 = new TCanvas("c15", "MT vs PSD", 800, 600);
+  hMTPSD->Draw("COLZ");
+  TCanvas *c16 = new TCanvas("c16", "E vs LL", 800, 600);
+  hELL->Draw("COLZ");
+  TCanvas *c17 = new TCanvas("c17", "MT vs LL", 800, 600);
+  hMTLL->Draw("COLZ");
 
   UShort_t wfSz = WF->GetSize();
   std::cout << " Averaging " << waveformVector.size()
             << " waveforms for plotting" << std::endl;
   digiAnalysis::WaveForm WFAveraged(wfSz, waveformVector);
   WFAveraged.SetSmooth(40);
+  WFAveraged.SetTracesFFT();
   WFAveraged.Plot();
 
   fApp->Run();

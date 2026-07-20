@@ -2,6 +2,7 @@
 #define Global_h
 
 #include "includes.hh"
+#include <RtypesCore.h>
 
 namespace digiAnalysis {
 extern UShort_t nSampleBL;
@@ -10,7 +11,9 @@ extern UShort_t GateStart;
 extern UShort_t GateLenLong;
 extern UShort_t GateLenShort;
 extern UShort_t GateMeanTime;
+extern UShort_t TriggerTime;
 extern UShort_t PairCoincWindow; // in ns
+extern UShort_t noiseLevelPP;
 extern double EvalNormFactor;
 extern UShort_t nSampleMovBL;
 extern double BLError;

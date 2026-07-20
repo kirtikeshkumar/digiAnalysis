@@ -28,6 +28,9 @@ singleHits::singleHits(const singleHits &other)
       Timestamp(other.Timestamp), Energy(other.Energy),
       EnergyShort(other.EnergyShort), PSD(other.PSD) {
 #ifdef WAVES
+  evalEnergy = other.evalEnergy;
+  evalEnergyShort = other.evalEnergyShort;
+  evalPSD = other.evalPSD;
   // Deep copy of unique pointers
   if (other.WF) {
     WF = std::make_unique<WaveForm>(*other.WF);
@@ -118,15 +121,15 @@ void singleHits::SetSmoothWF(UShort_t sBoxSz) { WF->SetSmooth(sBoxSz); }
 void singleHits::SetEvalEnergy() {
   if (WF->IsTracesMovBLCorrSet()) {
     evalEnergy =
-        (WF->IntegrateBLCorrWaveForm(GateStart, GateStart + GateLenLong)) /
-        GateLenLong * EvalNormFactor;
+        (WF->IntegrateBLCorrWaveForm(GateStart, GateStart + GateLenLong)) *
+        1.0 / GateLenLong * EvalNormFactor;
   } else if (WF->IsTracesSmoothSet()) {
     evalEnergy =
-        (WF->IntegrateSmoothWaveForm(GateStart, GateStart + GateLenLong)) /
-        GateLenLong * EvalNormFactor;
+        (WF->IntegrateSmoothWaveForm(GateStart, GateStart + GateLenLong)) *
+        1.0 / GateLenLong * EvalNormFactor;
   } else if (WF->IsTracesSet()) {
-    evalEnergy = (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) /
-                 GateLenLong * EvalNormFactor;
+    evalEnergy = (WF->IntegrateWaveForm(GateStart, GateStart + GateLenLong)) *
+                 1.0 / GateLenLong * EvalNormFactor;
   } else {
     std::cout << "err SetEvalEnergy: No waveform set" << std::endl;
   }
@@ -135,16 +138,16 @@ void singleHits::SetEvalEnergy() {
 void singleHits::SetEvalEnergyShort() {
   if (WF->IsTracesMovBLCorrSet()) {
     evalEnergyShort =
-        (WF->IntegrateBLCorrWaveForm(GateStart, GateStart + GateLenShort)) /
-        GateLenLong * EvalNormFactor;
+        (WF->IntegrateBLCorrWaveForm(GateStart, GateStart + GateLenShort)) *
+        1.0 / GateLenLong * EvalNormFactor;
   } else if (WF->IsTracesSmoothSet()) {
     evalEnergyShort =
-        (WF->IntegrateSmoothWaveForm(GateStart, GateStart + GateLenShort)) /
-        GateLenLong * EvalNormFactor;
+        (WF->IntegrateSmoothWaveForm(GateStart, GateStart + GateLenShort)) *
+        1.0 / GateLenLong * EvalNormFactor;
 
   } else if (WF->IsTracesSet()) {
     evalEnergyShort =
-        (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) /
+        (WF->IntegrateWaveForm(GateStart, GateStart + GateLenShort)) * 1.0 /
         GateLenLong * EvalNormFactor;
   } else {
     std::cout << "err SetEvalEnergyShort: No waveform set" << std::endl;

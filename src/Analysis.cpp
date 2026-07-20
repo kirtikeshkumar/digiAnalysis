@@ -52,7 +52,8 @@ void Analysis::LoadData(ULong64_t numOfEvents, double EThreshold) {
 
 void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
                         double EThreshold) {
-
+  std::vector<std::unique_ptr<singleHits>>().swap(vecOfHits);
+  std::vector<std::unique_ptr<Pair>>().swap(vecOfPairs);
   TFile *fp = new TFile(fDatafileName.c_str(), "READ");
 
   if (!fp || fp->IsZombie()) {
@@ -170,7 +171,7 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
     //////////////////////////////////////////////////////////////////////////////
     for (ULong64_t iev = start; iev < start + numOfEvents; iev++) {
       if ((iev - start) % 10000 == 0) {
-        std::cout << "Reading: " << indices[iev] << std::endl;
+        std::cout << "Reading: " << iev << " \t: " << indices[iev] << std::endl;
       }
       nbytes += tr->GetEntry(indices[iev]);
       if (Energy >= EThreshold) {
@@ -195,12 +196,18 @@ void Analysis::LoadData(ULong64_t start, ULong64_t numOfEvents,
       nbytes += tr->GetEntry(iev);
       // detPair->Print();
       vecOfPairs.push_back(std::make_unique<Pair>(*detPair));
+      vecOfHits.push_back(
+          std::make_unique<singleHits>(*detPair->GetHitPtr(-1)));
+      vecOfHits.push_back(
+          std::make_unique<singleHits>(*detPair->GetHitPtr(-2)));
     }
   }
+  fp->Close();
 }
 
 void Analysis::LoadData(UShort_t channel, ULong64_t start,
                         ULong64_t numOfEvents, double EThreshold) {
+  vecOfHits.clear();
 
   TFile *fp = new TFile(fDatafileName.c_str(), "READ");
 
@@ -337,8 +344,8 @@ void Analysis::LoadData(UShort_t channel, ULong64_t start,
   }
   while (nev < numOfEvents && iev < nentries) {
     nbytes += tr->GetEntry(indices[iev]);
-    if (iev % 100000 == 0) {
-      std::cout << "Reading: " << iev << std::endl;
+    if (iev % 10000 == 0) {
+      std::cout << "Reading: " << iev << " \t: " << indices[iev] << std::endl;
     }
     if (Channel < channel) {
       iev += 1;
@@ -358,6 +365,40 @@ void Analysis::LoadData(UShort_t channel, ULong64_t start,
     }
     iev += 1;
   }
+  fp->Close();
+}
+
+void Analysis::SaveData(std::string fname, int channel) {
+  TFile *fp = new TFile(fname.c_str(), "WRITE");
+  TTree *tr = new TTree("Data_F", "Data_F");
+  // Declaration of leaves types
+  UShort_t Channel;
+  ULong64_t Timestamp;
+  UShort_t Board;
+  UShort_t Energy;
+  UShort_t EnergyShort;
+  // #ifdef WAVES
+  TArrayS *Samples = nullptr;
+  // #endif
+  tr->SetBranchAddress("Channel", &Channel);
+  tr->SetBranchAddress("Timestamp", &Timestamp);
+  tr->SetBranchAddress("Board", &Board);
+  tr->SetBranchAddress("Energy", &Energy);
+  tr->SetBranchAddress("EnergyShort", &EnergyShort);
+#ifdef WAVES
+  tr->SetBranchAddress("Samples", &Samples);
+  std::cout << "Branch waves set" << std::endl;
+#endif
+  
+    for (const std::unique_ptr<digiAnalysis::singleHits> &s : vecOfHits) {
+      Channel = s->GetChNum();
+      Timestamp = s->GetTimestamp();
+      Board = s->GetBoard();
+      Energy = s->GetEnergy();
+      EnergyShort = s->GetEnergyShort();
+      
+    }
+  
 }
 
 void Analysis::SetSingleHit(ULong64_t hitIndx,
@@ -611,6 +652,19 @@ void Analysis::CreatePairs() {
       }
       isEnd = endcheck;
     }
+  }
+}
+
+void Analysis::FlattenPairs() {
+  if (!vecOfHits.empty()) {
+    vecOfHits.clear();
+    vecOfHits.shrink_to_fit();
+  }
+  for (int iter = 0; iter < vecOfPairs.size(); iter++) {
+    vecOfHits.push_back(
+        std::make_unique<singleHits>(*vecOfPairs[iter]->GetHitPtr(-1)));
+    vecOfHits.push_back(
+        std::make_unique<singleHits>(*vecOfPairs[iter]->GetHitPtr(-2)));
   }
 }
 

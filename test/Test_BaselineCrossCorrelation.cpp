@@ -63,13 +63,17 @@ int main(int argc, char *argv[]) {
   //                     "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_"
   //                     "120_300_WAVES_Singles_LeadPit_45.root";
 
-  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-                      "CoincidenceStudies/01JuneNoSrc/CalibrationFiles/"
-                      "DataF_NaI1_05June26_1750_CsSrc_Thresh_120_300_WAVES_"
-                      "Singles_LeadPit_68.root";
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/extCoinc/"
+      "NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_21/FILTERED/"
+      "DataF_NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+      "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
+      "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(0, fname, 0, 200000, 0);
+  digiAnalysis::Analysis an(2, fname, 0, 200000, 1);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
 
@@ -79,8 +83,16 @@ int main(int argc, char *argv[]) {
 
   int iterStart = 0;
   while (iterStart < hitsVector.size()) {
-    if (hitsVector[iterStart]->GetMeanTime() < 2.0 and
-        hitsVector[iterStart]->GetMeanTime() > 0.0)
+    if (hitsVector[iterStart]->GetEnergy() > 00 and
+        hitsVector[iterStart]->GetEnergy() < 30 and
+        hitsVector[iterStart]->GetPSD() > 0. and
+        // hitsVector[iterStart]->GetPSD() > 0.5 and
+        hitsVector[iterStart]->GetMeanTime() < 1.6 and
+        hitsVector[iterStart]->GetMeanTime() > 0.0 and
+        hitsVector[iterStart]->GetWFPtr()->IntegrateWaveForm(
+            0, digiAnalysis::GateStart) *
+                1.0 / digiAnalysis::GateStart <
+            2)
       break;
     iterStart++;
   }
@@ -89,13 +101,20 @@ int main(int argc, char *argv[]) {
   // WF->SetSmooth(500);
   WF->SetSmooth(16, "MovA");
   std::vector<double> tracePrimary = WF->GetTracesSmooth();
-  for (int iWF = 60; iWF < WF->GetSize(); iWF++) {
+  // for (int iWF = 60; iWF < WF->GetSize(); iWF++) {
+  //   if (abs(tracePrimary[iWF] - tracePrimary[iWF - 4]) > 3 or
+  //       abs(tracePrimary[iWF] - tracePrimary[iWF + 4]) > 3 or
+  //       tracePrimary[iWF] > 6)
+  //     tracePrimary[iWF] = tracePrimary[iWF - 30];
+  // }
+  for (int iWF = WF->GetSize() - 50; iWF >= 0; iWF--) {
     if (abs(tracePrimary[iWF] - tracePrimary[iWF - 4]) > 3 or
         abs(tracePrimary[iWF] - tracePrimary[iWF + 4]) > 3 or
-        tracePrimary[iWF] > 6)
-      tracePrimary[iWF] = tracePrimary[iWF - 30];
+        abs(tracePrimary[iWF]) > 12) {
+      tracePrimary[iWF] = tracePrimary[iWF + 30];
+    }
   }
-  // WF->Plot(WF->GetTracesSmooth(), tracePrimary); // this line is only for
+  WF->Plot(WF->GetTracesSmooth(), tracePrimary); // this line is only for
   //   setting the cutoff for removing the single pulses
   WF->SetTracesFFT(tracePrimary);
   std::vector<double> trFFT_AmpPrim = WF->GetTracesFFT();
@@ -112,19 +131,39 @@ int main(int argc, char *argv[]) {
     if (hititer % 1000 == 0)
       std::cout << "Processing hit " << hititer << std::endl;
 
+    // choose events whose waveforms is expected to give good baseline variation
     if (hitsVector[hititer]->GetEnergy() > 00 and
-        hitsVector[hititer]->GetEnergy() < 50) {
+        hitsVector[hititer]->GetEnergy() < 100 and
+        hitsVector[hititer]->GetPSD() > 0. and
+        // hitsVector[hititer]->GetPSD() > 0.5 and
+        hitsVector[hititer]->GetMeanTime() < 1.6 and
+        hitsVector[hititer]->GetMeanTime() > 0.0 and
+        hitsVector[iterStart]->GetWFPtr()->IntegrateWaveForm(
+            0, digiAnalysis::GateStart) *
+                1.0 / digiAnalysis::GateStart <
+            2) {
       WF1 = hitsVector[hititer]->GetWFPtr();
       // WF1->SetSmooth(500);
       WF1->SetSmooth(16, "MovA");
       traceSecondary = WF1->GetTracesSmooth();
       traceSecondaryOrig = WF1->GetTraces();
-      for (int iWF = 60; iWF < WF1->GetSize(); iWF++) {
+      // for (int iWF = 60; iWF < WF1->GetSize(); iWF++) {
+      //   if (abs(traceSecondary[iWF] - traceSecondary[iWF - 4]) > 3 or
+      //       abs(traceSecondary[iWF] - traceSecondary[iWF + 4]) > 3 or
+      //       traceSecondary[iWF] > 6) {
+      //     traceSecondary[iWF] = traceSecondary[iWF - 30];
+      //     traceSecondaryOrig[iWF] = traceSecondaryOrig[iWF - 30];
+      //   }
+      // }
+
+      // clean it to remove any fast fluctuations or large deviations from
+      // baseline
+      for (int iWF = WF1->GetSize() - 50; iWF >= 0; iWF--) {
         if (abs(traceSecondary[iWF] - traceSecondary[iWF - 4]) > 3 or
             abs(traceSecondary[iWF] - traceSecondary[iWF + 4]) > 3 or
-            traceSecondary[iWF] > 6) {
-          traceSecondary[iWF] = traceSecondary[iWF - 30];
-          traceSecondaryOrig[iWF] = traceSecondaryOrig[iWF - 30];
+            abs(traceSecondary[iWF]) > 12) {
+          traceSecondary[iWF] = traceSecondary[iWF + 30];
+          traceSecondaryOrig[iWF] = traceSecondaryOrig[iWF + 30];
         }
       }
       // WF1->Plot(traceSecondary);
@@ -172,10 +211,11 @@ int main(int argc, char *argv[]) {
       // }
       // WF1->SetTracesFFT(traceSecondary);
 
-      // // implementation of high pass filter to remove low frequency noise in
-      // the subtracted waveform std::vector<double> trFFT_AmpRes =
+      // // implementation of high pass filter to remove low frequency noise
+      // in the subtracted waveform std::vector<double> trFFT_AmpRes =
       // WF1->GetTracesFFT(); std::vector<double> trFFT_AmpPhs =
-      // WF1->GetTracesFFTPhase(); int noisestart = 500; int noisestop = 1000;
+      // WF1->GetTracesFFTPhase(); int noisestart = 500; int noisestop =
+      // 1000;
       // int sigstop = trFFT_AmpRes.size() - 1;
       // int highpass = 5;
       // double sum = std::accumulate(trFFT_AmpRes.begin() + 500,
@@ -198,8 +238,8 @@ int main(int argc, char *argv[]) {
       // WF1->Plot(WF1->GetTracesSmooth(), traceSecondary);
       //   WF1->Plot(traceSecondary, "SAME_KGreen");
 
-      // For accumulation, use the original waveforms, not the smoothed ones.
-      // traceSecondary = WF1->GetTraces();
+      // For accumulation, use the original waveforms, not the smoothed
+      // ones. traceSecondary = WF1->GetTraces();
       for (int iterWF = 0; iterWF < WF1->GetSize(); iterWF++) {
         val = iterWF - shift > 0 ? iterWF - shift
                                  : WF1->GetSize() + iterWF - shift;
@@ -218,7 +258,7 @@ int main(int argc, char *argv[]) {
                  accumulateTrace.begin(),
                  [numTraces](double val) { return val / numTraces; });
   WF1->Plot(accumulateTrace);
-
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   digiAnalysis::WaveForm AccumulatedWF(accumulateTrace);
   AccumulatedWF.SetTracesFFT();
   // AccumulatedWF.Plot(AccumulatedWF.GetTraces(),
@@ -245,7 +285,7 @@ int main(int argc, char *argv[]) {
   AccumulatedWF.Plot(
       AccumulatedWF.EvalIFFT(trFFT_AmpAccum, AccumulatedWF.GetTracesFFTPhase()),
       trFFT_AmpAccum);
-
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   std::vector<double> trFullRange =
       AccumulatedWF.EvalIFFT(trFFT_AmpAccum, AccumulatedWF.GetTracesFFTPhase());
   // std::vector<double> traceOnePeriod(trFullRange.begin() + 1428,
@@ -254,11 +294,11 @@ int main(int argc, char *argv[]) {
   digiAnalysis::WaveForm AccumulatedWF_5k(traceOnePeriod);
   AccumulatedWF_5k.SetTracesFFT();
   AccumulatedWF_5k.Plot();
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   // AccumulatedWF_5k.GetTracesFFT());
 
-  std::string outfname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "Baseline_05June_singlePeriod_Ch0.root";
+  std::string outfname = "/home/kirtikesh/Analysis/DATA/extCoinc/"
+                         "Baseline_17June_singlePeriod_Ch2.root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("baseline", "b1aseline");
   digiAnalysis::WaveForm WFSPE;

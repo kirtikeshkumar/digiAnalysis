@@ -41,10 +41,12 @@ int main(int argc, char *argv[]) {
   //     "SDataF_NaI31_29May26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
   //     "LeadPit.root";
 
-  std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-                      "CoincidenceStudies/01JuneNoSrc/"
-                      "NaI31_01June26_1345_1750_NoSrc_Thresh_300_30_WAVES_"
-                      "Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/"
+      "extCoinc/NaI3124_15-17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+      "ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
 
   digiAnalysis::Analysis an(fname, 000, 000, 0);
   std::cout << "getting the vector from an" << std::endl;
@@ -188,10 +190,10 @@ int main(int argc, char *argv[]) {
     //     ? Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.09465 - 5.7613
     //     : Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.08696 - 0.4222;
     // 1900V
-    Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0) * 0.5095 - 26.563;
+    Energy1 = vecOfPairs[iter]->GetPairHitEnergy(0); // * 0.5095 - 26.563;
     // Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.98145 -
     //           14.6; //* 1.0973 - 58.91;//
-    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1) * 0.09032 - 3.3849;
+    Energy2 = vecOfPairs[iter]->GetPairHitEnergy(1); // * 0.09032 - 3.3849;
     // std::cout << Energy1 << " : " << Energy2 << " : "
     //           << vecOfPairs[iter]->GetPairDelTime() / 1E3 << std::endl;
     double ETot = Energy1 + Energy2;

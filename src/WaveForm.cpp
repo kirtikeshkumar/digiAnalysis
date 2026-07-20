@@ -62,9 +62,11 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
   unsigned int size = arr->GetSize();
   for (unsigned int j = 0; j < size; j++) {
     traces.push_back(baseline - arr->At(j));
-    if (j >= GateStart and j <= GateStart + GateMeanTime) {
-      meantime = meantime + traces[j] * j;
-      sampleSum = sampleSum + traces[j];
+    if (j >= TriggerTime and j <= TriggerTime + GateMeanTime) {
+      if (fabs(traces[j]) > noiseLevelPP) {
+        meantime = meantime + traces[j] * j;
+        sampleSum = sampleSum + traces[j];
+      }
     }
 #ifdef SMOOTH
     if (smoothBoxSz == 1) {
@@ -81,7 +83,7 @@ WaveForm::WaveForm(TArrayS *arr) // CoMPASS saves waveforms as TArrayS
 #endif
   }
   // meantime = (GateLenLong * 0.5 + GateStart) - meantime / sampleSum;
-  meantime = meantime / sampleSum - GateStart;
+  meantime = meantime / sampleSum - TriggerTime;
   if (meantime > 0.0) {
     meantime = TMath::Log10(meantime);
   } else {
@@ -546,9 +548,11 @@ void WaveForm::SetWaveForm(std::vector<double> tr) {
     unsigned int size = tr.size();
     for (unsigned int j = 0; j < size; j++) {
       traces.push_back(baseline - tr[j]);
-      if (j >= GateStart and j <= GateStart + GateMeanTime) {
-        meantime = meantime + traces[j] * j;
-        sampleSum = sampleSum + traces[j];
+      if (j >= TriggerTime and j <= TriggerTime + GateMeanTime) {
+        if (fabs(traces[j]) > noiseLevelPP) {
+          meantime = meantime + traces[j] * j;
+          sampleSum = sampleSum + traces[j];
+        }
       }
 #ifdef SMOOTH
       if (smoothBoxSz == 1) {
@@ -564,7 +568,7 @@ void WaveForm::SetWaveForm(std::vector<double> tr) {
       }
 #endif
     }
-    meantime = (meantime / sampleSum) - GateStart;
+    meantime = (meantime / sampleSum) - TriggerTime;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -770,12 +774,12 @@ void WaveForm::SetTracesMovBLCorr() {
     for (int i = 0; i < N; i++) {
       // tracesMovBLCorr[i] = tracesSmooth[i] - tracesBL[i];
       tracesMovBLCorr[i] = traces[i] - tracesBL[i];
-      if (i >= GateStart and i <= GateStart + GateMeanTime) {
+      if (i >= TriggerTime and i <= TriggerTime + GateMeanTime) {
         meantime = meantime + tracesMovBLCorr[i] * i;
         sampleSum = sampleSum + tracesMovBLCorr[i];
       }
     }
-    meantime = (meantime / sampleSum) - GateStart;
+    meantime = (meantime / sampleSum) - TriggerTime;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -855,9 +859,10 @@ void WaveForm::SetSmooth() {
           tracesSmooth.push_back(0);
           movingSum = movingSum + traces[j];
           // tracesSmooth.push_back(movingSum / j);
+        } else {
+          movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
+          tracesSmooth.push_back(movingSum / smoothBoxSz);
         }
-        movingSum = movingSum + traces[j] - traces[j - smoothBoxSz];
-        tracesSmooth.push_back(movingSum / smoothBoxSz);
       }
     }
   } else {
@@ -887,11 +892,11 @@ void WaveForm::SetMeanTime() {
   double sampleSum = 0;
   if (!tracesMovBLCorr.empty()) {
     unsigned int size = tracesMovBLCorr.size();
-    for (unsigned int j = GateStart; j < GateMeanTime + GateStart; j++) {
+    for (unsigned int j = TriggerTime; j < GateMeanTime + TriggerTime; j++) {
       meantime = meantime + tracesMovBLCorr[j] * j;
       sampleSum = sampleSum + tracesMovBLCorr[j];
     }
-    meantime = meantime / sampleSum - GateStart;
+    meantime = meantime / sampleSum - TriggerTime;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -899,11 +904,13 @@ void WaveForm::SetMeanTime() {
     }
   } else if (!tracesSmooth.empty()) {
     unsigned int size = traces.size();
-    for (unsigned int j = GateStart; j < GateMeanTime + GateStart; j++) {
-      meantime = meantime + tracesSmooth[j] * j;
-      sampleSum = sampleSum + tracesSmooth[j];
+    for (unsigned int j = TriggerTime; j < GateMeanTime + TriggerTime; j++) {
+      if (fabs(traces[j]) > noiseLevelPP / 3.0) {
+        meantime = meantime + tracesSmooth[j] * j;
+        sampleSum = sampleSum + tracesSmooth[j];
+      }
     }
-    meantime = meantime / sampleSum - GateStart;
+    meantime = meantime / sampleSum - TriggerTime;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -911,11 +918,13 @@ void WaveForm::SetMeanTime() {
     }
   } else if (!traces.empty()) {
     unsigned int size = traces.size();
-    for (unsigned int j = GateStart; j < GateMeanTime + GateStart; j++) {
-      meantime = meantime + traces[j] * j;
-      sampleSum = sampleSum + traces[j];
+    for (unsigned int j = TriggerTime; j < GateMeanTime + TriggerTime; j++) {
+      if (fabs(traces[j]) > noiseLevelPP) {
+        meantime = meantime + traces[j] * j;
+        sampleSum = sampleSum + traces[j];
+      }
     }
-    meantime = meantime / sampleSum - GateStart;
+    meantime = meantime / sampleSum - TriggerTime;
     if (meantime > 0.0) {
       meantime = TMath::Log10(meantime);
     } else {
@@ -968,7 +977,9 @@ void WaveForm::SetMeanTime(const std::vector<double> tr, UShort_t start,
 void WaveForm::SetBaseLine() {
   baseline = 0;
   double sum = 0;
-
+  blStart = GateStart + GateLenLong + nSampleBL < traces.size()
+                ? GateStart + GateLenLong
+                : blStart;
   if (!traces.empty()) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + traces[j];
@@ -982,7 +993,9 @@ void WaveForm::SetBaseLine() {
 void WaveForm::SetBaseLine(std::vector<double> tr) {
   baseline = 0;
   double sum = 0;
-
+  blStart = GateStart + GateLenLong + nSampleBL < tr.size()
+                ? GateStart + GateLenLong
+                : blStart;
   if (!tr.empty()) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + tr[j];
@@ -1010,7 +1023,9 @@ void WaveForm::SetBaseLine(std::vector<double> tr, int start, int nSample) {
 void WaveForm::SetBaseLine(TArrayS *arr) {
   baseline = 0;
   double sum = 0;
-
+  blStart = GateStart + GateLenLong + nSampleBL < arr->GetSize()
+                ? GateStart + GateLenLong
+                : blStart;
   if (arr && (arr->GetSize() > nSampleBL)) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
       sum = sum + arr->At(j);
