@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
       "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
       "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21_BLCorrected.root";
 
-  digiAnalysis::Analysis an(fname, 0000, 200000, 0);
+  digiAnalysis::Analysis an(fname, 0000, 50000, 0);
   std::cout << "getting the vector from an" << std::endl;
 
   // an.CreatePairs();
@@ -90,12 +90,12 @@ int main(int argc, char *argv[]) {
     //                 0.4222; // Calibration to get the energy
     //                         // 1900V
     Energy1 = hit->GetEnergy() * 0.01911 - 0.3;
-    if (Energy1 > 55 and Energy1 < 64) {
+    if (Energy1 > 0 and Energy1 < 80) {
       WF = nullptr;
       WF = hit->GetWFPtr();
       WF->SetSmooth(65);
       // WF->Plot();
-      auto results = WF->DetectPeakValleys(6);
+      auto results = WF->DetectPeakValleys(10);
       // std::cout << "size of peaks: " << results.first.size() << std::endl;
       // std::cout << "size of valleys: " << results.second.size() << std::endl;
       // //
@@ -123,17 +123,18 @@ int main(int argc, char *argv[]) {
       // Select isolated SPE peaks and integrate to get charge
       digiAnalysis::WaveForm WFSPE;
       int iterPeaks = 0;
-      int isolationRange = 50;
+      int isolationRange = 40;
       int saveRange = 250; // isolationRange - 50;
       while (iterPeaks < results.first.size() && keepGoing) {
         int peakPos = results.first[iterPeaks];
-        if ((peakPos > 2000 and peakPos < 4500) and
+        if ((peakPos > 1750 and peakPos < 4500) and
             (peakPos - results.first[iterPeaks - 1] > isolationRange)) {
           if ((iterPeaks + 1 < results.first.size() and
                (results.first[iterPeaks + 1] - peakPos) > isolationRange) ||
               (iterPeaks + 1 == results.first.size())) {
-            double postBL = WF->EvalBaseLine(peakPos + 100, 50);
-            double preBL = WF->EvalBaseLine(peakPos - 100, 50);
+            double postBL = WF->EvalBaseLine(peakPos + 15, isolationRange - 5);
+            double preBL = WF->EvalBaseLine(peakPos - 15 - isolationRange,
+                                            isolationRange - 5);
             if (fabs(preBL - postBL) < 2.0) {
               WFSPE.SetWaveForm(*WF, peakPos - saveRange, peakPos + saveRange,
                                 saveRange - 100, 50);
@@ -147,13 +148,14 @@ int main(int argc, char *argv[]) {
                                               digiAnalysis::GateStart +
                                                   digiAnalysis::GateLenLong);
               hSPE->Fill(intSPE);
-              hESPE->Fill(Energy1, intWave / intSPE / Energy1);
-
-              // WFSPE.Plot();
-              // std::cout << "Do you want to see the next waveform? (y/n): ";
-              // std::getline(std::cin, userInput);
-              // if (userInput != "y" && userInput != "Y") {
-              //   keepGoing = false;
+              hESPE->Fill(Energy1, intWave / 360 / Energy1);
+              // if (results.second[2 * iterPeaks + 1] - peakPos > 35) {
+              //   WFSPE.Plot();
+              //   std::cout << "Do you want to see the next waveform? (y/n): ";
+              //   std::getline(std::cin, userInput);
+              //   if (userInput != "y" && userInput != "Y") {
+              //     keepGoing = false;
+              //   }
               // }
             }
           }
@@ -170,7 +172,7 @@ int main(int argc, char *argv[]) {
         int peakPos = results.first[iterPeaks];
         int valley1Pos = results.second[2 * iterPeaks];
         int valley2Pos = results.second[2 * iterPeaks + 1];
-        if (peakPos > 2000 and peakPos < 4500) {
+        if (peakPos > 1750 and peakPos < 4500) {
           // intSPE = WF->IntegrateWaveForm(valley1Pos, valley2Pos);
           // intWave = hit->GetEvalEnergy();
           // hSPE->Fill(intSPE);
@@ -221,6 +223,7 @@ int main(int argc, char *argv[]) {
   hpreVal->Draw("HIST");
   TCanvas *c4 = new TCanvas("c4", "postVal distance", 800, 600);
   hpostVal->Draw("HIST");
+
   fApp->Run();
 #endif
 }

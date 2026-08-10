@@ -1269,18 +1269,33 @@ double WaveForm::IntegrateWaveForm(std::vector<double> tr, int startTime,
 }
 
 double WaveForm::EvalNoisePar2(int startTime, int stopTime) {
-  double Q1 = 0, Q2 = 0, avT1 = 0, avT2 = 0, netQ = 0;
-  int sz = stopTime - startTime;
-  for (int iter = startTime; iter < startTime + sz / 2; iter++) {
-    avT1 += abs(traces[iter]) * iter;
-    avT2 += abs(traces[iter + sz / 2]) * (iter + sz / 2);
-    Q1 += abs(traces[iter]);
-    Q2 += abs(traces[iter + sz / 2]);
-    // netQ += (traces[iter] + traces[iter + sz / 2]);
+  if (tracesSmooth.empty()) {
+    double Q1 = 0, Q2 = 0, avT1 = 0, avT2 = 0, netQ = 0;
+    int sz = stopTime - startTime;
+    for (int iter = startTime; iter < startTime + sz / 2; iter++) {
+      avT1 += abs(traces[iter]) * iter;
+      avT2 += abs(traces[iter + sz / 2]) * (iter + sz / 2);
+      Q1 += abs(traces[iter]);
+      Q2 += abs(traces[iter + sz / 2]);
+      // netQ += (traces[iter] + traces[iter + sz / 2]);
+    }
+    double newLam =
+        TMath::Log(-1.0 * TMath::Log(Q2 / Q1) / (avT2 / Q2 - avT1 / Q1));
+    return newLam;
+  } else {
+    double Q1 = 0, Q2 = 0, avT1 = 0, avT2 = 0, netQ = 0;
+    int sz = stopTime - startTime;
+    for (int iter = startTime; iter < startTime + sz / 2; iter++) {
+      avT1 += abs(tracesSmooth[iter]) * iter;
+      avT2 += abs(tracesSmooth[iter + sz / 2]) * (iter + sz / 2);
+      Q1 += abs(tracesSmooth[iter]);
+      Q2 += abs(tracesSmooth[iter + sz / 2]);
+      // netQ += (traces[iter] + traces[iter + sz / 2]);
+    }
+    double newLam =
+        TMath::Log(-1.0 * TMath::Log(Q2 / Q1) / (avT2 / Q2 - avT1 / Q1));
+    return newLam;
   }
-  double newLam =
-      TMath::Log(-1.0 * TMath::Log(Q2 / Q1) / (avT2 / Q2 - avT1 / Q1));
-  return newLam;
 }
 
 double WaveForm::IntegrateSmoothWaveForm(int startTime, int stopTime) {

@@ -50,12 +50,11 @@ int main() {
   //           "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
   //           "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
 
-  //   fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //           "CoincidenceStudies/01JuneNoSrc/"
-  //           "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_"
-  //           "300_WAVES_Singles_LeadPit_45/FILTERED/"
-  //           "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_"
-  //           "120_300_WAVES_Singles_LeadPit_45_BLCorrected.root";
+  fname =
+      "/home/kirtikesh/Analysis/DATA/extCoinc/"
+      "NaI3124_17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
 
   //   fname =
   //       "/home/kirtikesh/Analysis/DATA/extCoinc/"
@@ -64,16 +63,16 @@ int main() {
   //       "DataF_NaI1_11Jun26_NoSrc_1900V_ExtTrig_Thresh2_DelayCoincLogic_"
   //       "1600nsCoinc_2Vpp_Thresh_12lsb_WAVES_4_BLCorrected.root";
 
-  fname =
-      "/home/kirtikesh/Analysis/DATA/extCoinc/"
-      "NaI3124_15-17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
-      "ExtTrig_"
-      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+  // fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI3124_15-17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+  //     "ExtTrig_"
+  //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+  //     "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
 
   //   digiAnalysis::GateStart = 400;
 
-  digiAnalysis::Analysis an(2, fname, 0, 00000, 1);
+  digiAnalysis::Analysis an(2, fname, 0, 200000, 1);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
   int nentries = hitsVector.size();
@@ -133,7 +132,7 @@ int main() {
       std::cout << "Processing: " << iter << std::endl;
     }
 
-    energy = hitsVector[iter]->GetEvalEnergy();
+    energy = hitsVector[iter]->GetEnergy();
     PSD = hitsVector[iter]->GetEvalPSD();
     MT = hitsVector[iter]->GetMeanTime();
     Lam = hitsVector[iter]->GetWFPtr()->EvalNoisePar2(
@@ -161,7 +160,9 @@ int main() {
     }
     coincDelay = iterTr - digiAnalysis::GateStart;
     if (accFlag and coincDelay < 650) {
-      hEPlotSel->Fill(energy);
+      if (Lam > -6.5) {
+        hEPlotSel->Fill(energy);
+      }
       hPSDPlotSel->Fill(energy, PSD);
       hMTPlotSel->Fill(energy, MT);
       hLamPlotSel->Fill(energy, Lam);

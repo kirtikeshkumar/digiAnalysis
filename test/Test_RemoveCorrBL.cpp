@@ -164,6 +164,8 @@ int main(int argc, char *argv[]) {
       digiAnalysis::WaveForm *WF1 = nullptr;
       bool keepGoing = true;
       std::string userInput;
+      TH1 *hE = new TH1F();
+      TH1 *hEEval = new TH1F();
       for (int hititer = 0; hititer < hitsVector.size();
            hititer++) // hitsVector.size()
       {
