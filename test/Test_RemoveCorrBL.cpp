@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   // "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
   // "1496nsCoinc_FreeWrites_Ch248Singles_14.root";
 
-  for (int fileiter = 31; fileiter <= 47; fileiter++) {
+  for (int fileiter = 41; fileiter <= 47; fileiter++) {
     std::string fname =
         "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
         "NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"

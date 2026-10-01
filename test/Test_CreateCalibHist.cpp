@@ -14,20 +14,20 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::string fpath = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/";
   std::string finit =
-      "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+      "NaI13_CsSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
       "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
       "1496nsCoinc_FreeWrites_Ch248Singles_";
-  for (int fiter = 14; fiter <= 15; fiter++) {
+  for (int fiter = 12; fiter <= 12; fiter++) {
     std::string fname = fpath + finit + std::to_string(fiter) +
-                        "/UNFILTERED/Data_" + finit + std::to_string(fiter) +
+                        "/FILTERED/DataF_" + finit + std::to_string(fiter) +
                         "_BLCorrected.root";
     if (std::filesystem::exists(fname)) {
-      digiAnalysis::Analysis an(fname, 00000, 00000, 0);
+      digiAnalysis::Analysis an(fname, 500000, 00000, 0);
       std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
           an.GetSingleHitsVec();
       std::string writefname = fpath + finit + std::to_string(fiter) +
-                               "/UNFILTERED/CalibHist_HighGainCh0_" + finit +
-                               std::to_string(fiter);
+                               "/FILTERED/CalibHist_HighGainCh0_" + finit +
+                               std::to_string(fiter) + ".root";
       TFile *fout = new TFile(writefname.c_str(), "RECREATE");
       TH1 *hECh0 =
           new TH1F("hECh0", "Ch0 BLCorrected Energies", 16384, 0, 16384);
@@ -37,10 +37,13 @@ int main(int argc, char *argv[]) {
         switch (hitsVector[hititer]->GetChNum()) {
         case 0:
           hECh0->Fill(hitsVector[hititer]->GetEvalEnergy());
+          break;
         case 4:
           hECh1->Fill(hitsVector[hititer]->GetEnergy());
+          break;
         case 8:
           hECh2->Fill(hitsVector[hititer]->GetEnergy());
+          break;
         }
       }
       hECh0->Write();
