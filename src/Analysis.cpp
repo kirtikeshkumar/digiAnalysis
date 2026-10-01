@@ -389,16 +389,14 @@ void Analysis::SaveData(std::string fname, int channel) {
   tr->SetBranchAddress("Samples", &Samples);
   std::cout << "Branch waves set" << std::endl;
 #endif
-  
-    for (const std::unique_ptr<digiAnalysis::singleHits> &s : vecOfHits) {
-      Channel = s->GetChNum();
-      Timestamp = s->GetTimestamp();
-      Board = s->GetBoard();
-      Energy = s->GetEnergy();
-      EnergyShort = s->GetEnergyShort();
-      
-    }
-  
+
+  for (const std::unique_ptr<digiAnalysis::singleHits> &s : vecOfHits) {
+    Channel = s->GetChNum();
+    Timestamp = s->GetTimestamp();
+    Board = s->GetBoard();
+    Energy = s->GetEnergy();
+    EnergyShort = s->GetEnergyShort();
+  }
 }
 
 void Analysis::SetSingleHit(ULong64_t hitIndx,
@@ -765,5 +763,5 @@ TTree *Analysis::GetTreeFromFile(const std::string &filename) {
   return tree;
 }*/
 
-Analysis::~Analysis() {}
+Analysis::~Analysis() = default;
 } // namespace digiAnalysis

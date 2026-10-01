@@ -15,11 +15,9 @@ int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
 
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-      "NaI31_29May26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_LeadPit/"
-      "FILTERED/"
-      "SDataF_NaI31_29May26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
-      "LeadPit.root";
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+      "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+      "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_21SepSum.root";
 
   digiAnalysis::Analysis an(fname, 0, 0000, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =

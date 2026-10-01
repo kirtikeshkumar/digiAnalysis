@@ -41,12 +41,9 @@ int main(int argc, char *argv[]) {
   // the pair data
 
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/extCoinc/PairFiles/"
-      "Pair_NaI3124_15-17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_"
-      "NoSplit_"
-      "ExtTrig_"
-      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
+      "Pair_NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_"
+      "Threshold_6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_21SepSum.root";
   digiAnalysis::Analysis an(fname, 0, 100000, 0);
   std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
       an.GetPairsVec();
@@ -98,10 +95,9 @@ int main(int argc, char *argv[]) {
 
   // Define noise WF as cluster0 using X1X2 cuts
   std::string fname1 =
-      "/home/kirtikesh/Analysis/DATA/extCoinc/"
-      "NaI3124_17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
-      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+      "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+      "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_21SepSum.root";
   digiAnalysis::Analysis an1(2, fname1, 0, 100000, 0);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVec1 =
       an1.GetSingleHitsVec();

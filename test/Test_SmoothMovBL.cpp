@@ -26,8 +26,12 @@ int main(int argc, char *argv[]) {
   //     "DataF_run_Cs_FAGain_2_10_CFDTHR_15_10_Mode_EXT_TRG_FREEWRITE_"
   //     "SignalDelay_50ns_Aug26.root";
 
-  std::string fname = "/home/kirtikesh/analysisSSD/DATA/SPE/run_noSource_19Sep/"
-                      "FILTERED/DataF_run_noSource_19Sep.root";
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+      "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+      "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_1/UNFILTERED/"
+      "Data_NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_"
+      "Threshold_6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_1.root";
 
   // test reading to singleHits
   digiAnalysis::Analysis an(fname, 0, 100000, 0);
@@ -51,7 +55,7 @@ int main(int argc, char *argv[]) {
   std::string userInput;
   bool keepGoing = true;
 
-  int spectralSz = 2048;
+  int spectralSz = 8192;
   TH1 *hE = new TH1F("hE", "Energy", spectralSz, 0, spectralSz);
   TH1 *hEEval = new TH1F("hEEval", "Energy Eval", spectralSz, 0, spectralSz);
   TH1 *hERough = new TH1F("hERough", "Energy Rough", spectralSz, 0, spectralSz);
@@ -84,9 +88,9 @@ int main(int argc, char *argv[]) {
     if (evi % 10000 == 0) {
       std::cout << evi << std::endl;
     }
-    if (hitsVector[evi]->GetChNum() == 9 and
+    if (hitsVector[evi]->GetChNum() == 0 and
         // fabs(hitsVector[evi]->GetMeanTime() - 2.7) < 0.3 and
-        fabs(hitsVector[evi]->GetEnergy() - 500) < 20) {
+        fabs(hitsVector[evi]->GetEnergy() - 100) < 20) {
       hitsVector[evi]->Print();
       hE->Fill(hitsVector[evi]->GetEnergy());
       hEEval->Fill(hitsVector[evi]->GetEvalEnergy());

@@ -68,16 +68,16 @@ int main(int argc, char *argv[]) {
   //     "1600nsCoinc_2Vpp_Thresh_12lsb_WAVES_4_BLCorrected.root";
 
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/extCoinc/"
-      "NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
-      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-      "2Vpp_Thresh_100lsb_WAVES_21/FILTERED/"
-      "DataF_NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
-      "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
-      "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21_BLCorrected.root";
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
+      "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+      "1496nsCoinc_FreeWrites_Ch248Singles_15/FILTERED/"
+      "DataF_NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+      "1496nsCoinc_FreeWrites_Ch248Singles_15_BLCorrected.root";
 
-  UShort_t channel = 2;
-  digiAnalysis::Analysis an(fname, 0000, 200000, 1);
+  UShort_t channel = 0;
+  digiAnalysis::Analysis an(0, fname, 000000, 200000, 1);
   std::cout << "getting the vector from an" << std::endl;
 
   // test Getting

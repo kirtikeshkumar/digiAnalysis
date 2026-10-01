@@ -30,8 +30,8 @@
 int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
-  std::string fnameBL = "/home/kirtikesh/Analysis/DATA/extCoinc/"
-                        "Baseline_17June_singlePeriod_Ch2.root";
+  std::string fnameBL = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/"
+                        "Baseline_29Sep_singlePeriod_Ch0.root";
   TFile *fp = new TFile(fnameBL.c_str(), "READ");
   TTree *tr = (TTree *)fp->Get("baseline");
   std::vector<double> *BL = nullptr;
@@ -54,71 +54,57 @@ int main(int argc, char *argv[]) {
   baselineWF.SetWaveForm(baselineWF.EvalIFFT(trFFT_AmpPrim, trFFT_PhsPrim));
 
   // std::string fname =
-  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-  //     "NaI13_20May26_1900_1345_Cs_Coinc144_WAVES_2/FILTERED/"
-  //     "SDataF_NaI13_20May26_1900_1345_Cs_Coinc144_WAVES_2.root";
+  // "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
+  // "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+  // "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+  // "1496nsCoinc_FreeWrites_Ch248Singles_14/FILTERED/"
+  // "DataF_NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+  // "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+  // "1496nsCoinc_FreeWrites_Ch248Singles_14.root";
 
-  // std::string fname =
-  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-  //     "NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_LeadPit/"
-  //     "FILTERED/"
-  //     "SDataF_NaI31_01June26_1345_1750_Cs_Thresh_300_30_WAVES_Coinc_144ns_"
-  //     "LeadPit.root";
+  for (int fileiter = 31; fileiter <= 47; fileiter++) {
+    std::string fname =
+        "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+        "NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+        "Acquisition_4_"
+        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+        "FreeWrites_Ch248Singles_" +
+        std::to_string(fileiter) +
+        "/UNFILTERED/"
+        "Data_NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+        "Acquisition_4_"
+        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+        "FreeWrites_Ch248Singles_" +
+        std::to_string(fileiter) + ".root";
 
-  // std::string fname =
-  //     "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/"
-  //     "NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5/FILTERED/"
-  //     "DataF_NaI31_26May26_1345_1750_NoSrc_Thresh50_WAVES_NoCoinc_LeadPit_5."
-  //     "root";
-
-  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //                     "CoincidenceStudies/01JuneNoSrc/"
-  //                     "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_2_30_"
-  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum.root";
-
-  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //                     "CoincidenceStudies/01JuneNoSrc/"
-  //                     "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
-  //                     "300_WAVES_Coinc_144ns_LeadPit_Sum.root";
-
-  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //                     "CoincidenceStudies/01JuneNoSrc/CalibrationFiles/"
-  //                     "DataF_NaI1_05June26_1900_CoEuSrc_Thresh_100_WAVES_"
-  //                     "Singles_LeadPit_75.root";
-
-  // std::string fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //                     "CoincidenceStudies/01JuneNoSrc/"
-  //                     "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_"
-  //                     "300_WAVES_Singles_LeadPit_45/FILTERED/"
-  //                     "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_"
-  //                     "120_300_WAVES_Singles_LeadPit_45.root";
-  for (int fileiter = 1; fileiter <= 1; fileiter++) {
     // std::string fname =
-    //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
-    //     "NaI3124_13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
-    //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-    //     "2Vpp_Thresh_50lsb_WAVES_" +
+    //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
+    //     "NaI13_CsSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+    //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+    //     "1496nsCoinc_FreeWrites_Ch248Singles_" +
     //     std::to_string(fileiter) +
     //     "/FILTERED/"
-    //     "DataF_NaI3124_13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
-    //     "ExtTrig_"
-    //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-    //     "2Vpp_Thresh_50lsb_WAVES_" +
+    //     "DataF_NaI13_CsSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_"
+    //     "12_Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_"
+    //     "800nsLong_1496nsCoinc_FreeWrites_Ch248Singles_" +
     //     std::to_string(fileiter) + ".root";
 
-    std::string fname =
-        "/home/kirtikesh/Analysis/DATA/extCoinc/"
-        "NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
-        "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-        "2Vpp_Thresh_100lsb_WAVES_21/FILTERED/"
-        "DataF_NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
-        "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
-        "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21.root";
+    // std::string fname =
+    //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+    //     "NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+    //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+    //     "2Vpp_Thresh_100lsb_WAVES_21/FILTERED/"
+    //     "DataF_NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
+    //     "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
+    //     "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21.root";
+
+    // std::string fname = "/home/kirtikesh/Analysis/DATA/extCoincSep/"
+    //                     "run_Bkg_Test_1750V_ExtTrigPrevSet_16Sep_Sum_Ch0.root";
 
     if (std::filesystem::exists(fname)) {
 
       // Read to singleHits
-      digiAnalysis::Analysis an(fname, 00000, 000000, 0);
+      digiAnalysis::Analysis an(fname, 00000, 00000, 0);
       // digiAnalysis::Analysis an2(0, fname, 0, 00000, 0);
       std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
           an.GetSingleHitsVec();
@@ -152,8 +138,8 @@ int main(int argc, char *argv[]) {
       int WFCutStart = 2500;
       std::cout << WFLen << " : " << blLen << std::endl;
 
-      std::vector<double> zeroTraceStart(WFCutStart, 0.0);
-      std::vector<double> zeroTraceEnd(blLen - WFLen, 0.0);
+      // std::vector<double> zeroTraceStart(WFCutStart, 0.0);
+      // std::vector<double> zeroTraceEnd(blLen - WFLen, 0.0);
       int numTraces = 0;
 
       std::vector<double> traceBL, traceSecondary;
@@ -171,7 +157,7 @@ int main(int argc, char *argv[]) {
       {
         if (hititer % 10000 == 0)
           std::cout << "Processing hit " << hititer << std::endl;
-        if (hitsVector[hititer]->GetChNum() == 2
+        if (hitsVector[hititer]->GetChNum() == 0
             // and hitsVector[hititer]->GetEnergy() < 2000
         ) {
 
@@ -180,8 +166,12 @@ int main(int argc, char *argv[]) {
           //       // WF1->SetSmooth(500);
           WF1->SetSmooth(16, "MovA");
           traceSecondary = WF1->GetTracesSmooth();
-          traceSecondaryOrig = WF1->GetTraces();
-          // for (int iWF = 60; iWF < WF1->GetSize() - 5; iWF++) {
+          // std::cout << "traceSec size: " << traceSecondary.size() <<
+          // std::endl;
+          traceSecondary.resize(baselineWF.GetSize());
+          // std::cout << "traceSec size: " << traceSecondary.size() <<
+          // std::endl; traceSecondaryOrig = WF1->GetTraces(); for (int iWF =
+          // 60; iWF < WF1->GetSize() - 5; iWF++) {
           //   if (abs(traceSecondary[iWF] - traceSecondary[iWF - 4]) > 3 or
           //       abs(traceSecondary[iWF] - traceSecondary[iWF + 4]) > 3 or
           //       traceSecondary[iWF] > 6) {
@@ -190,12 +180,12 @@ int main(int argc, char *argv[]) {
           //   }
           // }
 
-          for (int iWF = WF1->GetSize() - 50; iWF >= 0; iWF--) {
-            if (abs(traceSecondary[iWF] - traceSecondary[iWF - 4]) > 3 or
-                abs(traceSecondary[iWF] - traceSecondary[iWF + 4]) > 3 or
-                abs(traceSecondary[iWF]) > 12) {
+          for (int iWF = traceSecondary.size() - 50; iWF >= 0; iWF--) {
+            if (abs(traceSecondary[iWF] - traceSecondary[iWF - 4]) > 20 or
+                abs(traceSecondary[iWF] - traceSecondary[iWF + 4]) > 20 or
+                traceSecondary[iWF] > 30) {
               traceSecondary[iWF] = traceSecondary[iWF + 30];
-              traceSecondaryOrig[iWF] = traceSecondaryOrig[iWF + 30];
+              // traceSecondaryOrig[iWF] = traceSecondaryOrig[iWF + 30];
             }
           }
 
@@ -220,6 +210,8 @@ int main(int argc, char *argv[]) {
           trFFT_AmpSecn[0] = 0;
           trFFT_AmpCorr.clear();
           trFFT_PhsCorr.clear();
+          // std::cout << "traceFFTAmpSecn size: " << trFFT_AmpSecn.size()
+          //           << std::endl;
           for (int iterFFT = 0; iterFFT < trFFT_AmpSecn.size(); iterFFT++) {
             trFFT_AmpCorr.push_back(trFFT_AmpPrim[iterFFT] *
                                     trFFT_AmpSecn[iterFFT]);
@@ -272,18 +264,17 @@ int main(int argc, char *argv[]) {
           }
           // WF1->Plot(traceSecondary, WF1->GetTracesSmooth());
 
-          if (keepGoing) {
-            traceSecondaryOrig = WF1->GetTracesSmooth();
-            digiAnalysis::WaveForm *WF2 =
-                new digiAnalysis::WaveForm(traceSecondary);
-            WF2->SetSmooth(16, "MovA");
-            WF1->Plot(WF2->GetTracesSmooth(), WF1->GetTracesSmooth());
-            std::cout << "Do you want to see the next waveform? (y/n): ";
-            std::getline(std::cin, userInput);
-            if (userInput != "y" && userInput != "Y") {
-              keepGoing = false;
-            }
-          }
+          // if (keepGoing) {
+          //   traceSecondaryOrig = WF1->GetTracesSmooth();
+          //   digiAnalysis::WaveForm WF2(traceSecondary);
+          //   WF2.SetSmooth(16, "MovA");
+          //   WF1->Plot(WF2.GetTracesSmooth(), WF1->GetTracesSmooth());
+          //   std::cout << "Do you want to see the next waveform? (y/n): ";
+          //   std::getline(std::cin, userInput);
+          //   if (userInput != "y" && userInput != "Y") {
+          //     keepGoing = false;
+          //   }
+          // }
 
           Channel = hitsVector[hititer]->GetChNum();
           Timestamp = hitsVector[hititer]->GetTimestamp();
@@ -327,6 +318,8 @@ int main(int argc, char *argv[]) {
       }
       Data_F->Write();
       fout->Close();
+      delete fout;
+      fout = nullptr;
     }
   }
   // fApp->Run();

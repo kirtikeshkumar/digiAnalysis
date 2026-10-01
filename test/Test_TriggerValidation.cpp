@@ -45,16 +45,22 @@ int main() {
 #ifdef WAVES
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::string fname;
-  //   fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
-  //           "CoincidenceStudies/01JuneNoSrc/"
-  //           "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
-  //           "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
+  // fname = "/home/kirtikesh/Analysis/DATA/LeadPit/CopperLining/"
+  //         "CoincidenceStudies/01JuneNoSrc/"
+  //         "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
+  //         "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
 
-  fname =
-      "/home/kirtikesh/Analysis/DATA/extCoinc/"
-      "NaI3124_17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
-      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+  fname = "~/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/01JuneNoSrc/"
+          "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_300_WAVES_"
+          "Singles_LeadPit_45/FILTERED/"
+          "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_300_"
+          "WAVES_Singles_LeadPit_45_BLCorrected.root";
+
+  // fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
+  //     "NaI3124_17Jun26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
+  //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
+  //     "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
 
   //   fname =
   //       "/home/kirtikesh/Analysis/DATA/extCoinc/"
@@ -72,7 +78,7 @@ int main() {
 
   //   digiAnalysis::GateStart = 400;
 
-  digiAnalysis::Analysis an(2, fname, 0, 200000, 1);
+  digiAnalysis::Analysis an(0, fname, 0, 200000, 1);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
   int nentries = hitsVector.size();

@@ -20,12 +20,9 @@
 int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/"
-      "extCoinc/"
-      "NaI3124_15-17Jun-13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
-      "ExtTrig_"
-      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+      "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+      "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_21SepSum.root";
 
   digiAnalysis::Analysis an(fname, 1000000, 2000000, 0);
   std::cout << "getting the vector from an" << std::endl;
@@ -43,12 +40,9 @@ int main(int argc, char *argv[]) {
   std::cout << nPairs << " Pairs were formed in the data." << std::endl;
 
   std::string outfname =
-      "/home/kirtikesh/Analysis/DATA/extCoinc/PairFiles/"
-      "Pair_NaI3124_15-17Jun-13Jul26_NoSrc_1350V_2000V_1350V_1350V_Gain2_"
-      "NoSplit_"
-      "ExtTrig_"
-      "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-      "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected_1000000_2000000.root";
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
+      "Pair_NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+      "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_21SepSum.root";
 
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("Data_Pair", "Data_Pair");
