@@ -53,41 +53,42 @@ int main(int argc, char *argv[]) {
   trFFT_AmpPrim[0] = 0;
   baselineWF.SetWaveForm(baselineWF.EvalIFFT(trFFT_AmpPrim, trFFT_PhsPrim));
 
-  // std::string fname =
-  // "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
-  // "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-  // "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-  // "1496nsCoinc_FreeWrites_Ch248Singles_14/FILTERED/"
-  // "DataF_NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-  // "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-  // "1496nsCoinc_FreeWrites_Ch248Singles_14.root";
+  std::string fname =
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
+      "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+      "1496nsCoinc_FreeWrites_Ch248Singles_15/FILTERED/"
+      "DataF_NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+      "1496nsCoinc_FreeWrites_Ch248Singles_15.root";
 
-  for (int fileiter = 41; fileiter <= 47; fileiter++) {
-    std::string fname =
-        "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
-        "NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-        "Acquisition_4_"
-        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-        "FreeWrites_Ch248Singles_" +
-        std::to_string(fileiter) +
-        "/UNFILTERED/"
-        "Data_NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-        "Acquisition_4_"
-        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-        "FreeWrites_Ch248Singles_" +
-        std::to_string(fileiter) + ".root";
-
+  for (int fileiter = 12; fileiter <= 12; fileiter++) {
     // std::string fname =
-    //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
-    //     "NaI13_CsSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-    //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-    //     "1496nsCoinc_FreeWrites_Ch248Singles_" +
+    //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+    //     "NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+    //     "Acquisition_4_"
+    //     "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+    //     "FreeWrites_Ch248Singles_" +
     //     std::to_string(fileiter) +
-    //     "/FILTERED/"
-    //     "DataF_NaI13_CsSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_"
-    //     "12_Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_"
-    //     "800nsLong_1496nsCoinc_FreeWrites_Ch248Singles_" +
+    //     "/UNFILTERED/"
+    //     "Data_NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+    //     "Acquisition_4_"
+    //     "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+    //     "FreeWrites_Ch248Singles_" +
     //     std::to_string(fileiter) + ".root";
+
+    std::string fname =
+        "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
+        "NaI134_CoEuSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+        "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+        "1496nsCoinc_FreeWrites_Ch248Singles_" +
+        std::to_string(fileiter) +
+        "/FILTERED/"
+        "DataF_NaI134_CoEuSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_"
+        "12_"
+        "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+        "1496nsCoinc_FreeWrites_Ch248Singles_" +
+        std::to_string(fileiter) + ".root";
 
     // std::string fname =
     //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]) {
     if (std::filesystem::exists(fname)) {
 
       // Read to singleHits
-      digiAnalysis::Analysis an(fname, 00000, 00000, 0);
+      digiAnalysis::Analysis an(fname, 500000, 00000, 0);
       // digiAnalysis::Analysis an2(0, fname, 0, 00000, 0);
       std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
           an.GetSingleHitsVec();

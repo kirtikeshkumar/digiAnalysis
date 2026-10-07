@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::string fpath = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/";
   std::string finit =
-      "NaI13_CsSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+      "NaI134_CsSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
       "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
       "1496nsCoinc_FreeWrites_Ch248Singles_";
   for (int fiter = 12; fiter <= 12; fiter++) {
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
                         "/FILTERED/DataF_" + finit + std::to_string(fiter) +
                         "_BLCorrected.root";
     if (std::filesystem::exists(fname)) {
-      digiAnalysis::Analysis an(fname, 500000, 00000, 0);
+      digiAnalysis::Analysis an(fname, 0000, 00000, 0);
       std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
           an.GetSingleHitsVec();
       std::string writefname = fpath + finit + std::to_string(fiter) +

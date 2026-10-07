@@ -128,6 +128,12 @@ public:
   void PrintFitParameters() const;
   void FitExponential(UShort_t numExp, int start, int stop);
   std::vector<double> GenerateWaveFromFFT();
+
+  /**
+   * @brief Returns peak and valley locations.
+   *
+   * @param treshold peak-valley value above which WF is considered proper SPE.
+   */
   std::pair<std::vector<int>, std::vector<int>>
   DetectPeakValleys(double threshold);
 

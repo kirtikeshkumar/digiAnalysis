@@ -1023,12 +1023,20 @@ void WaveForm::SetBaseLine(std::vector<double> tr, int start, int nSample) {
 void WaveForm::SetBaseLine(TArrayS *arr) {
   baseline = 0;
   double sum = 0;
-  blStart = GateStart + GateLenLong + nSampleBL < arr->GetSize()
-                ? GateStart + GateLenLong
-                : blStart;
+  // blStart = GateStart + GateLenLong + nSampleBL < arr->GetSize()
+  //               ? GateStart + GateLenLong
+  //               : blStart;
+  // if (arr && (arr->GetSize() > nSampleBL)) {
+  //   for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
+  //     sum = sum + arr->At(j);
+  //   }
+  //   baseline = sum / nSampleBL;
+
+  blStart = GateStart - nSampleBL > 0 ? GateStart - nSampleBL - 1
+                                      : GateStart + GateLenLong;
   if (arr && (arr->GetSize() > nSampleBL)) {
     for (unsigned int j = blStart; j < nSampleBL + blStart; j++) {
-      sum = sum + arr->At(j);
+      sum += arr->At(j);
     }
     baseline = sum / nSampleBL;
   } else {
@@ -1724,20 +1732,27 @@ WaveForm::DetectPeakValleys(double threshold) {
   std::vector<int> valleyTemp;
   int iter = 0, peakPos = 0, valleyPos = 0;
   bool findPeak = true, findValley = true, peakFound = false;
+  double checkval = 0, checkpos = 0;
   if (IsTracesSmoothSet()) {
     // std::cout << "using smoothtrace" << std::endl;
     double peakVal = tracesSmooth[peakPos], valleyVal = tracesSmooth[valleyPos],
            currVal;
     while (iter < tracesSmooth.size()) {
-      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " :
-      // "
+      // std::cout << iter << " : " << traces[iter] << " : " << peakPos << " : "
       //           << peakVal << " : " << valleyPos << " : " << valleyVal
       //           << std::endl;
       currVal = tracesSmooth[iter];
       if (findPeak and currVal < peakVal) {
         findPeak = false;
         findValley = true;
-        if (peakVal > threshold) {
+        checkval = valley.empty() ? 0 : tracesSmooth[valley.back()];
+        if (abs(peakVal - checkval) > threshold) {
+          // std::cout << "pos: " << iter << " currVal: " << currVal
+          //           << " peakVal: " << peakVal << " valleyVal: " << valleyVal
+          //           << " peakPos: " << peakPos << " valleyPos: " << valleyPos
+          //           << " valleylen: " << valley.size()
+          //           << " checkval: " << checkval << " cehckpos: " << checkpos
+          //           << std::endl;
           peak.push_back(peakPos);
           peakFound = true;
           if (!valleyTemp.empty()) {
