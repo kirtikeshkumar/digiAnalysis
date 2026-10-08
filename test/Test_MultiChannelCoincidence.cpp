@@ -13,7 +13,8 @@
 #include <ostream>
 #include <string>
 #include <vector>
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
   // std::string fname =
@@ -25,9 +26,8 @@ int main(int argc, char *argv[]) {
   //     "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
 
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
-      "Pair_NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_"
-      "Threshold_6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_21SepSum.root";
+      "/media/kirtikesh/KKBlack/ToCopy/PairFiles/"
+      "Pair_NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_FreeWrites_Ch248Singles_68_BLCorrected.root";
 
   // std::string wfname =
   //     "/home/kirtikesh/Analysis/MLTests/AverageWaveforms.root"; // file
@@ -105,54 +105,57 @@ int main(int argc, char *argv[]) {
   double MT, Lam;
   digiAnalysis::WaveForm *WF = nullptr, *WFNorm = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector, wfVecNoise;
-  for (int i = 0; i < vecOfPairs.size(); i++) {
+  for (int i = 0; i < vecOfPairs.size(); i++)
+  {
     X1 = 0;
     X2 = 0;
     XTot = 0;
-    switch (vecOfPairs[i]->GetPairHitCh(1)) {
+    switch (vecOfPairs[i]->GetPairHitCh(1))
+    {
     // case 0: // for 2kV Data
     //   energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.47835 - 11.71;
     //   break;
     case 0: // 2 for 2kV Data
       // vecOfPairs[i]->GetHitPtr(1)->SetEvalEnergy();
-      energy0 = vecOfPairs[i]->GetPairHitEvalEnergy(1) * 0.009157 +
-                0.501; // * 0.01911 - 0.301 for 2kV Data;
+      energy0 = vecOfPairs[i]->GetPairHitEvalEnergy(1) * 0.0062915 +
+                0.3047; // * 0.01911 - 0.301 for 2kV Data;
       MT = vecOfPairs[i]->GetHitPtr(1)->GetMeanTime();
       vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->SetSmooth(100);
       Lam = vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->EvalNoisePar2(1050, 1650);
       break;
     case 4: // 3 for 2kV Data
-      energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.2601 -
-                    10.544; //* 0.54222 - 10.3 for 2kV Data;
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.52958 -
+                    18.96; //* 0.54222 - 10.3 for 2kV Data;
       break;
     case 8: // 4 for 2kV Data
-      energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.2537 -
-                    3.057; //* 0.48345 + 2.395 for 2kV Data;
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.50226 -
+                    11.89; //* 0.48345 + 2.395 for 2kV Data;
       break;
 
     default:
       break;
     }
-    switch (vecOfPairs[i]->GetPairHitCh(0)) {
+    switch (vecOfPairs[i]->GetPairHitCh(0))
+    {
       // case 0: // for 2kV Data
     //   energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.47835 - 11.71;
     //   break;
     case 0: // 2 for 2kV Data
       // vecOfPairs[i]->GetHitPtr(1)->SetEvalEnergy();
-      energy0 = vecOfPairs[i]->GetPairHitEvalEnergy(0) * 0.009157 +
-                0.501; // * 0.01911 - 0.301 for 2kV Data;
+      energy0 = vecOfPairs[i]->GetPairHitEvalEnergy(0) * 0.0062915 +
+                0.3047; // * 0.01911 - 0.301 for 2kV Data;
       // MT = vecOfPairs[i]->GetHitPtr(0)->GetMeanTime();
       // vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->SetSmooth(100);
       // Lam = vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->EvalNoisePar2(1050,
       // 1650);
       break;
     case 4: // 3 for 2kV Data
-      energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.2601 -
-                    10.544; //* 0.54222 - 10.3 for 2kV Data;
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.52958 -
+                    18.96; //* 0.54222 - 10.3 for 2kV Data;
       break;
     case 8: // 4 for 2kV Data
-      energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.2537 -
-                    3.057; //* 0.48345 + 2.395 for 2kV Data;
+      energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.50226 -
+                    11.89; //* 0.48345 + 2.395 for 2kV Data;
       break;
 
     default:
@@ -161,15 +164,17 @@ int main(int argc, char *argv[]) {
 
     // if (vecOfPairs[i]->GetHitPtr(0)->GetMeanTime() > 2.08)
     if (vecOfPairs[i]->GetPairHitCh(0) == 0 or
-        vecOfPairs[i]->GetPairHitCh(1) == 0) {
-      hE1E2->Fill(energy0, energyOther);
+        vecOfPairs[i]->GetPairHitCh(1) == 0)
+    {
       double preint =
           vecOfPairs[i]->GetPairHitCh(0) == 0
               ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->IntegrateWaveForm(
                     0, digiAnalysis::GateStart)
               : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->IntegrateWaveForm(
                     0, digiAnalysis::GateStart);
-      if (preint / digiAnalysis::GateStart < 2.0) {
+      if (preint / digiAnalysis::GateStart < 2.0)
+      {
+        hE1E2->Fill(energy0, energyOther);
         WF = vecOfPairs[i]->GetPairHitCh(0) == 0
                  ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()
                  : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr();
@@ -184,7 +189,9 @@ int main(int argc, char *argv[]) {
         // hMTLam->Fill(MT, Lam);
         // }
         hX1X2->Fill(X1, X2);
-      } else {
+      }
+      else
+      {
         badWFCount++;
       }
       // std::cout << "E0: " << energy0 << " : EO: " << energyOther <<
