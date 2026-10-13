@@ -1242,13 +1242,13 @@ double WaveForm::IntegrateWaveForm() {
 double WaveForm::IntegrateWaveForm(int startTime, int stopTime) {
   double sum = 0;
   if (!traces.empty() && (traces.size() >= stopTime)) {
-    if (startTime < stopTime) {
-      for (unsigned int j = startTime; j < stopTime; j++) {
+    if (startTime <= stopTime) {
+      for (unsigned int j = startTime; j <= stopTime; j++) {
         sum = sum + traces[j];
       }
     } else {
       std::cout << "err IntegrateWaveForm: order the times properly "
-                << std::endl;
+                << startTime << " : " << stopTime << std::endl;
     }
   } else {
     std::cout << "err IntegrateWaveForm: fill traces first: " << traces.size()
@@ -1261,13 +1261,13 @@ double WaveForm::IntegrateWaveForm(std::vector<double> tr, int startTime,
                                    int stopTime) {
   double sum = 0;
   if (!tr.empty() && (tr.size() >= stopTime)) {
-    if (startTime < stopTime) {
-      for (unsigned int j = startTime; j < stopTime; j++) {
+    if (startTime <= stopTime) {
+      for (unsigned int j = startTime; j <= stopTime; j++) {
         sum = sum + tr[j];
       }
     } else {
       std::cout << "err IntegrateWaveForm: order the times properly "
-                << std::endl;
+                << startTime << " : " << stopTime << std::endl;
     }
   } else {
     std::cout << "err IntegrateWaveForm: fill traces first: " << tr.size()

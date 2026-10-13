@@ -39,14 +39,16 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
-      "NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-      "1496nsCoinc_FreeWrites_Ch248Singles_47/UNFILTERED/"
-      "Data_NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-      "1496nsCoinc_FreeWrites_Ch248Singles_47_BLCorrected.root";
+      "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+      "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_BLCorrected_29SepSum."
+      "root";
   // Read to singleHits
-  digiAnalysis::Analysis an(0, fname, 0, 100000, 0);
+  digiAnalysis::Analysis an(0, fname, 0, 500000, 0);
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
+  //     "pair.root";
+  // digiAnalysis::Analysis an(fname, 0, 500000, 0);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -64,19 +66,19 @@ int main(int argc, char *argv[]) {
                spectralsize, 500, -4, 4);
   TH2 *hLamPlot =
       new TH2F("LamPlot", "Energy vs Lambda", spectralsize * nbinspect, 0,
-               spectralsize, 2000, -10.0, 10.0);
+               spectralsize, 2000, -20.0, 10.0);
   TH2 *hPSDLamPlot =
-      new TH2F("PSDLamPlot", "PSD vs Lambda", 100, 0, 1, 2000, -10.0, 10.0);
+      new TH2F("PSDLamPlot", "PSD vs Lambda", 100, 0, 1, 2000, -20.0, 10.0);
   TH3 *hLamMTPlot =
       new TH3F("LamMTPlot", "Energy vs Lambda vs MT", spectralsize * nbinspect,
-               0, spectralsize, 80, -10, -2, 200, 0, 4);
+               0, spectralsize, 80, -20, -2, 200, 0, 4);
   TH3 *hPSDLamMTPlot = new TH3F("PSDLamMTPlot", "PSD vs Lambda vs MT", 200, -1,
-                                1, 60, -10, -4, 200, -4, 4);
+                                1, 60, -20, -4, 200, -4, 4);
   TH3 *hPSDLamEPlot =
       new TH3F("PSDLamEPlot", "PSD vs Lambda vs E", spectralsize * nbinspect, 0,
-               spectralsize, 100, 0, 1, 80, -10, -2);
+               spectralsize, 100, 0, 1, 80, -20, -2);
   TH2 *hMTLam =
-      new TH2F("MTLam", "MeanTime vs Lambda", 500, -4, 4, 2000, -10.0, 10.0);
+      new TH2F("MTLam", "MeanTime vs Lambda", 500, -4, 4, 2000, -20.0, 10.0);
   TH2 *hPSDPlot = new TH2F("PSDPlot", "Energy vs PSD", spectralsize * nbinspect,
                            0, spectralsize, 500, -8, 2);
   TH2 *hEPlot = new TH2F("EPlot", "Energy vs EvalEnergy", 4096, 0, spectralsize,
@@ -101,6 +103,7 @@ int main(int argc, char *argv[]) {
   TH2 *hMTLL = new TH2F("hMTLL", "hMTLL", 500, -4, 4, 1000, -5, 5);
   TH2 *hX1X2 = new TH2F("hX1X2", "hX1X2", 600, -0.2, 1, 600, -0.2, 1);
   TH2 *hX1X2_1 = new TH2F("hX1X2_1", "hX1X2_1", 600, -0.2, 1, 600, -0.2, 1);
+  TH3 *hX1X2E = new TH3F("hX1X2E", "hX1X2E", 100, 0, 20, 100, 0, 1, 100, 0, 1);
   TH1 *hpreint = new TH1F("hPreint", "hpreint", 1000, 0, 100);
   int nentries = hitsVector.size();
   double psd = 0;
@@ -109,9 +112,10 @@ int main(int argc, char *argv[]) {
   double energy = 0;
   double energyShort = 0;
   double shortPSD = 0;
-  double Q1 = 0, Q2 = 0, avT1 = 0, avT2 = 0, netQ = 0;
+  double Q1 = 0, Q2 = 0, avT1 = 0, avT2 = 0, netQ = 0, Q1_1, avT1_1, Q2_1,
+         avT2_1;
   double X1 = 0, X2 = 0, XTot = 0;
-  double newLam = 0;
+  double newLam = 0, lam = 0;
   bool keepGoing = true;
   std::string userInput;
   digiAnalysis::WaveForm *WF = nullptr;
@@ -128,7 +132,7 @@ int main(int argc, char *argv[]) {
   digiAnalysis::WaveForm WFNormAv(*traceAv);
   double intValAv = WFNormAv.IntegrateWaveForm();
 
-  double X1LowCut = 0.07, X1HiCut = 0.4;
+  double X1LowCut = 0.01, X1HiCut = 0.25;
   double mX = -1., mC_low = 0.764, mC_hi = 0.95;
   double X2LowCut = 0.4, X2HiCut = 0.6;
 
@@ -160,6 +164,15 @@ int main(int argc, char *argv[]) {
 
       WFMT = TMath::Log10(WF->GetSize() / 2.0);
       newLam = -1;
+      lam = -1;
+      WF->SetSmooth(60);
+      std::pair<std::vector<int>, std::vector<int>> results =
+          WF->DetectPeakValleys(25);
+      // std::cout << "lenPeaks: " << results.first.size()
+      //           << " len valley: " << results.second.size() << std::endl;
+      ushort numiter = 0;
+      UShort_t c1 = 0, c2 = 0;
+      double val = 0;
       if (preInt < 5.0) {
         Q1 = 0;
         Q2 = 0;
@@ -184,7 +197,58 @@ int main(int argc, char *argv[]) {
         XTot = WF->IntegrateWaveForm(980, 1280);
         X1 = X1 / XTot;
         X2 = X2 / XTot;
+
+        Q1_1 = 0;
+        Q2_1 = 0;
+        avT1_1 = 0;
+        avT2_1 = 0;
+        val = 0;
+        short startiter = -1;
+        numiter = 0;
+        short iter = 0;
+        bool itertrue = true;
+        // std::cout << "peaksize" << results.first.size() << std::endl;
+        while (itertrue and iter < results.first.size()) {
+          // std::cout << i << " iter: " << iter << " : "
+          //           << results.second[2 * iter] << " : " <<
+          //           results.first[iter]
+          //           << " : " << results.second[2 * iter + 1] << std::endl;
+          if (results.first[iter] > digiAnalysis::TriggerTime and
+              results.first[iter] <
+                  digiAnalysis::TriggerTime + 2 * digiAnalysis::GateLenLong) {
+            if (startiter < 0)
+              startiter = iter;
+            numiter++;
+          }
+          if (results.first[iter] >=
+              digiAnalysis::TriggerTime + digiAnalysis::GateLenLong)
+            itertrue = false;
+          iter++;
+        }
+        // std::cout << "startiter: " << startiter << ": niter: " << numiter
+        //           << std::endl;
+
+        for (iter = startiter; iter < startiter + numiter; iter++) {
+          val = WF->IntegrateWaveForm(
+              results.second[2 * iter],
+              std::min(abs(results.second[2 * iter + 1]), int(WF->GetSize())));
+          if (results.first[iter] <
+              0.5 * (digiAnalysis::GateStart +
+                     results.first[startiter + numiter - 1])) {
+            Q1_1 += val;
+            avT1_1 += results.first[iter] * val;
+            c1++;
+          } else {
+            Q2_1 += val;
+            avT2_1 += results.first[iter] * val;
+            c2++;
+          }
+        }
       }
+      lam = TMath::Log(-1.0 * TMath::Log(Q2_1 / Q1_1) /
+                       (avT2_1 / Q2_1 - avT1_1 / Q1_1));
+      // std::cout << lam << " : " << Q2_1 / Q1_1 << " : "
+      //           << (avT2_1 / c2 - avT1_1 / c1) << std::endl;
       newLam = TMath::Log(-1.0 * TMath::Log(Q2 / Q1) / (avT2 / Q2 - avT1 / Q1));
       evalEnergy = hitsVector[i]->GetEvalEnergy() * 0.0062915 +
                    0.3047; // * 0.01911 - 0.301; //
@@ -201,7 +265,8 @@ int main(int argc, char *argv[]) {
         hpreint->Fill(preInt);
       if (psd > 0.01 and psd < 0.7 and preInt < 5.0) { //
         hX1X2->Fill(X1, X2);
-        hLamPlot->Fill(evalEnergy, newLam);
+        hX1X2E->Fill(evalEnergy, X1, X2);
+        hLamPlot->Fill(evalEnergy, lam);
       }
       hPSDPlot->Fill(energy, psd);
       hMTPlot->Fill(energy, meanTime);
@@ -216,7 +281,7 @@ int main(int argc, char *argv[]) {
         hX1X2_1->Fill(X1, X2);
 
         hLamMTPlot->Fill(evalEnergy, newLam, meanTime);
-        hMTLam->Fill(meanTime, newLam);
+        hMTLam->Fill(meanTime, lam);
         // shortPSD =
         //     WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290,
         //     600);
@@ -234,27 +299,30 @@ int main(int argc, char *argv[]) {
       hMTPSD->Fill(meanTime, psd);
       if (preInt < 5.0 and X1 > X1LowCut and X1 < X1HiCut and
           X2 < mX * X1 + mC_hi and X2 > 0.2 and
-          newLam > 3.44 * meanTime - 13.4) { // meanTime > 1.75 and meanTime
-                                             // < 2.2 and psd < 0.7 and
-                                             // psd > 0.2 and
+          newLam > 3.44 * meanTime - 13.4 and
+          newLam > -5.5) { // meanTime > 1.75 and meanTime
+                           // < 2.2 and psd < 0.7 and
+                           // psd > 0.2 and
         hMTPlot1->Fill(energy, meanTime);
         hEEvalSpectra->Fill(evalEnergy);
       }
 
-      // if (keepGoing and energy < 5 and energy > 1 and meanTime < 2.2 and
-      //     psd < 0.7 and psd > 0.01 and fabs(preInt) < 5.0 and X1 > X1LowCut
-      //     and X1 < X1HiCut and X2 < mX * X1 + mC_hi and X2 > 0.2) {
-      if (keepGoing and X2 < 0.2 and X1 > 0.3 and X1 < 0.7) {
-        WF->SetTracesFFT();
-        WF->Plot();
-        std::cout << i << " Energy: " << energy << " X1: " << X1
-                  << " X2: " << X2 << " MT: " << meanTime << std::endl;
-        std::cout << "Do you want to see the next waveform? (y/n): ";
-        std::getline(std::cin, userInput);
-        if (userInput != "y" && userInput != "Y") {
-          keepGoing = false;
-        }
-      }
+      // if ((keepGoing and energy < 3 and energy > 0.5 and
+      //      (meanTime < 2.2 and psd < 0.7 and psd > 0.3 and
+      //       fabs(preInt) < 5.0 and X1 > X1LowCut and X1 < X1HiCut and
+      //       X2 < mX * X1 + mC_hi and X2 > 0.2 and
+      //       newLam > 3.44 * meanTime - 13.4 and newLam > -5.5))) {
+      // // if (keepGoing and X2 < 0.2 and X1 > 0.4 and X1 < 0.6) {
+      //   // WF->SetTracesFFT();
+      //   WF->Plot();
+      //   std::cout << i << " Energy: " << energy << " X1: " << X1
+      //             << " X2: " << X2 << " MT: " << meanTime << std::endl;
+      //   std::cout << "Do you want to see the next waveform? (y/n): ";
+      //   std::getline(std::cin, userInput);
+      //   if (userInput != "y" && userInput != "Y") {
+      //     keepGoing = false;
+      //   }
+      // }
 
       if (preInt >= 5.0 or psd > 0.7) {
         badwf++;
@@ -386,8 +454,10 @@ int main(int argc, char *argv[]) {
   // WFAveraged.SetSmooth(40);
   // WFAveraged.SetTracesFFT();
   // WFAveraged.Plot();
-  TCanvas *c21 = new TCanvas("c21", "preint", 800, 600);
-  hpreint->Draw();
+  // TCanvas *c21 = new TCanvas("c21", "preint", 800, 600);
+  // hpreint->Draw();
+  TCanvas *c22 = new TCanvas("c22", "EvX1vX2", 800, 600);
+  hX1X2E->Draw();
 
   fApp->Run();
 #endif

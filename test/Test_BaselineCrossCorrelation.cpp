@@ -31,13 +31,15 @@ int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
 
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
-      "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-      "1496nsCoinc_FreeWrites_Ch248Singles_15/FILTERED/"
-      "DataF_NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-      "1496nsCoinc_FreeWrites_Ch248Singles_15.root";
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+      "NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+      "Acquisition_4_"
+      "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+      "FreeWrites_Ch248Singles_45/UNFILTERED/"
+      "Data_NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+      "Acquisition_4_"
+      "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+      "FreeWrites_Ch248Singles_45.root";
 
   // Read to singleHits
   digiAnalysis::Analysis an(0, fname, 00000, 200000, 1);
@@ -173,10 +175,10 @@ int main(int argc, char *argv[]) {
       }
       digiAnalysis::WaveForm *WF2 = new digiAnalysis::WaveForm(traceSecondary);
       WF2->SetSmooth();
-      if (hititer and numTraces % 5 == 0) {
-        WF1->Plot(WF1->GetTraces(), traceSecondary);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
+      // if (hititer and numTraces % 5 == 0) {
+      //   WF1->Plot(WF1->GetTraces(), traceSecondary);
+      //   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      // }
 
       // WF1->SetTracesFFT(traceSecondary);
 
@@ -267,7 +269,7 @@ int main(int argc, char *argv[]) {
   // AccumulatedWF_5k.GetTracesFFT());
 
   std::string outfname = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/"
-                         "Baseline_29Sep_singlePeriod_Ch0.root";
+                         "Baseline_30Sep_singlePeriod_Ch0.root";
   TFile *fout = TFile::Open(outfname.c_str(), "RECREATE");
   TTree *t = new TTree("baseline", "b1aseline");
   digiAnalysis::WaveForm WFSPE;

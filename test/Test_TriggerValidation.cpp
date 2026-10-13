@@ -50,11 +50,13 @@ int main() {
   //         "NaI1342_June26_1750_1345_1350_1350_NoSrc_Thresh_15-30_"
   //         "300_WAVES_Coinc_144ns_LeadPit_Sum_BLCorrected.root";
 
-  fname = "~/Analysis/DATA/LeadPit/CopperLining/CoincidenceStudies/01JuneNoSrc/"
-          "NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_300_WAVES_"
-          "Singles_LeadPit_45/FILTERED/"
-          "DataF_NaI1342_04June26_1750_1345_1350_1350_NoSrc_Thresh_120_300_"
-          "WAVES_Singles_LeadPit_45_BLCorrected.root";
+  fname = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+          "NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+          "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+          "1496nsCoinc_FreeWrites_Ch248Singles_47/UNFILTERED/"
+          "Data_NaI134_NoSrc_30Sep_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+          "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+          "1496nsCoinc_FreeWrites_Ch248Singles_47_BLCorrected.root";
 
   // fname =
   //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
@@ -78,13 +80,13 @@ int main() {
 
   //   digiAnalysis::GateStart = 400;
 
-  digiAnalysis::Analysis an(0, fname, 0, 200000, 1);
+  digiAnalysis::Analysis an(0, fname, 0, 00000, 1);
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
       an.GetSingleHitsVec();
   int nentries = hitsVector.size();
   std::cout << "Got " << nentries << " from file" << std::endl;
 
-  int spectralsize = 4096;
+  int spectralsize = 16384;
   TH2 *hMTPlot = new TH2F("MTPlot", "Energy vs MeanTime", spectralsize, 0,
                           spectralsize, 500, -4, 4);
   TH2 *hLamPlot = new TH2F("LamPlot", "Energy vs Lambda", spectralsize, 0,
@@ -93,7 +95,7 @@ int main() {
       new TH2F("MTLam", "MeanTime vs Lambda", 500, -4, 4, 2000, -10.0, 10.0);
   TH2 *hPSDPlot = new TH2F("PSDPlot", "Energy vs PSD", spectralsize, 0,
                            spectralsize, 500, -8, 2);
-  TH1 *hEPlot = new TH1F("EPlot", "Energy", 4096, 0, spectralsize);
+  TH1 *hEPlot = new TH1F("EPlot", "Energy", 16384, 0, spectralsize);
 
   TH2 *hMTPlotSel =
       new TH2F("MTPlotSel", "Energy vs MeanTime of Selected Events",
@@ -105,8 +107,8 @@ int main() {
                             500, -4, 4, 2000, -10.0, 10.0);
   TH2 *hPSDPlotSel = new TH2F("PSDPlotSel", "Energy vs PSD of Selected Events",
                               spectralsize, 0, spectralsize, 500, -8, 2);
-  TH1 *hEPlotSel =
-      new TH1F("EPlotSel", "Energy  of Selected Events", 4096, 0, spectralsize);
+  TH1 *hEPlotSel = new TH1F("EPlotSel", "Energy  of Selected Events", 16384, 0,
+                            spectralsize);
 
   TH2 *hMTPlotDel =
       new TH2F("MTPlotDel", "Energy vs MeanTime of Deleted Events",
@@ -119,7 +121,7 @@ int main() {
   TH2 *hPSDPlotDel = new TH2F("PSDPlotDel", "Energy vs PSD of Deleted Events",
                               spectralsize, 0, spectralsize, 500, -8, 2);
   TH1 *hEPlotDel =
-      new TH1F("EPlotDel", "Energy  of Deleted Events", 4096, 0, spectralsize);
+      new TH1F("EPlotDel", "Energy  of Deleted Events", 16384, 0, spectralsize);
 
   TH1 *hCoincDelay =
       new TH1F("hCoincDelay", "Delay of trigger and coinc", 5000, 0, 5000);
@@ -127,9 +129,9 @@ int main() {
   std::vector<double> trigVec, gateOrig, gateDelay;
   std::vector<double> trace;
   int gateLen = 80;
-  int delay = 120;
+  int delay = 150;
   int gateDelayLen = 300;
-  int threshold = 17;
+  int threshold = 180;
   bool accFlag = false;
   double energy, MT, PSD, Lam, coincDelay;
 

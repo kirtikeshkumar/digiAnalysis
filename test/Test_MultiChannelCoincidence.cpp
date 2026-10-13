@@ -13,8 +13,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
 
   // std::string fname =
@@ -26,9 +25,8 @@ int main(int argc, char *argv[])
   //     "2Vpp_Thresh_100lsb_WAVES_Sum_BLCorrected.root";
 
   std::string fname =
-      "/media/kirtikesh/KKBlack/ToCopy/PairFiles/"
-      "Pair_NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_FreeWrites_Ch248Singles_68_BLCorrected.root";
-
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
+      "pair.root";
   // std::string wfname =
   //     "/home/kirtikesh/Analysis/MLTests/AverageWaveforms.root"; // file
   //     for
@@ -72,7 +70,7 @@ int main(int argc, char *argv[])
   // "/media/kirtikesh/UbuntuFiles/SDataF_NaI1342_02June26_1750_1345_1350_1350_NoSrc_Thresh_30_300_WAVES_Coinc_144ns_LeadPit_1.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 100000, 0);
+  digiAnalysis::Analysis an(fname, 0, 00000, 0);
   // an.CreatePairs();
   std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
       an.GetPairsVec();
@@ -95,7 +93,8 @@ int main(int argc, char *argv[])
   TH1 *hECuts = new TH1F("hECuts", "ECuts", 320, 0, 80);
   TH1 *hELikeCuts = new TH1F("hELLCuts", "ELLCuts", 320, 0, 80);
   TH1 *hEOrig = new TH1F("hEOrig", "EOrig", 320, 0, 80);
-  double X1LowCut = 0.2, X1HiCut = 0.4;
+  double X1LowCut = 0.07, X1HiCut = 0.4;
+  double mX = -1., mC_low = 0.764, mC_hi = 0.95;
   double X2LowCut = 0.4, X2HiCut = 0.6;
   double X1 = 0, X2 = 0, XTot = 0;
 
@@ -105,13 +104,11 @@ int main(int argc, char *argv[])
   double MT, Lam;
   digiAnalysis::WaveForm *WF = nullptr, *WFNorm = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector, wfVecNoise;
-  for (int i = 0; i < vecOfPairs.size(); i++)
-  {
+  for (int i = 0; i < vecOfPairs.size(); i++) {
     X1 = 0;
     X2 = 0;
     XTot = 0;
-    switch (vecOfPairs[i]->GetPairHitCh(1))
-    {
+    switch (vecOfPairs[i]->GetPairHitCh(1)) {
     // case 0: // for 2kV Data
     //   energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.47835 - 11.71;
     //   break;
@@ -121,7 +118,7 @@ int main(int argc, char *argv[])
                 0.3047; // * 0.01911 - 0.301 for 2kV Data;
       MT = vecOfPairs[i]->GetHitPtr(1)->GetMeanTime();
       vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->SetSmooth(100);
-      Lam = vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->EvalNoisePar2(1050, 1650);
+      Lam = vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->EvalNoisePar2(1080, 1780);
       break;
     case 4: // 3 for 2kV Data
       energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.52958 -
@@ -135,8 +132,7 @@ int main(int argc, char *argv[])
     default:
       break;
     }
-    switch (vecOfPairs[i]->GetPairHitCh(0))
-    {
+    switch (vecOfPairs[i]->GetPairHitCh(0)) {
       // case 0: // for 2kV Data
     //   energyOther = vecOfPairs[i]->GetPairHitEnergy(1) * 0.47835 - 11.71;
     //   break;
@@ -144,10 +140,9 @@ int main(int argc, char *argv[])
       // vecOfPairs[i]->GetHitPtr(1)->SetEvalEnergy();
       energy0 = vecOfPairs[i]->GetPairHitEvalEnergy(0) * 0.0062915 +
                 0.3047; // * 0.01911 - 0.301 for 2kV Data;
-      // MT = vecOfPairs[i]->GetHitPtr(0)->GetMeanTime();
+      MT = vecOfPairs[i]->GetHitPtr(0)->GetMeanTime();
       // vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->SetSmooth(100);
-      // Lam = vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->EvalNoisePar2(1050,
-      // 1650);
+      Lam = vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->EvalNoisePar2(1080, 1780);
       break;
     case 4: // 3 for 2kV Data
       energyOther = vecOfPairs[i]->GetPairHitEnergy(0) * 0.52958 -
@@ -164,16 +159,14 @@ int main(int argc, char *argv[])
 
     // if (vecOfPairs[i]->GetHitPtr(0)->GetMeanTime() > 2.08)
     if (vecOfPairs[i]->GetPairHitCh(0) == 0 or
-        vecOfPairs[i]->GetPairHitCh(1) == 0)
-    {
+        vecOfPairs[i]->GetPairHitCh(1) == 0) {
       double preint =
           vecOfPairs[i]->GetPairHitCh(0) == 0
               ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->IntegrateWaveForm(
                     0, digiAnalysis::GateStart)
               : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr()->IntegrateWaveForm(
                     0, digiAnalysis::GateStart);
-      if (preint / digiAnalysis::GateStart < 2.0)
-      {
+      if (preint / digiAnalysis::GateStart < 5.0) {
         hE1E2->Fill(energy0, energyOther);
         WF = vecOfPairs[i]->GetPairHitCh(0) == 0
                  ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()
@@ -186,12 +179,10 @@ int main(int argc, char *argv[])
         hDelT->Fill(vecOfPairs[i]->GetPairDelTime() / 1E3);
         hEMT->Fill(energy0, MT);
         // // if (energy0 > 15) {
-        // hMTLam->Fill(MT, Lam);
+        hMTLam->Fill(MT, Lam);
         // }
         hX1X2->Fill(X1, X2);
-      }
-      else
-      {
+      } else {
         badWFCount++;
       }
       // std::cout << "E0: " << energy0 << " : EO: " << energyOther <<

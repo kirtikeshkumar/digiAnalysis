@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fnameBL = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/"
-                        "Baseline_29Sep_singlePeriod_Ch0.root";
+                        "Baseline_01Oct_singlePeriod_Ch0_1.root";
   TFile *fp = new TFile(fnameBL.c_str(), "READ");
   TTree *tr = (TTree *)fp->Get("baseline");
   std::vector<double> *BL = nullptr;
@@ -53,59 +53,47 @@ int main(int argc, char *argv[]) {
   trFFT_AmpPrim[0] = 0;
   baselineWF.SetWaveForm(baselineWF.EvalIFFT(trFFT_AmpPrim, trFFT_PhsPrim));
 
-  std::string fname =
-      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
-      "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-      "1496nsCoinc_FreeWrites_Ch248Singles_15/FILTERED/"
-      "DataF_NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-      "1496nsCoinc_FreeWrites_Ch248Singles_15.root";
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
+  //     "NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+  //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+  //     "1496nsCoinc_FreeWrites_Ch248Singles_15/FILTERED/"
+  //     "DataF_NaI1_AmSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+  //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+  //     "1496nsCoinc_FreeWrites_Ch248Singles_15.root";
 
-  for (int fileiter = 12; fileiter <= 12; fileiter++) {
-    // std::string fname =
-    //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
-    //     "NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-    //     "Acquisition_4_"
-    //     "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-    //     "FreeWrites_Ch248Singles_" +
-    //     std::to_string(fileiter) +
-    //     "/UNFILTERED/"
-    //     "Data_NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-    //     "Acquisition_4_"
-    //     "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-    //     "FreeWrites_Ch248Singles_" +
-    //     std::to_string(fileiter) + ".root";
-
+  for (int fileiter = 95; fileiter <= 120; fileiter++) {
     std::string fname =
-        "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
-        "NaI134_CoEuSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
-        "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-        "1496nsCoinc_FreeWrites_Ch248Singles_" +
+        "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+        "NaI134_NoSrc_06Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+        "Acquisition_4_"
+        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+        "FreeWrites_Ch248Singles_" +
         std::to_string(fileiter) +
-        "/FILTERED/"
-        "DataF_NaI134_CoEuSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_"
-        "12_"
-        "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-        "1496nsCoinc_FreeWrites_Ch248Singles_" +
+        "/UNFILTERED/"
+        "Data_NaI134_NoSrc_06Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+        "Acquisition_4_"
+        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
+        "FreeWrites_Ch248Singles_" +
         std::to_string(fileiter) + ".root";
 
     // std::string fname =
-    //     "/home/kirtikesh/Analysis/DATA/extCoinc/"
-    //     "NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_ExtTrig_"
-    //     "Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_1000nsCoinc_"
-    //     "2Vpp_Thresh_100lsb_WAVES_21/FILTERED/"
-    //     "DataF_NaI3124_16Jun26_AmSrc_1350V_2000V_1350V_1350V_Gain2_NoSplit_"
-    //     "ExtTrig_Thresh75_DelayCoincLogic_PGate160ns_Delay240ns_DGate600ns_"
-    //     "1000nsCoinc_2Vpp_Thresh_100lsb_WAVES_21.root";
-
-    // std::string fname = "/home/kirtikesh/Analysis/DATA/extCoincSep/"
-    //                     "run_Bkg_Test_1750V_ExtTrigPrevSet_16Sep_Sum_Ch0.root";
+    //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
+    //     "NaI134_CoEuSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_12_"
+    //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+    //     "1496nsCoinc_FreeWrites_Ch248Singles_" +
+    //     std::to_string(fileiter) +
+    //     "/FILTERED/"
+    //     "DataF_NaI134_CoEuSrc_1800_1337_1350_WAVES_FILTERED_NoSplitSignal_Gain_"
+    //     "12_"
+    //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
+    //     "1496nsCoinc_FreeWrites_Ch248Singles_" +
+    //     std::to_string(fileiter) + ".root";
 
     if (std::filesystem::exists(fname)) {
 
       // Read to singleHits
-      digiAnalysis::Analysis an(fname, 500000, 00000, 0);
+      digiAnalysis::Analysis an(fname, 0000, 00, 0);
       // digiAnalysis::Analysis an2(0, fname, 0, 00000, 0);
       std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
           an.GetSingleHitsVec();
@@ -266,16 +254,17 @@ int main(int argc, char *argv[]) {
           // WF1->Plot(traceSecondary, WF1->GetTracesSmooth());
 
           // if (keepGoing) {
-          //   traceSecondaryOrig = WF1->GetTracesSmooth();
-          //   digiAnalysis::WaveForm WF2(traceSecondary);
-          //   WF2.SetSmooth(16, "MovA");
-          //   WF1->Plot(WF2.GetTracesSmooth(), WF1->GetTracesSmooth());
-          //   std::cout << "Do you want to see the next waveform? (y/n): ";
-          //   std::getline(std::cin, userInput);
-          //   if (userInput != "y" && userInput != "Y") {
-          //     keepGoing = false;
-          //   }
-          // }
+          if (hititer % 10000 == 0) {
+            traceSecondaryOrig = WF1->GetTracesSmooth();
+            digiAnalysis::WaveForm WF2(traceSecondary);
+            WF2.SetSmooth(16, "MovA");
+            WF1->Plot(WF2.GetTracesSmooth(), WF1->GetTracesSmooth());
+            // std::cout << "Do you want to see the next waveform? (y/n): ";
+            // std::getline(std::cin, userInput);
+            // if (userInput != "y" && userInput != "Y") {
+            //   keepGoing = false;
+            // }
+          }
 
           Channel = hitsVector[hititer]->GetChNum();
           Timestamp = hitsVector[hititer]->GetTimestamp();
