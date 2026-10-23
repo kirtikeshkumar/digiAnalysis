@@ -37,18 +37,36 @@ int main(int argc, char *argv[]) {
   // "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"
   //                     "Data_CoEu_Combined.root";
 
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+  //     "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+  //     "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_BLCorrected_30SepSum."
+  //     "root";
+  // // Read to singleHits
+  // digiAnalysis::Analysis an(0, fname, 0, 500000, 0);
+
   std::string fname =
-      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
-      "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
-      "6mV_160nsPromt_240nsDelay_800nsLong_1200nsCoinc_BLCorrected_29SepSum."
-      "root";
-  // Read to singleHits
-  digiAnalysis::Analysis an(0, fname, 0, 500000, 0);
+      "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
+      "pair_PreTrig1000.root";
+  digiAnalysis::Analysis an(fname, 0, 500000, 0);
 
   // std::string fname =
-  //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
-  //     "pair.root";
-  // digiAnalysis::Analysis an(fname, 0, 500000, 0);
+  //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+  //     "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+  //     "6mV_160nsPromt_270nsDelay_800nsLong_1200nsCoinc_PreTrig1000_BLC_"
+  //     "12OctSum."
+  //     "root";
+  // digiAnalysis::Analysis an(0, fname, 4000000, 1500000, 0);
+
+  // std::string fname =
+  //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+  //     "NaI134_NoSrc_12Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+  //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_270nsDelay_800nsLong_"
+  //     "1496nsCoinc_FreeWrites_Ch248Singles_PreTrig1000_289/UNFILTERED/"
+  //     "Data_NaI134_NoSrc_12Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+  //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_270nsDelay_800nsLong_"
+  //     "1496nsCoinc_FreeWrites_Ch248Singles_PreTrig1000_289.root";
+  // digiAnalysis::Analysis an(0, fname, 000000, 00000, 0);
 
   // Get the vector
   std::vector<std::unique_ptr<digiAnalysis::singleHits>> &hitsVector =
@@ -101,9 +119,10 @@ int main(int argc, char *argv[]) {
                                  spectralsize * nbinspect, 0, spectralsize);
   TH2 *hELL = new TH2F("hELL", "hELL", 800, 0, 80, 1000, -5, 5);
   TH2 *hMTLL = new TH2F("hMTLL", "hMTLL", 500, -4, 4, 1000, -5, 5);
-  TH2 *hX1X2 = new TH2F("hX1X2", "hX1X2", 600, -0.2, 1, 600, -0.2, 1);
-  TH2 *hX1X2_1 = new TH2F("hX1X2_1", "hX1X2_1", 600, -0.2, 1, 600, -0.2, 1);
-  TH3 *hX1X2E = new TH3F("hX1X2E", "hX1X2E", 100, 0, 20, 100, 0, 1, 100, 0, 1);
+  TH2 *hX1X2 = new TH2F("hX1X2", "hX1X2", 1200, -0.2, 1, 1200, -0.2, 1);
+  TH2 *hX1X2_1 = new TH2F("hX1X2_1", "hX1X2_1", 1200, -0.2, 1, 1200, -0.2, 1);
+  TH3 *hX1X2E =
+      new TH3F("hX1X2E", "hX1X2E", 1000, 0, 100, 100, 0, 1, 100, 0, 1);
   TH1 *hpreint = new TH1F("hPreint", "hpreint", 1000, 0, 100);
   int nentries = hitsVector.size();
   double psd = 0;
@@ -132,8 +151,8 @@ int main(int argc, char *argv[]) {
   digiAnalysis::WaveForm WFNormAv(*traceAv);
   double intValAv = WFNormAv.IntegrateWaveForm();
 
-  double X1LowCut = 0.01, X1HiCut = 0.25;
-  double mX = -1., mC_low = 0.764, mC_hi = 0.95;
+  double X1LowCut = 0.15, X1HiCut = 0.45;
+  double mX = -1., mC_low = 0.764, mC_hi = 0.85;
   double X2LowCut = 0.4, X2HiCut = 0.6;
 
   for (int i = 0; i < nentries; i++) {
@@ -165,9 +184,9 @@ int main(int argc, char *argv[]) {
       WFMT = TMath::Log10(WF->GetSize() / 2.0);
       newLam = -1;
       lam = -1;
-      WF->SetSmooth(60);
-      std::pair<std::vector<int>, std::vector<int>> results =
-          WF->DetectPeakValleys(25);
+      // WF->SetSmooth(60);
+      // std::pair<std::vector<int>, std::vector<int>> results =
+      //     WF->DetectPeakValleys(25);
       // std::cout << "lenPeaks: " << results.first.size()
       //           << " len valley: " << results.second.size() << std::endl;
       ushort numiter = 0;
@@ -182,9 +201,11 @@ int main(int argc, char *argv[]) {
         avT1 = 0;
         avT2 = 0;
         netQ = 0;
-        int sz = 700;        // digiAnalysis::GateLenLong; // trace.size();
-        int startVal = 1080; // digiAnalysis::GateStart
-        int startVal1 = 980;
+        int sz = 700; // digiAnalysis::GateLenLong; // trace.size();
+        // int startVal = 1080; // digiAnalysis::GateStart
+        // int startVal1 = 980;
+        int startVal = 600; // digiAnalysis::GateStart
+        int startVal1 = 500;
         for (int iter = startVal; iter < startVal + sz / 2; iter++) {
           avT1 += abs(trace[iter]) * iter;
           avT2 += abs(trace[iter + sz / 2]) * (iter + sz / 2);
@@ -192,61 +213,66 @@ int main(int argc, char *argv[]) {
           Q2 += abs(trace[iter + sz / 2]);
           netQ += (trace[iter] + trace[iter + sz / 2]);
         }
-        X1 = WF->IntegrateWaveForm(980, 1025);
-        X2 = WF->IntegrateWaveForm(1060, 1280);
-        XTot = WF->IntegrateWaveForm(980, 1280);
+        // X1 = WF->IntegrateWaveForm(980, 1025);
+        // X2 = WF->IntegrateWaveForm(1060, 1280);
+        // XTot = WF->IntegrateWaveForm(980, 1280);
+        X1 = WF->IntegrateWaveForm(500, 545);
+        X2 = WF->IntegrateWaveForm(580, 800);
+        XTot = WF->IntegrateWaveForm(500, 800);
         X1 = X1 / XTot;
         X2 = X2 / XTot;
 
-        Q1_1 = 0;
-        Q2_1 = 0;
-        avT1_1 = 0;
-        avT2_1 = 0;
-        val = 0;
-        short startiter = -1;
-        numiter = 0;
-        short iter = 0;
-        bool itertrue = true;
-        // std::cout << "peaksize" << results.first.size() << std::endl;
-        while (itertrue and iter < results.first.size()) {
-          // std::cout << i << " iter: " << iter << " : "
-          //           << results.second[2 * iter] << " : " <<
-          //           results.first[iter]
-          //           << " : " << results.second[2 * iter + 1] << std::endl;
-          if (results.first[iter] > digiAnalysis::TriggerTime and
-              results.first[iter] <
-                  digiAnalysis::TriggerTime + 2 * digiAnalysis::GateLenLong) {
-            if (startiter < 0)
-              startiter = iter;
-            numiter++;
-          }
-          if (results.first[iter] >=
-              digiAnalysis::TriggerTime + digiAnalysis::GateLenLong)
-            itertrue = false;
-          iter++;
-        }
+        // Q1_1 = 0;
+        // Q2_1 = 0;
+        // avT1_1 = 0;
+        // avT2_1 = 0;
+        // val = 0;
+        // short startiter = -1;
+        // numiter = 0;
+        // short iter = 0;
+        // bool itertrue = true;
+        // // std::cout << "peaksize" << results.first.size() << std::endl;
+        // while (itertrue and iter < results.first.size()) {
+        //   // std::cout << i << " iter: " << iter << " : "
+        //   //           << results.second[2 * iter] << " : " <<
+        //   //           results.first[iter]
+        //   //           << " : " << results.second[2 * iter + 1] << std::endl;
+        //   if (results.first[iter] > digiAnalysis::TriggerTime and
+        //       results.first[iter] <
+        //           digiAnalysis::TriggerTime + 2 * digiAnalysis::GateLenLong)
+        //           {
+        //     if (startiter < 0)
+        //       startiter = iter;
+        //     numiter++;
+        //   }
+        //   if (results.first[iter] >=
+        //       digiAnalysis::TriggerTime + digiAnalysis::GateLenLong)
+        //     itertrue = false;
+        //   iter++;
+        // }
         // std::cout << "startiter: " << startiter << ": niter: " << numiter
         //           << std::endl;
 
-        for (iter = startiter; iter < startiter + numiter; iter++) {
-          val = WF->IntegrateWaveForm(
-              results.second[2 * iter],
-              std::min(abs(results.second[2 * iter + 1]), int(WF->GetSize())));
-          if (results.first[iter] <
-              0.5 * (digiAnalysis::GateStart +
-                     results.first[startiter + numiter - 1])) {
-            Q1_1 += val;
-            avT1_1 += results.first[iter] * val;
-            c1++;
-          } else {
-            Q2_1 += val;
-            avT2_1 += results.first[iter] * val;
-            c2++;
-          }
-        }
+        //   for (iter = startiter; iter < startiter + numiter; iter++) {
+        //     val = WF->IntegrateWaveForm(
+        //         results.second[2 * iter],
+        //         std::min(abs(results.second[2 * iter + 1]),
+        //         int(WF->GetSize())));
+        //     if (results.first[iter] <
+        //         0.5 * (digiAnalysis::GateStart +
+        //                results.first[startiter + numiter - 1])) {
+        //       Q1_1 += val;
+        //       avT1_1 += results.first[iter] * val;
+        //       c1++;
+        //     } else {
+        //       Q2_1 += val;
+        //       avT2_1 += results.first[iter] * val;
+        //       c2++;
+        //     }
+        //   }
       }
-      lam = TMath::Log(-1.0 * TMath::Log(Q2_1 / Q1_1) /
-                       (avT2_1 / Q2_1 - avT1_1 / Q1_1));
+      // lam = TMath::Log(-1.0 * TMath::Log(Q2_1 / Q1_1) /
+      //                  (avT2_1 / Q2_1 - avT1_1 / Q1_1));
       // std::cout << lam << " : " << Q2_1 / Q1_1 << " : "
       //           << (avT2_1 / c2 - avT1_1 / c1) << std::endl;
       newLam = TMath::Log(-1.0 * TMath::Log(Q2 / Q1) / (avT2 / Q2 - avT1 / Q1));
@@ -266,7 +292,7 @@ int main(int argc, char *argv[]) {
       if (psd > 0.01 and psd < 0.7 and preInt < 5.0) { //
         hX1X2->Fill(X1, X2);
         hX1X2E->Fill(evalEnergy, X1, X2);
-        hLamPlot->Fill(evalEnergy, lam);
+        hLamPlot->Fill(evalEnergy, newLam);
       }
       hPSDPlot->Fill(energy, psd);
       hMTPlot->Fill(energy, meanTime);
@@ -281,7 +307,7 @@ int main(int argc, char *argv[]) {
         hX1X2_1->Fill(X1, X2);
 
         hLamMTPlot->Fill(evalEnergy, newLam, meanTime);
-        hMTLam->Fill(meanTime, lam);
+        hMTLam->Fill(meanTime, newLam);
         // shortPSD =
         //     WF->IntegrateWaveForm(440, 600) / WF->IntegrateWaveForm(290,
         //     600);
@@ -307,12 +333,12 @@ int main(int argc, char *argv[]) {
         hEEvalSpectra->Fill(evalEnergy);
       }
 
-      // if ((keepGoing and energy < 3 and energy > 0.5 and
+      // if ((keepGoing and energy < 1 and energy > 0.5 and
       //      (meanTime < 2.2 and psd < 0.7 and psd > 0.3 and
       //       fabs(preInt) < 5.0 and X1 > X1LowCut and X1 < X1HiCut and
       //       X2 < mX * X1 + mC_hi and X2 > 0.2 and
       //       newLam > 3.44 * meanTime - 13.4 and newLam > -5.5))) {
-      // // if (keepGoing and X2 < 0.2 and X1 > 0.4 and X1 < 0.6) {
+      //   // if (keepGoing and X2 < 0.2 and X1 > 0.4 and X1 < 0.6) {
       //   // WF->SetTracesFFT();
       //   WF->Plot();
       //   std::cout << i << " Energy: " << energy << " X1: " << X1
@@ -335,11 +361,12 @@ int main(int argc, char *argv[]) {
 
       // if (newLam > -5.5 and newLam < -4.5 and psd < 0.5 and psd > 0.12 and
       //     meanTime < 2.1 and meanTime > 1.9 and preInt < 2.0) {
-      //   digiAnalysis::WaveForm WFNorm(WF->ScaleWaveForm(1.0 / fabs(energy)));
-      //   trace = WFNorm.GetTraces();
+      //   digiAnalysis::WaveForm WFNorm(WF->ScaleWaveForm(1.0 /
+      //   fabs(energy))); trace = WFNorm.GetTraces();
 
       //   for (int j = digiAnalysis::GateStart;
-      //        j < digiAnalysis::GateStart + digiAnalysis::GateLenLong; j++) {
+      //        j < digiAnalysis::GateStart + digiAnalysis::GateLenLong; j++)
+      //        {
       //     logLikelihood += WFNorm.GetTraces()[j] *
       //                      TMath::Log(abs(trace[j] / traceAv->at(j)));
       //   }
@@ -364,12 +391,15 @@ int main(int argc, char *argv[]) {
       //     logLikelihood
       //                      // >0.
       //   hitsVector[i]->Print();
-      //   std::cout << "lam: " << newLam << " : " << Q1 << " : " << Q2 << " : "
+      //   std::cout << "lam: " << newLam << " : " << Q1 << " : " << Q2 << " :
+      //   "
       //             << avT1 << " : " << avT2 << " : " << netQ << " : "
-      //             << WF->IntegrateWaveForm(1500, 4900) / 3400.0 << std::endl;
+      //             << WF->IntegrateWaveForm(1500, 4900) / 3400.0 <<
+      //             std::endl;
       //   std::cout << "Energy: " << energy << " : " << evalEnergy
       //             << "\t | PSD = " << psd << " | InitEnergy: "
-      //             << WF->IntegrateWaveForm(0, digiAnalysis::GateStart) * 1.0
+      //             << WF->IntegrateWaveForm(0, digiAnalysis::GateStart)
+      //             * 1.0
       //             /
       //                    digiAnalysis::GateStart
       //             << std::endl

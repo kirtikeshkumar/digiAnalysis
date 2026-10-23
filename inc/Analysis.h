@@ -161,6 +161,15 @@ public:
   void CreatePairs(UShort_t Ch1, UShort_t Ch2);
 
   /**
+   * @brief Creates pairs of hits based on the specified channels.
+   *
+   * @param Ch1 The first channel number.
+   * @param Ch2 The second channel number.
+   * @param CoincWindow The coincidence duration for creating pairs
+   */
+  void CreatePairs(UShort_t Ch1, UShort_t Ch2, UShort_t CoincWindow);
+
+  /**
    * @brief Creates pairs of hits between all channels.
    */
   void CreatePairs();

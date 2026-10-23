@@ -21,13 +21,13 @@
 int main(int argc, char *argv[]) {
   std::cout << "hello DigiAnalysis..." << std::endl;
 
-  int startIndex = 95, endIndex = 121;
+  int startIndex = 315, endIndex = 334;
   std::string fpath = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/";
   std::string finit =
-      "NaI134_NoSrc_06Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
-      "1496nsCoinc_FreeWrites_Ch248Singles_";
-  for (int fileiter = startIndex; fileiter < endIndex; fileiter++) {
+      "NaI134_NoSrc_12Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+      "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_270nsDelay_800nsLong_"
+      "1496nsCoinc_FreeWrites_Ch248Singles_PreTrig1000_";
+  for (int fileiter = startIndex; fileiter <= endIndex; fileiter++) {
     std::string fname = fpath + finit + std::to_string(fileiter) +
                         "/UNFILTERED/Data_" + finit + std::to_string(fileiter) +
                         "_BLCorrected.root";

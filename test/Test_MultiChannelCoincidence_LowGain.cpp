@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
-      "pair.root";
+      "pair_PreTrig1000.root";
 
   std::vector<double> cluster0;
   std::vector<double> cluster1;

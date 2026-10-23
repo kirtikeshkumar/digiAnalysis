@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   TApplication *fApp = new TApplication("TEST", NULL, NULL);
   std::cout << "hello DigiAnalysis..." << std::endl;
   std::string fnameBL = "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/"
-                        "Baseline_01Oct_singlePeriod_Ch0_1.root";
+                        "Baseline_12Oct_singlePeriod_Ch0_PreTrig1000.root";
   TFile *fp = new TFile(fnameBL.c_str(), "READ");
   TTree *tr = (TTree *)fp->Get("baseline");
   std::vector<double> *BL = nullptr;
@@ -62,20 +62,38 @@ int main(int argc, char *argv[]) {
   //     "Acquisition_4_ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_"
   //     "1496nsCoinc_FreeWrites_Ch248Singles_15.root";
 
-  for (int fileiter = 95; fileiter <= 120; fileiter++) {
+  for (int fileiter = 341; fileiter <= 343; fileiter++) {
     std::string fname =
         "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
-        "NaI134_NoSrc_06Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+        "NaI134_NoSrc_12Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
         "Acquisition_4_"
-        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-        "FreeWrites_Ch248Singles_" +
+        "ExtTrig_Threshold1LSB_160nsPromt_270nsDelay_800nsLong_1496nsCoinc_"
+        "FreeWrites_Ch248Singles_PreTrig1000_" +
         std::to_string(fileiter) +
         "/UNFILTERED/"
-        "Data_NaI134_NoSrc_06Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+        "Data_NaI134_NoSrc_12Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
         "Acquisition_4_"
-        "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-        "FreeWrites_Ch248Singles_" +
+        "ExtTrig_Threshold1LSB_160nsPromt_270nsDelay_800nsLong_1496nsCoinc_"
+        "FreeWrites_Ch248Singles_PreTrig1000_" +
         std::to_string(fileiter) + ".root";
+    // fname =
+    //     std::filesystem::exists(fname)
+    //         ? fname
+    //         : "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
+    //           "NaI134_NoSrc_12Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
+    //           "Acquisition_4_"
+    //           "ExtTrig_Threshold1LSB_160nsPromt_270nsDelay_800nsLong_"
+    //           "1496nsCoinc_"
+    //           "FreeWrites_Ch248Singles_" +
+    //               std::to_string(fileiter) +
+    //               "/UNFILTERED/"
+    //               "Data_NaI134_NoSrc_12Oct_1800_1337_1350_WAVES_NoSplitSignal_"
+    //               "Gain_12_"
+    //               "Acquisition_4_"
+    //               "ExtTrig_Threshold1LSB_160nsPromt_270nsDelay_800nsLong_"
+    //               "1496nsCoinc_"
+    //               "FreeWrites_Ch248Singles_" +
+    //               std::to_string(fileiter) + ".root";
 
     // std::string fname =
     //     "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Calib/"

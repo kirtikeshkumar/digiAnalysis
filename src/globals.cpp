@@ -10,11 +10,11 @@ UShort_t smoothBoxSz = 100;
 // UShort_t GateLenLong = 2000; // NaI 500MSPS has *2 ns
 // UShort_t GateLenShort = 275; // NaI 500MSPS has *2 ns
 
-UShort_t GateStart = 925;    // NaI 500MSPS has *2 ns
+UShort_t GateStart = 425;    // NaI 500MSPS has *2 ns
 UShort_t GateLenLong = 1250; // NaI 500MSPS has *2 ns
 UShort_t GateLenShort = 125; // NaI 500MSPS has *2 ns
 UShort_t GateMeanTime = 600;
-UShort_t TriggerTime = 1000;
+UShort_t TriggerTime = 500;
 UShort_t noiseLevelPP = 15;
 
 // SPE

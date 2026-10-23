@@ -69,14 +69,9 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/"
-      "NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-      "Acquisition_4_"
-      "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-      "FreeWrites_Ch248Singles_58/UNFILTERED/"
-      "Data_NaI134_NoSrc_01Oct_1800_1337_1350_WAVES_NoSplitSignal_Gain_12_"
-      "Acquisition_4_"
-      "ExtTrig_Threshold1LSB_160nsPromt_240nsDelay_800nsLong_1496nsCoinc_"
-      "FreeWrites_Ch248Singles_58_BLCorrected.root";
+      "NaI134_NoSrc_WAVES_SplitSignal_Gain_6_Acquisition_4_ExtTrig_Threshold_"
+      "6mV_160nsPromt_270nsDelay_800nsLong_1200nsCoinc_PreTrig1000_12OctSum."
+      "root";
 
   UShort_t channel = 0;
   digiAnalysis::Analysis an(0, fname, 000000, 10000, 1);

@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
   std::string fname =
       "/home/kirtikesh/Analysis/DATA/extCoincSep/1800V/Data/PairFiles/"
-      "pair.root";
+      "pair_PreTrig1000.root";
   // std::string wfname =
   //     "/home/kirtikesh/Analysis/MLTests/AverageWaveforms.root"; // file
   //     for
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   // "/media/kirtikesh/UbuntuFiles/SDataF_NaI1342_02June26_1750_1345_1350_1350_NoSrc_Thresh_30_300_WAVES_Coinc_144ns_LeadPit_1.root";
 
   // Read to singleHits
-  digiAnalysis::Analysis an(fname, 0, 00000, 0);
+  digiAnalysis::Analysis an(fname, 0, 10000, 0);
   // an.CreatePairs();
   std::vector<std::unique_ptr<digiAnalysis::Pair>> &vecOfPairs =
       an.GetPairsVec();
@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
   std::string userInput;
   int badWFCount = 0;
   double MT, Lam;
+  int countPass = 0, countFail = 0;
   digiAnalysis::WaveForm *WF = nullptr, *WFNorm = nullptr;
   std::vector<digiAnalysis::WaveForm> waveformVector, wfVecNoise;
   for (int i = 0; i < vecOfPairs.size(); i++) {
@@ -160,6 +161,7 @@ int main(int argc, char *argv[]) {
     // if (vecOfPairs[i]->GetHitPtr(0)->GetMeanTime() > 2.08)
     if (vecOfPairs[i]->GetPairHitCh(0) == 0 or
         vecOfPairs[i]->GetPairHitCh(1) == 0) {
+      countPass++;
       double preint =
           vecOfPairs[i]->GetPairHitCh(0) == 0
               ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()->IntegrateWaveForm(
@@ -171,9 +173,12 @@ int main(int argc, char *argv[]) {
         WF = vecOfPairs[i]->GetPairHitCh(0) == 0
                  ? vecOfPairs[i]->GetHitPtr(0)->GetWFPtr()
                  : vecOfPairs[i]->GetHitPtr(1)->GetWFPtr();
-        X1 = WF->IntegrateWaveForm(980, 1025);
-        X2 = WF->IntegrateWaveForm(1060, 1280);
-        XTot = WF->IntegrateWaveForm(980, 1280);
+        // X1 = WF->IntegrateWaveForm(980, 1025);
+        // X2 = WF->IntegrateWaveForm(1060, 1280);
+        // XTot = WF->IntegrateWaveForm(980, 1280);
+        X1 = WF->IntegrateWaveForm(500, 545);
+        X2 = WF->IntegrateWaveForm(580, 800);
+        XTot = WF->IntegrateWaveForm(500, 800);
         X1 = X1 / XTot;
         X2 = X2 / XTot;
         hDelT->Fill(vecOfPairs[i]->GetPairDelTime() / 1E3);
@@ -182,6 +187,14 @@ int main(int argc, char *argv[]) {
         hMTLam->Fill(MT, Lam);
         // }
         hX1X2->Fill(X1, X2);
+        if (keepGoing and MT < 1.7) {
+          WF->Plot();
+          std::cout << "Do you want to see the next waveform? (y/n): ";
+          std::getline(std::cin, userInput);
+          if (userInput != "y" && userInput != "Y") {
+            keepGoing = false;
+          }
+        }
       } else {
         badWFCount++;
       }
@@ -220,18 +233,22 @@ int main(int argc, char *argv[]) {
       //   WFNorm = new digiAnalysis::WaveForm(
       //       WF->ScaleWaveForm(1.0 / energy0)); // WF->NormWaveForm().second
 
-      //   wfVecNoise.push_back(*WFNorm);
-      //   // if (keepGoing) {
-      //   //   WF->Plot();
-      //   //   std::cout << "Do you want to see the next waveform? (y/n): ";
-      //   //   std::getline(std::cin, userInput);
-      //   //   if (userInput != "y" && userInput != "Y") {
-      //   //     keepGoing = false;
-      //   //   }
-      //   // }
+      // wfVecNoise.push_back(*WFNorm);
+      // // if (keepGoing and ) {
+      // //   WF->Plot();
+      // //   std::cout << "Do you want to see the next waveform? (y/n): ";
+      // //   std::getline(std::cin, userInput);
+      // //   if (userInput != "y" && userInput != "Y") {
+      // //     keepGoing = false;
+      // //   }
+      // // }
       // }
+    } else {
+      countFail++;
     }
   }
+  std::cout << "PassFails: " << countPass << " : " << countFail << " : "
+            << vecOfPairs.size() << std::endl;
 
   // UShort_t wfSz = WF->GetSize();
   // std::cout << " Averaging " << waveformVector.size()

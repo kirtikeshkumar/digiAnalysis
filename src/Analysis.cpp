@@ -728,6 +728,67 @@ void Analysis::CreatePairs(UShort_t Ch1, UShort_t Ch2) {
   }
 }
 
+void Analysis::CreatePairs(UShort_t Ch1, UShort_t Ch2, UShort_t CoincWindow) {
+
+  /*
+  Make Pairs of singleHits from Ch1 and Ch2 within PairCoincWindow
+  iterate over hits in Ch1 and for each hit find the closest hit in Ch2
+  */
+  if (Ch1 == Ch2) {
+    std::cerr << "Error in Analysis::CreatePairs: Ch1 and Ch2 cannot be same"
+              << std::endl;
+    return;
+  }
+
+  std::vector<singleHits *> hitsVectorCh0 = GetSingleHitsVec(Ch1);
+  std::vector<singleHits *> hitsVectorCh1 = GetSingleHitsVec(Ch2);
+
+  if (hitsVectorCh0.empty() || hitsVectorCh1.empty()) {
+    std::cerr << "Error in Analysis::CreatePairs: One or both channels have "
+                 "no hits"
+              << std::endl;
+    return;
+  } else {
+    std::cout << "got the vector of channel " << Ch1
+              << " from an: " << hitsVectorCh0.size() << std::endl;
+    std::cout << "got the vector of channel " << Ch2
+              << " from an: " << hitsVectorCh1.size() << std::endl;
+  }
+
+  Long64_t i = 0, j = 0;
+  Long64_t Ch0Time = hitsVectorCh0[0]->GetTimestamp();
+  Long64_t Ch1Time = hitsVectorCh1[0]->GetTimestamp();
+  Long64_t TDiffCurr = Ch0Time - Ch1Time;
+  Long64_t TDiffMin = 0;
+  Pair currPair;
+
+  while (i < hitsVectorCh0.size()) {
+    Ch0Time = hitsVectorCh0[i]->GetTimestamp();
+    TDiffMin = 100000000000000;
+    while (j < hitsVectorCh1.size()) {
+      Ch1Time = hitsVectorCh1[j]->GetTimestamp();
+      TDiffCurr = Ch1Time - Ch0Time;
+      if (fabs(TDiffCurr) < fabs(TDiffMin)) {
+        TDiffMin = TDiffCurr;
+        j = j + 1;
+      } else {
+        if (fabs(TDiffMin / 1000) < CoincWindow) // since the TimeStamp is in ps
+        {
+          currPair.ClearPair();
+          currPair.SetPair(*hitsVectorCh0[i], *hitsVectorCh1[j - 1]);
+          vecOfPairs.push_back(std::make_unique<Pair>(currPair));
+        }
+        i = i + 1;
+        j = (j >= 2) ? j - 2 : j;
+        break;
+      }
+    }
+    if (i >= hitsVectorCh0.size() - 1 or j >= hitsVectorCh1.size() - 1) {
+      break;
+    }
+  }
+}
+
 std::vector<std::unique_ptr<Pair>> &Analysis::GetPairsVec() {
   return vecOfPairs;
 }
